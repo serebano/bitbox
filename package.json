@@ -1,0 +1,22 @@
+{
+  "name": "NEW-APP",
+  "version": "0.1.0",
+  "description": "NEW-APP DESCRIPTION",
+  "main": "main.js",
+  "repository": "https://github.com/PUT_YOUR_REPO",
+  "author": "WHO ARE YOU?",
+  "license": "Apache2",
+  "devDependencies": {
+    "react-scripts": "0.8.5"
+  },
+  "dependencies": {
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

@@ -1,0 +1,7 @@
+# cerebral
+
+## start
+
+```
+yarn start
+```
