@@ -1,16 +1,14 @@
-import Tag from '../Tag'
+import tag from '../Tag'
 
-export default Tag.template('props', {
-    get(target, path) {
-        return Tag.extract(target, path)
+export default tag.template('props', {
+    get(context, path) {
+        return this.extract(context, path)
     },
-    set(target, path, value) {
+    set(context, path, value) {
         const keys = path.split(".")
         const key = keys.pop()
-        const object = Tag.extract(target, keys.join("."))
+        const target = this.extract(context, keys)
 
-        return typeof value === "undefined"
-            ? (delete object[key])
-            : (object[key] = value)
+        target[key] = value
     }
 })

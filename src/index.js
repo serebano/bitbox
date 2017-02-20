@@ -1,9 +1,19 @@
 import Tag from './Tag'
 //import state from './handlers/state'
-import props from './handlers/props'
+//import props from './handlers/props'
 import string from './handlers/string'
+import compute from './handlers/compute'
 import observe from './handlers/observe'
 
+const props = observe('props', (path, value) => {
+	console.log(`(props)`, path, '=', value)
+})
+
+const state = observe('state', (path, value) => {
+    console.info(`(state)`, path, '=', value)
+})
+
+Object.assign(window, Tag.templates)
 
 const context = {
     state: {
@@ -16,20 +26,11 @@ const context = {
     }
 }
 
-const state = observe('state', function(path, value) {
-    console.info(path, '=', value)
-})
 
-const comp = Tag.compute(
-    state`app.name`,
-    props`color`,
-    function(name, color) {
-        return {
-            name,
-            color
-        }
-    }
-)
+const comp = compute({
+    name: state`app.name`,
+    color: props`color`
+})
 
 window.str = string`name: ${state`app.name`}, color: ${props`color`}`
 
@@ -39,9 +40,5 @@ state`app.str`.set(context, string`
 `)
 
 window.comp = comp
-window.observe = observe
-window.state = state
-window.props = props
-window.string = string
 window.context = context
 window.tag = Tag

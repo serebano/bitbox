@@ -1,52 +1,48 @@
-const COMPUTE_TYPE = Symbol(`type/compute`)
-
 export default class Tag {
 
     static templates = {}
 
     static template(type, handlers) {
-        Tag.templates[type] = (strings, ...values) => {
-            return new Tag(type, Object.assign({}, handlers), strings, values)
+        if (typeof type === "function") {
+            Tag.templates[type.name] = type
+            Tag.templates[type.name].handlers = handlers
+
+            return Tag.templates[type.name]
         }
-        Tag.templates[type].type = type
+
+        Tag.templates[type] = function(keys, ...values) {
+            return new Tag(type, handlers, keys, values)
+        }
+
         Tag.templates[type].handlers = handlers
 
         return Tag.templates[type]
     }
 
     static compose(factory) {
-        return factory(Tag.templates, Tag.compute)
-    }
-
-    static compute(...args) {
-        const get = args.pop()
-
-        return new Tag(COMPUTE_TYPE, {
-            get(context) {
-                const tags = this.tags()
-                const values = tags.map(tag => tag.get(context))
-
-                return get(...values)
-            }
-        }, args.map((_,i) => i), args)
+        return factory(Tag.templates)
     }
 
     /*
       Extracts value from object using a path
     */
     static extract(target, path) {
-        return path.split('.').reduce((currentValue, key, index) => {
-            if (index > 0 && currentValue === undefined)
+        const keys = !Array.isArray(path)
+            ? path.split('.')
+            : path
+
+        return keys.reduce((result, key, index) => {
+            if (index > 0 && result === undefined)
                 throw new Error(`A tag is extracting with path "${path}", but it is not valid`)
 
-            return key === "" ? currentValue : currentValue[key]
+            return key === "" ? result : result[key]
         }, target)
     }
 
-    constructor(tag, handlers, strings, values) {
+    constructor(tag, handlers, keys, values) {
         this.type = tag
         this.handlers = handlers
-        this.strings = strings
+        this.keys = keys
         this.values = values
     }
 
@@ -55,7 +51,7 @@ export default class Tag {
       in components
     */
     tags(self) {
-        return this.strings.reduce((paths, string, index) => {
+        return this.keys.reduce((paths, string, index) => {
             return this.values[index] instanceof Tag
                 ? paths.concat(this.values[index])
                 : paths
@@ -69,7 +65,7 @@ export default class Tag {
         if (!context)
             throw new Error('You can not grab the path from a Tag without context')
 
-        return this.strings.reduce((currentPath, string, idx) => {
+        return this.keys.reduce((currentPath, string, idx) => {
             const valueTemplate = this.values[idx]
 
             if (valueTemplate instanceof Tag)
@@ -82,26 +78,23 @@ export default class Tag {
         }, '')
     }
 
-    /*
-      Uses the path of the tag to look it up in related getter
-    */
     get(context) {
         if (!context)
             throw new Error('You can not grab a value from a Tag without getters')
 
-        if (COMPUTE_TYPE === this.type)
-            return this.handlers.get.call(this, context)
+        if (this.handlers.resolve)
+            return this.handlers.resolve.apply(this, arguments)
 
         const target = context[this.type]
         const handler = this.handlers.get
 
-        if (handler && !target)
+        if (!target)
             throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
 
         if (!handler)
-            return this.path(context)
+            throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide get handler`)
 
-        return handler.call(this, target, this.path(context))
+        return handler.call(this, context, this.path(context))
     }
 
     set(context, value) {
@@ -111,23 +104,34 @@ export default class Tag {
         const target = context[this.type]
         const handler = this.handlers.set
 
+        if (!target)
+            throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
+
         if (!handler)
             throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide set handler`)
 
         if (value instanceof Tag)
-            return handler.call(this, target, this.path(context), value.get(context))
+            return handler.call(this, context, this.path(context), value.get(context))
 
         if (typeof value === "function")
-            return handler.call(this, target, this.path(context), value(this.get(context)))
+            return handler.call(this, context, this.path(context), value(this.get(context)))
 
-        return handler.call(this, target, this.path(context), value)
+        return handler.call(this, context, this.path(context), value)
+    }
+
+    extract(context, path) {
+        return Tag.extract(context[this.type], path)
+    }
+
+    target(context) {
+        return context[this.type]
     }
 
     /*
       Produces a string representation of the path
     */
     pathToString() {
-        return this.strings.reduce((currentPath, string, idx) => {
+        return this.keys.reduce((currentPath, string, idx) => {
             const valueTemplate = this.values[idx]
 
             if (valueTemplate instanceof Tag)
