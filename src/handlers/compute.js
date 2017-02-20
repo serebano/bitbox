@@ -31,7 +31,7 @@ const handlers = {
 }
 
 function compute(args) {
-    if (arguments.length === 1 && typeof args === "object") {
+    if (arguments.length === 1 && !(args instanceof tag) && typeof args === "object") {
         const keys = Object.keys(args)
 		const values = keys.map(key => args[key])
 
