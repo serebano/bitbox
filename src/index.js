@@ -6,6 +6,10 @@ import compute from './handlers/compute'
 import observe from './handlers/observe'
 import * as operators from './operators'
 import debug from './debug'
+import computeExample from './examples/compute'
+import createStore from './examples/store'
+import Counter from './examples/components/counter'
+import Component from './component'
 
 const props = observe('props', (path, value) => {
 	console.log(`(props)`, path, '=', value)
@@ -17,11 +21,29 @@ const state = observe('state', (path, value) => {
 
 Object.assign(window, Tag.templates, operators)
 
+const store = createStore({
+	app: {
+		name: 'Falcon',
+		color: 'green',
+		count: 0
+	},
+	user: {
+		firstName: 'Sergiu',
+		lastName: 'Toderascu'
+	}
+})
+
+const counter = Component(Counter.props, Counter.view)
+
 const context = {
     state: {
         app: {
             name: 'Falcon'
-        }
+        },
+		user: {
+			firstName: 'Sergiu',
+			lastName: 'Toderascu'
+		}
     },
     props: {
         color: 'red',
@@ -57,10 +79,16 @@ const comp = compute({
 const incAction = operators.inc(state`app.count`, props`count`)
 const setAction = operators.set(state`app.str2`, props`str2`)
 
+window.Counter = Counter
 
 window.incAction = incAction
 window.setAction = setAction
 
+window.counter = counter
+window.Component = Component
+window.store = store
+window.createStore = createStore
+window.computeExample = computeExample
 window.arr = arr
 window.obj = obj
 window.mix = mix
