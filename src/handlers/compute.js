@@ -1,45 +1,84 @@
 import tag from '../Tag'
 
-const handlers = {
-    resolve(context) {
-        if (!this.keys) {
-            return this.values.reduce((result, value, index) => {
-				if (value instanceof tag)
-					return result.concat(value.get(context))
-
-				if (typeof value === "function")
-					return Array.isArray(result)
-						? value(...result)
-						: value(result)
-
-				return result
-			}, [])
-		}
-
-        return this.keys.reduce((obj, key, idx) => {
-            const value = this.values[idx]
-
-            obj[key] = (value instanceof tag)
-                ? value.get(context)
-                : typeof value === "function"
-					? value(obj)
-					: value
-
-            return obj
-        }, {})
-    }
-}
-
 function compute(args) {
-    if (arguments.length === 1 && !(args instanceof tag) && typeof args === "object") {
-        const keys = Object.keys(args)
-		const values = keys.map(key => args[key])
+    if (arguments.length === 1) {
+        if (args instanceof tag)
+            return args
 
-		return new tag('compute', handlers, keys, values)
+        if (typeof args === "function")
+            return compute(tag.compose(args))
+
+        if (Array.isArray(args))
+            return compute.array(args)
+
+        if (typeof args === "object")
+		    return compute.object(args)
     }
 
-	return new tag('compute', handlers, undefined, Array.from(arguments))
+	return compute.array(Array.from(arguments))
 }
 
+compute.array = function computeArray(array) {
+	return new tag('compute.array', {
+        resolve(context) {
+            return this.values.reduce((result, value, index) => {
+                if (typeof value === "function")
+                    return index === (this.values.length - 1)
+                        ? value(...result)
+                        : [ value(...result) ]
 
-export default tag.template(compute, handlers)
+                if (value instanceof tag)
+                    result.push(value.get(context))
+                else
+                    result.push(value)
+
+                return result
+            }, [])
+        },
+        string() {
+            const args = this.values.map((value, idx) => `${value}`).join(",\n")
+            return `${this.type}([\n${args}\n])`
+        }
+    }, undefined, array.map(ensure))
+}
+
+compute.object = function computeObject(object) {
+    const keys = Object.keys(object)
+	const values = keys.map(key => ensure(object[key]))
+
+	return new tag('compute.object', {
+        resolve(context) {
+            return this.keys.reduce((obj, key, idx) => {
+                const value = this.values[idx]
+
+                obj[key] = (value instanceof tag)
+                    ? value.get(context)
+                    : value
+
+                return obj
+            }, {})
+        },
+        string() {
+            const args = this.keys.map((key, idx) => `${key}: ${this.values[idx]}`).join(",\n")
+
+            return `${this.type}({\n${args}\n})`
+        }
+    }, keys, values)
+}
+
+function ensure(arg) {
+    if (arg instanceof tag)
+        return arg
+
+    if (Array.isArray(arg))
+        return compute.array(arg)
+
+    if (typeof arg === "object")
+        return compute.object(arg)
+
+    return arg
+}
+
+compute.types = ['array', 'object']
+
+export default tag.template(compute)

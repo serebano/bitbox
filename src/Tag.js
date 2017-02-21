@@ -20,7 +20,7 @@ export default class Tag {
     }
 
     static compose(factory) {
-        return factory(Tag.templates)
+        return factory.args || (factory.args = factory(Tag.templates))
     }
 
     /*
@@ -104,11 +104,11 @@ export default class Tag {
         const target = context[this.type]
         const handler = this.handlers.set
 
-        if (!target)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
-
         if (!handler)
             throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide set handler`)
+
+        if (!target)
+            throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
 
         if (value instanceof Tag)
             return handler.call(this, context, this.path(context), value.get(context))
@@ -135,7 +135,7 @@ export default class Tag {
             const valueTemplate = this.values[idx]
 
             if (valueTemplate instanceof Tag)
-                return currentPath + string + '${' + valueTemplate.toString() + '}'
+                return currentPath + string + '${ ' + valueTemplate.toString() + ' }'
 
             return currentPath + string + (valueTemplate || '')
         }, '')
@@ -145,6 +145,9 @@ export default class Tag {
       Produces a string representation of the tag
     */
     toString() {
-        return this.type + '`' + this.pathToString() + '`'
+        if (this.handlers.string)
+            return this.handlers.string.call(this)
+
+        return this.type + ' `' + this.pathToString() + '`'
     }
 }

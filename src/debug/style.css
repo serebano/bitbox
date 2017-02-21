@@ -1,0 +1,30 @@
+body {
+  font-family: Arial, sans;
+  margin: 0; padding: 0;
+}
+pre {
+  margin: 0;
+  font-size: 14px;
+  font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+}
+pre code {
+  font-size: 14px;
+  font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+}
+code.hljs {
+    padding: 16px
+}
+.json {
+    background: #eee;
+    border: 1px solid #aaa;
+    padding: 16px;
+    font-size: 14px
+}
+
+/*code {
+    background: #f4f4f4;
+    border-radius: 2px;
+    border: 1px solid #eee;
+    margin: 1px;
+    font-size: 14px
+}*/
