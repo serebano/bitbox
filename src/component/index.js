@@ -1,7 +1,7 @@
 import View from 'react'
 import {compute} from '../tags'
 
-export default function component(dependencies, Component) {
+export default function createComponent(dependencies, Component) {
 
 	class Wrapper extends View.Component {
 
@@ -9,7 +9,7 @@ export default function component(dependencies, Component) {
   			super(props, context)
 
 			this.tag = compute(dependencies)
-			this.map = this.getDeps(props)
+			this.deps = this.getDeps(props)
 		}
 
 		getContext(props) {
@@ -17,12 +17,24 @@ export default function component(dependencies, Component) {
 		}
 
 		componentWillMount () {
-			this.context.store.deps.register(this, this.map)
+			const update = (changes) => {
+				const prevDeps = this.deps
+
+				this.deps = this.getDeps(this.props)
+				this.context.store.deps.update(update, prevDeps, this.deps)
+
+				this.forceUpdate()
+			}
+
+			update.deps = this.deps
+			update.toString = () => `${Component.name}Component`
+
+			this.disconnect = this.context.store.deps.add(update, update.deps)
 		}
 
 		componentWillUnmount () {
 	    	this._isUnmounting = true
-			this.context.store.deps.remove(this, this.map)
+			this.disconnect()
 	    }
 
 		shouldComponentUpdate () {
@@ -37,20 +49,8 @@ export default function component(dependencies, Component) {
 			return this.tag.get(this.getContext(this.props))
 		}
 
-		_update(changes) {
-			const prevMap = this.map
-			this.map = this.getDeps(this.props)
-			this.context.store.deps.update(this, prevMap, this.map)
-
-			this.forceUpdate()
-		}
-
 		render() {
 			return View.createElement(Component, this.getProps())
-		}
-
-		toJSON () {
-			return Component.displayName || Component.name
 		}
 	}
 

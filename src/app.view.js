@@ -2,7 +2,7 @@ import React from 'react'
 import Component from './component'
 
 export const Foo = Component(
-	function({props,state}) {
+	function({ props, state }) {
 		return {
 			pColor: props`color`,
 			data: [
@@ -26,12 +26,12 @@ export const Foo = Component(
 )
 
 export const Counter = Component(
-	function({props,state,signal,path}) {
+	function({ props, state, signal, path }) {
 		return {
-			count: state`${path.deep}.count`,
-			color: state`${path.deep}.color`,
-			inc: signal`counter.increment`,
-			dec: signal`counter.decrement`
+			count: state `${path.deep}.count`,
+			color: state `${path.deep}.color`,
+			inc: signal `${path.deep}.increment`,
+			dec: signal `${path.deep}.decrement`
 		}
 	},
 	function Count({count,color,inc,dec}) {

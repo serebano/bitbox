@@ -1,33 +1,50 @@
 import Tag from './Tag'
-import * as operators from './operators'
-//import * as utils from './utils'
-//import debug from './debug'
-import store from './app.store'
-import tags from './tags'
-import './render'
-import {Controller} from 'cerebral'
-import Devtools from 'cerebral/devtools'
-import actionChain from './action'
-import * as action from './action/chain'
+import Store from './store'
+import Run from './action'
+import Deps from './deps'
 
-const controller = Controller({
-  // You do not want to run the devtools in production as it
-  // requires a bit of processing and memory to send data from
-  // your application
-  devtools: (
-    process.env.NODE_ENV === 'production' ?
-      null
-    :
-      Devtools({
-        // If running standalone debugger
-        remoteDebugger: 'localhost:8585'
-      })
-  )
+import * as tags from './tags'
+import * as operators from './operators'
+import {compute,state} from './tags'
+
+import store from './app.store'
+import './render'
+
+const deps = compute({
+	name: state`app.name`,
+	color: state`app.color`
 })
 
-//export default controller
+store.on(deps, function demo(props) {
+	console.log('demo', props)
+})
 
-Object.assign(window, {action,actionChain,Tag,store,tags,operators,controller}, tags, operators)
+store.set(state`app.name`, 'My App')
+
+Object.assign(window, {Store,Run,Deps,Tag,store,tags,operators}, tags, operators)
+
+
+//import * as utils from './utils'
+//import debug from './debug'
+// import {Controller} from 'cerebral'
+// import Devtools from 'cerebral/devtools'
+
+// const controller = Controller({
+//   // You do not want to run the devtools in production as it
+//   // requires a bit of processing and memory to send data from
+//   // your application
+//   devtools: (
+//     process.env.NODE_ENV === 'production' ?
+//       null
+//     :
+//       Devtools({
+//         // If running standalone debugger
+//         remoteDebugger: 'localhost:8585'
+//       })
+//   )
+// })
+
+//export default controller
 
 //const {state,props,string,compute} = store.tags
 

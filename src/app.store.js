@@ -1,6 +1,6 @@
 import Store from './store'
 import { set, inc, dec } from './operators'
-import { state, props, signal } from './tags'
+import { state, props } from './tags'
 
 function App(tags) {
 
@@ -42,8 +42,10 @@ function App(tags) {
 	}
 }
 
-function  Counter({state,props,path}) {
-	path.set(this.name, this.path)
+function Counter({ state, props, path }) {
+
+	const root = path[this.name] = this.path
+
 	return {
 		state: {
 			count: 0,
@@ -54,10 +56,10 @@ function  Counter({state,props,path}) {
 				set(state`counter.color`, props`color`)
 			],
 			increment: [
-				inc(state`${path.deep}.count`, 7)
+				inc(state`${root}.count`, 7)
 			],
 			decrement: [
-				dec(state`${path.deep}.count`, 9)
+				dec(state`${root}.count`, 9)
 			]
 		}
 	}

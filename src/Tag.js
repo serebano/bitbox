@@ -22,9 +22,12 @@ export default class Tag {
 
     static observe(type, fn) {
         const key = type.name||type
+
         if (!Tag.observers[key])
             Tag.observers[key] = []
+
         const index = Tag.observers[key].push(fn) - 1
+
         return function remove() {
             return Tag.observers[key].splice(index, 1)
         }
@@ -64,21 +67,11 @@ export default class Tag {
         }
     }
 
-    constructor(tag, handlers, keys, values) {
-        this.type = tag
+    constructor(type, handlers, keys, values) {
+        this.type = type
         this.handlers = handlers
         this.keys = keys
         this.values = values
-    }
-
-    connect(context, component) {
-        return context.store.connect(this, component)
-    }
-
-    $(action) {
-        return function $(context) {
-            return action(this.get(context))
-        }
     }
 
     deps(context) {
@@ -118,6 +111,9 @@ export default class Tag {
     path(context) {
         if (!context)
             throw new Error('You can not grab the path from a Tag without context')
+
+        if (typeof this.keys === 'string')
+            return this.keys
 
         return this.keys.reduce((path, key, idx) => {
             const value = this.values[idx]
@@ -216,6 +212,9 @@ export default class Tag {
       Produces a string representation of the path
     */
     pathToString() {
+        if (typeof this.keys === 'string')
+            return this.keys
+            
         return this.keys.reduce((currentPath, string, idx) => {
             const valueTemplate = this.values[idx]
 

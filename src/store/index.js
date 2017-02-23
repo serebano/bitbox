@@ -1,27 +1,55 @@
 import Tag from '../Tag'
-import createDependencyStore from '../deps'
-import tags, {module} from '../tags'
-import {isValidResult} from '../utils'
+import DependencyStore from '../deps'
 import createRun from '../action'
+import * as tags from '../tags'
+
+function absolutePath(tag, context) {
+	return tag.type + "." + tag.path(context)
+}
+
+/*
+	deps = compute({
+		name: state`app.name`,
+		color: state`app.color`
+	})
+
+	store.on(deps, props => console.log('on', props))
+	store.set(name: state`app.name`, 'My App')
+
+ */
 
 function Store(init = {}, ...providers) {
 
 	const store = {
-		path(tag, props, absolute) {
-			return absolute
-				? tag.type + "." + tag.path(store.run.context({ type:"store.path" }, props))
-				: tag.path(store.run.context({ type:"store.set" }, props))
+		path(tag, props) {
+			return tag.path(store.run.context({}, props))
 		},
 		get(tag, props) {
-			return tag.get(store.run.context({ type:"store.get" }, props))
+			return tag.get(store.run.context({}, props))
 		},
 		set(tag, value, props) {
-			tag.set(store.run.context({ type:"store.set" }, props), value)
-			deps.commit()
+			tag.set(store.run.context({}, props), value)
+
+			return store.deps.commit()
+		},
+		on(tag, fn) {
+			const path = store.path(tag)
+			const deps = tag.deps(store.run.context())
+			const entity = () => fn(store.get(tag))
+
+			entity.deps = deps
+			entity.toString = () => `on(${tag}, ${fn})`
+			entity.on = () => store.deps.add(entity, deps)
+			entity.off = entity.on()
+
+			return entity
+		},
+		apply(fn, props) {
+			return fn(store.run.context(fn, props))
 		}
 	}
 
-	const deps = createDependencyStore()
+	const deps = new DependencyStore()
 	const run = createRun(Store.provider(store), ...providers)
 
 	store.module = {}
@@ -33,16 +61,15 @@ function Store(init = {}, ...providers) {
 	Tag.observe(tags.signal, observer)
 	Tag.observe(tags.module, observer)
 
-	store.set(module`.`, init)
+	store.set(tags.module`.`, init)
 
 	function observer(handler, tag, context, details) {
-		const path = store.path(tag, {}, true)
+		const path = absolutePath(tag, context)
+
 		const index = handler === "set" && deps.push(path)
 		if (index[1] === 0)
 			console.log(`\n***`)
 		if (handler !== "get:cached")
-			//console.log(`[cached]`)
-		//else
 			console.log(`%c${handler.toUpperCase()} %c${tag.type}%c \`${tag.pathToString()}\`%c`, `color:${handler==="set"?"orange":handler==="get:cached"?"#555":"lime"};font-weight:bold;`, `font-weight:bold`, `color:${handler==="get:cached"?"#777":"#999"}`, '', details)
 	}
 

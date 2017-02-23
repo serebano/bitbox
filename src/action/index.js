@@ -1,11 +1,12 @@
 import Tag from '../Tag'
-import {isValidResult,isObject} from '../utils'
-import tags from '../tags'
+import {isObject} from '../utils'
+import * as tags from '../tags'
 
 const nextAction = result => result
 
 function PropsProvider(context, action, props) {
 	context.props = props || {}
+
 	return context
 }
 
@@ -36,7 +37,7 @@ export default function createRun(...providers) {
 		return runChain([].concat(chain), props)
 	}
 
-	function runAction(action, props={}, next = nextAction) {
+	function runAction(action, props = {}, next = nextAction) {
 		if (action instanceof Tag)
 			return runAction(context => action.get(context), props, next)
 
