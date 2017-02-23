@@ -11,6 +11,16 @@ pre code {
   font-size: 14px;
   font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 }
+ul.deps {
+    font-size: 13px;
+    font-family: Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+    display: inline-block;
+}
+ul.deps li {
+    padding: 3px 6px;
+    background: lightyellow;
+    margin: 1px;
+}
 code.hljs {
     padding: 16px
 }

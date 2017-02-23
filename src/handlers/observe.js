@@ -1,28 +1,26 @@
 import Tag from '../Tag'
 
-export default function observe(type, fn) {
-    return Tag.template(type, {
-        get(context, path) {
-            const target = this.target(context)
+export default function Observe(tags, type) {
+    return function o(keys, ...values) {
+        return new Tag(type, {
+            get(context) {
+                const path = this.path(context)
+                return this.extract(context, path)
+            },
+            set(context, value) {
+                const path = this.path(context)
+                const keys = path.split(".")
+                const key = keys.pop()
 
-            if (typeof target === "function")
-                return target(path)
-                
-            return this.extract(context, path)
-        },
-        set(context, path, value) {
-            const target = this.target(context)
+                if (!key)
+                    context[this.type] = value
+                else
+                    this.extract(context, keys)[key] = value
 
-            if (typeof target.set === "function")
-                return target.set(path, value)
+                tags[type].observer && tags[type].observer(this, path, value)
 
-            const keys = path.split(".")
-            const key = keys.pop()
-            const object = this.extract(context, keys)
-
-            fn(path, value)
-
-            return (object[key] = value)
-        }
-    })
+                return true
+            }
+        }, keys, values)
+    }
 }

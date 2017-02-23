@@ -1,4 +1,4 @@
-import compute from '../handlers/compute'
+import {compute} from '../tags'
 
 export default function push(target, ...values) {
 

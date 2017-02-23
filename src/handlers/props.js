@@ -1,14 +1,23 @@
-import tag from '../Tag'
+import Tag from '../Tag'
 
-export default tag.template('props', {
-    get(context, path) {
-        return this.extract(context, path)
-    },
-    set(context, path, value) {
-        const keys = path.split(".")
-        const key = keys.pop()
-        const target = this.extract(context, keys)
+export default function Props(tags) {
+    return function props(keys, ...values) {
+        return new Tag('props', {
+            get(context) {
+                const path = this.path(context)
+                return this.extract(context, path)
+            },
+            set(context, value) {
+                const path = this.path(context)
+                const root = path.split(".")
+                const key = root.pop()
+                if (!root.length)
+                    context.props[key] = value
+                else
+                    this.extract(context, keys)[key] = value
 
-        target[key] = value
+                return true
+            }
+        }, keys, values)
     }
-})
+}

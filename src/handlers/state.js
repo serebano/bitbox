@@ -1,24 +1,42 @@
 import Tag from '../Tag'
 
-export default Tag.template('state', {
-    get(context, path) {
-        const target = this.target(context)
+export default function State(tags) {
+    const cache = Tag.cache
 
-        if (typeof target === "function")
-            return target(path)
+    function state(keys, ...values) {
+        return new Tag("state", {
 
-        return this.extract(context, path)
-    },
-    set(context, path, value) {
-        const target = this.target(context)
+            isStateDependency: true,
 
-        if (typeof target.set === "function")
-            return target.set(path, value)
+            get(context) {
+                const path = this.path(context)
+                const value = this.extract(context, path)
+                cache.set(this.type, path, value)
 
-        const keys = path.split(".")
-        const key = keys.pop()
-        const object = this.extract(context, keys)
+                return value
+            },
 
-        return object[key] = value
+            set(context, value) {
+                const path = this.path(context)
+
+                cache.delete(this.type, path)
+
+                const target = context.store.module
+                const keys = path.split(".")
+                const key = keys.pop()
+
+                if (!key)
+                    target.state = value
+                else
+                    Tag.extract(target.state, keys)[key] = value
+
+                cache.set(this.type, path, value)
+
+                return true
+            }
+
+        }, keys, values)
     }
-})
+
+    return state
+}

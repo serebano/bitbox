@@ -1,7 +1,11 @@
 import Tag from '../Tag'
 
-export default Tag.template('string', {
-	resolve(context) {
-		return this.path(context)
+export default function() {
+	return function string(keys, ...values) {
+		return new Tag('string', {
+			resolve(context) {
+				return this.path(context)
+			}
+		}, keys, values)
 	}
-})
+}

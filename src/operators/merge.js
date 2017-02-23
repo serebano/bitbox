@@ -1,4 +1,4 @@
-import compute from '../handlers/compute'
+import {compute} from '../tags'
 
 export default function merge(target, ...values) {
 
