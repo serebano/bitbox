@@ -14,6 +14,27 @@ export function ensureStrictPath(path, value) {
     return path
 }
 
+export function absolutePath(target, context) {
+	return target.type + "." + target.path(context)
+}
+
+export function extractFrom(target, path) {
+	if (!target)
+		throw new Error(`Invalid target, extracting with path: ${path}`)
+
+	const keys = !Array.isArray(path)
+		? path.split('.')
+		: path
+
+	return keys.reduce((result, key, index) => {
+		if (index > 0 && result === undefined) {
+			console.log(`target`, target, key, index, result)
+			throw new Error(`A tag is extracting with path "${path}/${key}[${index}]", but it is not valid`)
+		}
+		return key === "" || key === "*" || key === "**" ? result : result[key]
+	}, target)
+}
+
 export function ensurePath(path = []) {
     if (Array.isArray(path)) {
         return path

@@ -1,6 +1,8 @@
 import Store from './store'
 import { set, inc, dec } from './operators'
 import { state, props } from './tags'
+import ProxyProvider from './providers/proxy'
+import Debugger from './providers/debugger'
 
 function App(tags) {
 
@@ -75,5 +77,6 @@ const store = Store({
 		counter2: Counter
 	}
 })
+//, Debugger((data, ...args) => { console.log(`(debugger)`, data, args) }), ProxyProvider({ xxx: {a:1,b:2} }))
 
 export default store

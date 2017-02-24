@@ -1,24 +1,16 @@
-import {cleanPath,Cache} from './utils'
+import {cleanPath,Cache,extractFrom} from './utils'
 
 export default class Tag {
+
+
+    static Context = class TagContext {}
+
     /*
       Extracts value from object using a path
     */
-    static extract(target, path) {
-        if (!target)
-            throw new Error(`Invalid target, extracting with path: ${path}`)
+    static cache = Cache()
 
-        const keys = !Array.isArray(path)
-            ? path.split('.')
-            : path
-
-        return keys.reduce((result, key, index) => {
-            if (index > 0 && result === undefined) {
-                throw new Error(`A tag is extracting with path "${path}/${key}[${index}]", but it is not valid`)
-            }
-            return key === "" || key === "*" || key === "**" ? result : result[key]
-        }, target)
-    }
+    static extract = extractFrom
 
     static observers = {}
 
@@ -44,9 +36,6 @@ export default class Tag {
             })
     }
 
-    static cache = Cache()
-
-
     constructor(type, handlers, keys, values) {
         this.type = type
         this.handlers = handlers
@@ -55,7 +44,7 @@ export default class Tag {
     }
 
     paths(context) {
-        const canChange = (tag) => typeof tag.handlers.set === "function"
+        const canChange = (tag) => typeof this.set === "function"
 
         return this.tags(canChange(this))
             .reduce((map, tag) => {
@@ -107,52 +96,77 @@ export default class Tag {
         if (!context)
             throw new Error('You can not grab a value from a Tag without getters')
 
-        if (typeof context === "function") {
-            const tag = this
-            return function get(ctx) {
-                return context(tag.get(ctx))
-            }
-        }
 
-        const handler = this.handlers.resolve
-            ? this.handlers.resolve
-            : this.handlers.get
+        return this.extract(context, this.path(context))
 
-        if (!handler)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide get handler`)
+        // if (typeof context === "function") {
+        //     const tag = this
+        //     return function get(ctx) {
+        //         return context(tag.get(ctx))
+        //     }
+        // }
 
-        const cached = Tag.cache.get(this.type, this.path(context))
-
-        if (cached) {
-            Tag.emit('get:cached', this, context, cached)
-
-            return cached
-        }
-
-        const value = handler.call(this, context)
-
-        Tag.emit('get', this, context, value)
-
-        return value
+        // const handler = this.handlers.resolve
+        //     ? this.handlers.resolve
+        //     : this.handlers.get
+        //
+        // if (!handler)
+        //     throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide get handler`)
+        //
+        // const cached = Tag.cache.get(this.type, this.path(context))
+        //
+        // if (cached) {
+        //     Tag.emit('get:cached', this, context, cached)
+        //
+        //     return cached
+        // }
+        //
+        // const value = handler.call(this, context)
+        //
+        // Tag.emit('get', this, context, value)
+        //
+        // return value
     }
 
-    set(context, value) {
+    resolve(context, value, next) {
+        if (context instanceof Tag)
+            return (ctx) => this.resolve(ctx, context, next)
+
+    	if (value instanceof Tag)
+            return this.resolve(context, value.get(context), next)
+
+        if (value instanceof Promise)
+            return value.then(result => this.resolve(context, result, next))
+
+    	if (typeof value === "function")
+            return this.resolve(context, value(context), next)
+
+    	return next ? next(value) : value
+    }
+
+    _set(context, value) {
         if (!context)
             throw new Error('You can not grab a value from a Tag without getters')
 
-        const handler = this.handlers.set
+        const handler = context.set
 
         if (!handler)
             throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide set handler`)
 
+        if (context.set)
+            return context.set(this, value)
+
         if (context instanceof Tag)
-            return (ctx) => ctx.set(this, context)
+            return (ctx) => ctx.set(this, ctx.get(context))
+
+        if (typeof context === "function")
+            return (ctx) => ctx.set(this, context(ctx))
 
         if (context.set)
             return context.set(this, value)
 
         if (typeof value === "function")
-            return this.set(context, value.call(this, context))
+            return this.set(context, value(context))
 
         if (value instanceof Tag) {
             const resolved = value.get(context)
@@ -176,6 +190,16 @@ export default class Tag {
         return Tag.extract(context[this.type], path)
     }
 
+    update(target, path, value) {
+        const root = path.split(".")
+        const key = root.pop()
+        if (!key)
+            return (target[this.type] = value)
+
+        const object = this.extract(target, root)
+        return (object[key] = value)
+    }
+
     /*
       Produces a string representation of the path
     */
@@ -197,8 +221,8 @@ export default class Tag {
       Produces a string representation of the tag
     */
     toString() {
-        if (this.handlers.string)
-            return this.handlers.string.call(this)
+        //if (this.handlers.string)
+        //    return this.handlers.string.call(this)
 
         return this.type + '`' + this.pathToString() + '`'
     }

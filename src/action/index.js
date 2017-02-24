@@ -4,32 +4,6 @@ import * as tags from '../tags'
 
 const nextAction = result => result
 
-function PropsProvider(context, action, props) {
-	context.props = props || {}
-
-	return context
-}
-
-// export function ContextFactory(...providers) {
-// 	function Context(action, ...args) {
-// 		if (!(this instanceof Context))
-// 			return new Context(...arguments)
-//
-// 		const context = Context.providers.reduce((context, Provider) => {
-// 			if (Provider(context, action, ...args) !== this)
-// 				throw new Error(`Provider(${Provider.name}) must return context`)
-// 			return context
-// 		}, this)
-//
-// 		return typeof action === "function"
-// 			? action(context, ...args)
-// 			: context
-// 	}
-//
-// 	Context.providers = providers
-//
-// 	return Context
-// }
 
 export function ContextFactory(...providers) {
 	function Context(action, ...args) {
@@ -37,7 +11,10 @@ export function ContextFactory(...providers) {
 			if (Provider(context, action, ...args) !== context)
 				throw new Error(`Provider(${Provider.name}) must return context`)
 			return context
-		}, {})
+		}, new Tag.Context())
+
+		if (action instanceof Tag)
+			return action.get(context)
 
 		return typeof action === "function"
 			? action(context, ...args)
@@ -68,12 +45,8 @@ export default function createRun(...providers) {
 	run.chain = runChain
 	run.context = ContextFactory(...providers)
 
-	function run(target, props, next) {
-
-		if (target instanceof Tag)
-			return runAction(context => target.get(context), props, next)
-
-		if (typeof target === 'function')
+	function run(target, props = {}, next) {
+		if (target instanceof Tag || typeof target === 'function')
 			return runAction(target, props, next)
 
 		if (Array.isArray(target))
@@ -84,32 +57,32 @@ export default function createRun(...providers) {
 
 	function runAction(action, props = {}, next = nextAction) {
 		if (action instanceof Tag)
-			return runAction(context => action.get(context), props, next)
+			return runAction(function getTag(context) {
+				return action.get(context)
+			}, props, next)
 
 		const result = run.context(action, props)
-		//const result = action(context, tags)
 
 		if (typeof result === "function") return runAction(result, props, next)
 		if (result instanceof Promise) return result.then(next)
+		if (Array.isArray(result)) return runChain(result, props, next, 0)
 
 		return next(result)
 	}
 
-	function runChain(chain, payload, next = nextAction, index = 0) {
+	function runChain(chain, props, next = nextAction, index = 0) {
 		const item = chain[index]
 		const runNext = (result) => {
-			const props = isObject(result)
-			 	? Object.assign({}, payload, result)
-				: result
-					? Object.assign({}, payload, {result})
-					: payload
-			return runChain(chain, props.result||props, next, index + 1)
+			props.result = result
+			return runChain(chain, props, next, index + 1)
 		}
 
-		if (!item) return next(payload)
-		if (Array.isArray(item)) return runChain(item, payload, runNext, 0)
+		if (!item) return next(props)
+		if (Array.isArray(item)) {
+			return runChain(item, props, runNext, 0)
+		}
 
-		return runAction(item, payload, runNext)
+		return runAction(item, props, runNext)
 	}
 
 	return run

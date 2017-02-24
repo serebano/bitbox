@@ -1,11 +1,12 @@
 import Tag from './Tag'
-import Store from './store'
-import Run from './action'
+import Store from './Store'
+import Context from './Context'
+import Run from './Run'
 import Deps from './deps'
 
 import * as tags from './tags'
 import * as operators from './operators'
-import {state} from './tags'
+import {props,state,github,string} from './tags'
 
 import store from './app.store'
 import './render'
@@ -15,11 +16,37 @@ import './render'
 // 	color: state`app.color`
 // })
 
-// store.connect(state`app.name`, name => console.log('App name:', name))
+store.on(state`app.name`, name => console.log('App name:', name))
 //
-// store.set(state`app.name`, 'My App')
+store.set(state`app.name`, 'My App')
 
-Object.assign(window, {Store,Run,Deps,Tag,store,tags,operators}, tags, operators)
+function getRepo({ get, set }) {
+	const key = get(string`${props`user`}-${props`repo`}`)
+
+	return get(state`_repo-${key}`) || get(github`repos.${props`user`}.${props`repo`}`)
+		.then(result => {
+			set(state`_repo-${key}`, result)
+
+			return { result }
+		})
+}
+
+function setRepo() {
+	return [
+		props`r`.set(github`repos.${props`user`}.${props`repo`}`),
+		state`app.repo`.set(getRepo),
+		state`app.repoProps`.set(props`r`)
+	]
+}
+
+// store.run(setRepo, {
+// 	user: 'serebano',
+// 	repo: 'tag'
+// }, res => {
+// 	console.log(`res`, res)
+// })
+
+Object.assign(window, {context: Context(c => { c.get = t => t.get(c); return c }), Context,setRepo,getRepo,Store,Run,Deps,Tag,store,tags,operators}, tags, operators)
 
 
 //import * as utils from './utils'

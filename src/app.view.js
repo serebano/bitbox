@@ -50,7 +50,7 @@ export const Name = Component(
 		return {
 			name: [
 				state`app.name`,
-				name => name.toUpperCase()
+				name => String(name).toUpperCase()
 			],
 			nameChanged: signal`app.nameChanged`
 		}
@@ -68,7 +68,7 @@ export const Name = Component(
 export default Component(
 	({ props, state }) => {
 		return {
-			name: state`app.name`
+			name: state`app.name2`
 		}
 	},
 	function App({name}) {

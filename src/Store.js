@@ -1,9 +1,10 @@
-import Tag from '../Tag'
-import Run from '../Run'
-import DependencyStore from '../deps'
-import * as tags from '../tags'
-import {absolutePath} from '../utils'
-import ResolveProvider from '../providers/resolve'
+import Tag from './Tag'
+import Run from './Run'
+import DependencyStore from './deps'
+import * as tags from './tags'
+import {absolutePath} from './utils'
+import ResolveProvider from './providers/resolve'
+
 /*
 	deps = compute({
 		name: state`app.name`,
@@ -67,6 +68,7 @@ function Store(init = {}, ...providers) {
 	store.tags = (target, props) => target.tags(run.context(null, props))
 
 	store.context = run.context
+
 	store.run = (action, props, done) => run(action, props, result => {
         console.log(`result`, result)
         return store.deps.commit()
@@ -76,15 +78,3 @@ function Store(init = {}, ...providers) {
 }
 
 export default Store
-
-
-
-// function observer(handler, target, context, details) {
-// 	const path = absolutePath(target, context)
-//
-// 	const index = handler === "set" && deps.push(path)
-// 	if (index[1] === 0)
-// 		console.log(`\n***`)
-// 	if (handler !== "get:cached")
-// 		console.log(`%c${handler.toUpperCase()} %c${target.type}%c \`${target.pathToString()}\`%c`, `color:${handler==="set"?"orange":handler==="get:cached"?"#555":"lime"};font-weight:bold;`, `font-weight:bold`, `color:${handler==="get:cached"?"#777":"#999"}`, '', details)
-// }

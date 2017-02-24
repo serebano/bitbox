@@ -10,30 +10,44 @@ export function getModule(target, path) {
     }, target)
 }
 
+module.Tag = class ModuleTag extends Tag {
+    extract(target, path) {
+        if ((!path || path === "." || path === "*" || path === "**") && target instanceof Module)
+            return target
+
+        return ensurePath(path).reduce((mod, key) => {
+            return mod instanceof Module
+                ? key === "." || key === "*" || key === "**"
+                    ? mod
+                    : mod.modules[key]
+                : undefined
+        }, target)
+    }
+    get(context) {
+        const path = this.path(context)
+        const value = this.extract(context.store.module, path)
+
+        if (!value)
+            throw new Error(`Module not found at path: ${path}`)
+
+        return value
+    }
+    set(context, module) {
+        const path = this.path(context)
+        const root = path.split(".")
+        const key = root.pop()
+        const parent = getModule(context.store.module, root)
+
+        if (parent && key)
+            return (parent.modules[key] = new Module(context.store, root.concat(key), module))
+        else
+            return (context.store.module = new Module(context.store, [], module))
+
+    }
+}
+
 function module(keys, ...values) {
-    return new Tag("module", {
-        get(context) {
-            const path = this.path(context)
-            const value = getModule(context.store.module, path)
-
-            if (!value)
-                throw new Error(`Module not found at path: ${path}`)
-
-            return value
-        },
-        set(context, module) {
-            const path = this.path(context)
-            const root = path.split(".")
-            const key = root.pop()
-            const parent = getModule(context.store.module, root)
-
-            if (parent && key)
-                return (parent.modules[key] = new Module(context.store, root.concat(key), module))
-            else
-                return (context.store.module = new Module(context.store, [], module))
-
-        }
-    }, keys, values)
+    return new module.Tag("module", {}, keys, values)
 }
 
 module.Module = Module
