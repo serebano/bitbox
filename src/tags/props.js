@@ -1,7 +1,9 @@
 import Tag from '../Tag'
 
+class Props extends Tag {}
+
 function props(keys, ...values) {
-    return new Tag('props', {
+    return new Props('props', {
         get(context) {
             const path = this.path(context)
             return this.extract(context, path)

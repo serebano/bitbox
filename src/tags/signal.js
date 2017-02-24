@@ -4,8 +4,10 @@ import module from './module'
 
 const {cache} = Tag
 
+class Signal extends Tag {}
+
 function signal(keys, ...values) {
-    return new Tag("signal", {
+    return new Signal("signal", {
         get(context) {
             const path = this.path(context)
             const root = ensurePath(path)

@@ -1,24 +1,30 @@
-import { ensurePath, dependencyMatch } from '../utils'
+import { cleanPath, ensurePath, dependencyMatch } from '../utils'
 
 class DependencyStore {
 
-    constructor() {
-        this.map = {}
-        this.keys = {}
-        this.changes = []
+    static match = dependencyMatch
+
+    keys = {}
+    changes = []
+    paths = []
+
+    constructor(map = {}) {
+        this.map = map
     }
 
     /*
       Adds the entity to all the depending paths
     */
-    add(entity, depsMap) {
-        for (const depsMapKey in depsMap) {
+    add(entity, ...paths) {
+        for (const depsMapKey of paths) {
             const path = depsMapKey.split('.')
 
+            if (this.paths.indexOf(depsMapKey) === -1)
+                this.paths.push(depsMapKey)
+
             path.reduce((currentMapLevel, key, index) => {
-                if (!currentMapLevel[key]) {
+                if (!currentMapLevel[key])
                     currentMapLevel[key] = {}
-                }
 
                 if (index < path.length - 1) {
                     currentMapLevel[key].children = currentMapLevel[key].children || {}
@@ -34,7 +40,21 @@ class DependencyStore {
             }, this.map)
         }
 
-        return () => this.remove(entity, depsMap)
+        const connection = { paths }
+
+        connection.remove = () => {
+            this.remove(entity, ...connection.paths)
+            connection.paths = []
+        }
+
+        connection.update = (newPaths) => {
+            const oldPaths = connection.paths
+            connection.paths = newPaths
+
+            return this.update(entity, oldPaths, newPaths)
+        }
+
+        return connection
     }
 
     /*
@@ -58,8 +78,8 @@ class DependencyStore {
     /*
       Removes the entity from all depending paths
     */
-    remove(entity, depsMap) {
-        for (const depsMapKey in depsMap) {
+    remove(entity, ...paths) {
+        for (const depsMapKey of paths) {
             const path = depsMapKey.split('.')
             path.reduce((currentMapLevel, key, index) => {
                 if (index === path.length - 1) {
@@ -77,26 +97,17 @@ class DependencyStore {
     /*
       Updates entity based on changed dependencies
     */
-    update(entity, prevDepsMap, nextDepsMap) {
-        const toRemove = Object.keys(prevDepsMap).reduce((removeDepsMap, prevDepsMapKey) => {
-            if (!nextDepsMap[prevDepsMapKey]) {
-                removeDepsMap[prevDepsMapKey] = true
-            }
+    update(entity, prevPaths, nextPaths) {
+        const toRemove = prevPaths.filter(prevPath => nextPaths.indexOf(prevPath) === -1)
+        const toAdd = nextPaths.filter(nextPath => prevPaths.indexOf(nextPath) === -1)
 
-            return removeDepsMap
-        }, {})
-        const toAdd = Object.keys(nextDepsMap).reduce((addDepsMap, nextDepsMapKey) => {
-            if (!prevDepsMap[nextDepsMapKey]) {
-                addDepsMap[nextDepsMapKey] = true
-            }
+        this.remove(entity, ...toRemove)
+        this.add(entity, ...toAdd)
 
-            return addDepsMap
-        }, {})
-
-        this.remove(entity, toRemove)
-        this.add(entity, toAdd)
-
-        return [ toRemove, toAdd ]
+        return {
+            added: toAdd,
+            removed: toRemove
+        }
     }
     /*
       As same entity can appear in multiple paths, this method returns
@@ -160,7 +171,6 @@ class DependencyStore {
     commit(force) {
 
 		const changes = this.changes
-		const keys = this.keys
 
 		this.changes = []
 		this.keys = {}
@@ -169,15 +179,19 @@ class DependencyStore {
 			? this.getAll()
 			: this.get(changes)
 
+        const paths = changes.map(change => change.path.join('.'))
+
 		components.forEach((component) => {
-            component(changes)
+            component(paths)
 		})
 
-		return { keys, changes, components, force }
+		return { paths, components }
 	}
 
-    emit(path) {
-		this.push(path)
+    emit(...paths) {
+		paths.forEach(path => {
+            this.push(path)
+        })
 
 		return this.commit()
 	}

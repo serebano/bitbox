@@ -5,21 +5,19 @@ import Deps from './deps'
 
 import * as tags from './tags'
 import * as operators from './operators'
-import {compute,state} from './tags'
+import {state} from './tags'
 
 import store from './app.store'
 import './render'
 
-const deps = compute({
-	name: state`app.name`,
-	color: state`app.color`
-})
+// const deps = compute({
+// 	name: state`app.name`,
+// 	color: state`app.color`
+// })
 
-store.on(deps, function demo(props) {
-	console.log('demo', props)
-})
-
-store.set(state`app.name`, 'My App')
+// store.connect(state`app.name`, name => console.log('App name:', name))
+//
+// store.set(state`app.name`, 'My App')
 
 Object.assign(window, {Store,Run,Deps,Tag,store,tags,operators}, tags, operators)
 

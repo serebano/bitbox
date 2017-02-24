@@ -2,11 +2,14 @@ import Tag from '../Tag'
 
 const {cache} = Tag
 
+class State extends Tag {}
+state.Tag = State
+
 function state(keys, ...values) {
-    return new Tag("state", {
+    return new State("state", {
         get(context) {
             const path = this.path(context)
-            const value = this.extract(context, path)
+            const value = Tag.extract(context.store.module.state, path)
             cache.set(this.type, path, value)
 
             return value

@@ -1,57 +1,36 @@
 import View from 'react'
 import {compute} from '../tags'
 
-export default function createComponent(dependencies, Component) {
+export default function connectComponent(dependencies, Component) {
+
+	const target = compute(dependencies)
 
 	class Wrapper extends View.Component {
-
-		constructor (props, context) {
-  			super(props, context)
-
-			this.tag = compute(dependencies)
-			this.deps = this.getDeps(props)
-		}
-
-		getContext(props) {
-			return this.context.store.run.context({}, Object.assign({}, this.props, props))
-		}
-
 		componentWillMount () {
-			const update = (changes) => {
-				const prevDeps = this.deps
 
-				this.deps = this.getDeps(this.props)
-				this.context.store.deps.update(update, prevDeps, this.deps)
+			this.connection = this.context.store.connect(target, (changes) => {
+				const newPaths = this.context.store.paths(target, this.props)
+				this.connection.update(newPaths)
 
 				this.forceUpdate()
-			}
+			})
 
-			update.deps = this.deps
-			update.toString = () => `${Component.name}Component`
-
-			this.disconnect = this.context.store.deps.add(update, update.deps)
+			console.log(`${Component.name} connected`, this.connection)
 		}
 
 		componentWillUnmount () {
 	    	this._isUnmounting = true
-			this.disconnect()
+			this.connection.remove()
 	    }
 
 		shouldComponentUpdate () {
 			return false
 		}
 
-		getDeps(props) {
-			return this.tag.deps(this.getContext(props))
-		}
-
-		getProps() {
-			return this.tag.get(this.getContext(this.props))
-		}
-
 		render() {
-			return View.createElement(Component, this.getProps())
+			return View.createElement(Component, this.context.store.get(target, this.props))
 		}
+
 	}
 
 	Wrapper.displayName = `${Component.displayName || Component.name}_Wrapper`

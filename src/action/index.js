@@ -10,11 +10,46 @@ function PropsProvider(context, action, props) {
 	return context
 }
 
-export function ActionContext(providers, action, props) {
-	[ PropsProvider ]
-		.concat(providers)
-		.reduce((context, Provider) => Provider(context, {action}, props), this)
+// export function ContextFactory(...providers) {
+// 	function Context(action, ...args) {
+// 		if (!(this instanceof Context))
+// 			return new Context(...arguments)
+//
+// 		const context = Context.providers.reduce((context, Provider) => {
+// 			if (Provider(context, action, ...args) !== this)
+// 				throw new Error(`Provider(${Provider.name}) must return context`)
+// 			return context
+// 		}, this)
+//
+// 		return typeof action === "function"
+// 			? action(context, ...args)
+// 			: context
+// 	}
+//
+// 	Context.providers = providers
+//
+// 	return Context
+// }
+
+export function ContextFactory(...providers) {
+	function Context(action, ...args) {
+		const context = Context.providers.reduce((context, Provider) => {
+			if (Provider(context, action, ...args) !== context)
+				throw new Error(`Provider(${Provider.name}) must return context`)
+			return context
+		}, {})
+
+		return typeof action === "function"
+			? action(context, ...args)
+			: context
+	}
+
+	Context.providers = providers
+
+	return Context
 }
+
+createRun.Context = ContextFactory
 
 /*
 	obj = { name: 'Serebano', age: 32 }
@@ -28,21 +63,31 @@ export function ActionContext(providers, action, props) {
  */
 export default function createRun(...providers) {
 
-	run.providers = providers
+	//run.providers = providers
 	run.action = runAction
 	run.chain = runChain
-	run.context = (action, props) => new ActionContext(providers, action, props)
+	run.context = ContextFactory(...providers)
 
-	function run(chain, props) {
-		return runChain([].concat(chain), props)
+	function run(target, props, next) {
+
+		if (target instanceof Tag)
+			return runAction(context => target.get(context), props, next)
+
+		if (typeof target === 'function')
+			return runAction(target, props, next)
+
+		if (Array.isArray(target))
+			return runChain(target, props, next)
+
+		throw new Error(`Invalid target`)
 	}
 
 	function runAction(action, props = {}, next = nextAction) {
 		if (action instanceof Tag)
 			return runAction(context => action.get(context), props, next)
 
-		const context = run.context(action, props)
-		const result = action(context, tags)
+		const result = run.context(action, props)
+		//const result = action(context, tags)
 
 		if (typeof result === "function") return runAction(result, props, next)
 		if (result instanceof Promise) return result.then(next)

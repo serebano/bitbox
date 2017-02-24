@@ -21,28 +21,26 @@ function absolutePath(tag, context) {
 function Store(init = {}, ...providers) {
 
 	const store = {
-		path(tag, props) {
-			return tag.path(store.run.context({}, props))
+		path(target, props) {
+			return target.path(store.run.context({}, props))
 		},
-		get(tag, props) {
-			return tag.get(store.run.context({}, props))
+		paths(target, props) {
+			return target.paths(store.run.context({}, props))
 		},
-		set(tag, value, props) {
-			tag.set(store.run.context({}, props), value)
+		tags(target, props) {
+			return target.tags(store.run.context({}, props))
+		},
+		get(target, props) {
+			return target.get(store.run.context({}, props))
+		},
+		set(target, value, props) {
+			target.set(store.run.context({}, props), value)
 
 			return store.deps.commit()
 		},
-		on(tag, fn) {
-			const path = store.path(tag)
-			const deps = tag.deps(store.run.context())
-			const entity = () => fn(store.get(tag))
-
-			entity.deps = deps
-			entity.toString = () => `on(${tag}, ${fn})`
-			entity.on = () => store.deps.add(entity, deps)
-			entity.off = entity.on()
-
-			return entity
+		connect(target, listener) {
+			const paths = store.paths(target)
+			return store.deps.add(listener, ...paths)
 		},
 		apply(fn, props) {
 			return fn(store.run.context(fn, props))
@@ -50,11 +48,37 @@ function Store(init = {}, ...providers) {
 	}
 
 	const deps = new DependencyStore()
-	const run = createRun(Store.provider(store), ...providers)
+
+	function provider(context, action, props) {
+		context.props = props
+		context.store = store
+
+		context.path = (target) => target.path(context)
+		context.get = (target) => target.get(context)
+		context.set = function set(target, value) {
+
+			if (value instanceof Promise)
+				return value.then(v => context.set(target, v))
+
+			if (value instanceof Tag)
+	            return context.set(target, value.get(context))
+
+			const result = target.handlers.set.call(target, context, value)
+
+			observer('set', target, context, value)
+
+			return result
+		}
+
+		return context
+	}
+
+	const run = createRun(provider, ...providers)
 
 	store.module = {}
 	store.deps = deps
 	store.run = run
+
 
 	Tag.observe(tags.props, observer)
 	Tag.observe(tags.state, observer)
@@ -63,14 +87,14 @@ function Store(init = {}, ...providers) {
 
 	store.set(tags.module`.`, init)
 
-	function observer(handler, tag, context, details) {
-		const path = absolutePath(tag, context)
+	function observer(handler, target, context, details) {
+		const path = absolutePath(target, context)
 
 		const index = handler === "set" && deps.push(path)
 		if (index[1] === 0)
 			console.log(`\n***`)
 		if (handler !== "get:cached")
-			console.log(`%c${handler.toUpperCase()} %c${tag.type}%c \`${tag.pathToString()}\`%c`, `color:${handler==="set"?"orange":handler==="get:cached"?"#555":"lime"};font-weight:bold;`, `font-weight:bold`, `color:${handler==="get:cached"?"#777":"#999"}`, '', details)
+			console.log(`%c${handler.toUpperCase()} %c${target.type}%c \`${target.pathToString()}\`%c`, `color:${handler==="set"?"orange":handler==="get:cached"?"#555":"lime"};font-weight:bold;`, `font-weight:bold`, `color:${handler==="get:cached"?"#777":"#999"}`, '', details)
 	}
 
 	return store
@@ -78,6 +102,12 @@ function Store(init = {}, ...providers) {
 
 Store.provider = (store) => {
 	return (context, action, props) => {
+		context.get = (target) => store.get(target, props)
+		context.set = (target, value) => {
+			store.set(target, value, props)
+		}
+		context.path = (target) => store.path(target, props)
+
 		context.store = store
 		context.state = store.module.state
 

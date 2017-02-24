@@ -1,9 +1,3 @@
-export function pushChange(changes, type, path, forceChildPathUpdates = false) {
-    return changes.push({
-        path: [type].concat(path.split(".")),
-        forceChildPathUpdates
-    })
-}
 
 export function Context(providers, ...args) {
 	providers.reduce((context, Provider) => {
@@ -45,7 +39,9 @@ export function isPromise (result) {
 }
 
 export function cleanPath(path) {
-    return typeof path === 'string' ? path.replace(/\.\*\*|\.\*/, '') : path
+    return path.indexOf('*') > -1
+        ? path.replace(/\.\*\*|\.\*/, '')
+        : path
 }
 
 export function isObject(obj) {
@@ -115,4 +111,32 @@ export function dependencyMatch(changes, dependencyMap) {
     }
 
     return currentMatches
+}
+
+export function Cache() {
+    const _index = {}
+
+    return {
+        keys(type) {
+            return _index[type] && Object.keys(_index[type])
+        },
+        has(type, path) {
+            return _index[type] && (path in _index[type][path])
+        },
+        get(type, path) {
+            return _index[type] && _index[type][path]
+        },
+        set(type, path, value) {
+            if (!_index[type])
+                _index[type] = {}
+
+            _index[type][path] = value
+        },
+        delete(type, path) {
+            return _index[type] && (delete _index[type][path])
+        },
+        clear(type) {
+            return delete _index[type]
+        }
+    }
 }

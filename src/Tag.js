@@ -1,20 +1,22 @@
-import {ensureStrictPath} from './utils'
+import {cleanPath,Cache} from './utils'
 
 export default class Tag {
     /*
       Extracts value from object using a path
     */
     static extract(target, path) {
+        if (!target)
+            throw new Error(`Invalid target, extracting with path: ${path}`)
+
         const keys = !Array.isArray(path)
             ? path.split('.')
             : path
 
         return keys.reduce((result, key, index) => {
             if (index > 0 && result === undefined) {
-                console.log(`ext`, {target})
                 throw new Error(`A tag is extracting with path "${path}/${key}[${index}]", but it is not valid`)
             }
-            return key === "" ? result : result[key]
+            return key === "" || key === "*" || key === "**" ? result : result[key]
         }, target)
     }
 
@@ -42,30 +44,8 @@ export default class Tag {
             })
     }
 
-    static cache = {
-        index: {},
-        keys(type) {
-            return this.index[type] && Object.keys(this.index[type])
-        },
-        has(type, path) {
-            return this.index[type] && (path in this.index[type][path])
-        },
-        get(type, path) {
-            return this.index[type] && this.index[type][path]
-        },
-        set(type, path, value) {
-            if (!this.index[type])
-                this.index[type] = {}
+    static cache = Cache()
 
-            this.index[type][path] = value
-        },
-        delete(type, path) {
-            return this.index[type] && (delete this.index[type][path])
-        },
-        clear(type) {
-            return delete this.index[type]
-        }
-    }
 
     constructor(type, handlers, keys, values) {
         this.type = type
@@ -74,23 +54,20 @@ export default class Tag {
         this.values = values
     }
 
-    deps(context) {
+    paths(context) {
         const canChange = (tag) => typeof tag.handlers.set === "function"
 
         return this.tags(canChange(this))
             .reduce((map, tag) => {
                 if (canChange(tag)) {
-                    const path = tag.path(context)
-                    const value = tag.get(context)
-                    const strictPath = ensureStrictPath(path ? (tag.type + "." + path) : tag.type, value)
-
-                    map[strictPath] = true
+                    const path = tag.path(context, false)
+                    map.push(path && path !== "." ? (tag.type + "." + path) : tag.type)
                 } else {
-                    return Object.assign(map, tag.deps(context))
+                    return map.concat(tag.paths(context))
                 }
 
                 return map
-            }, {})
+            }, [])
     }
 
     /*
@@ -108,21 +85,22 @@ export default class Tag {
     /*
       Gets the path of the tag, where nested tags are evaluated
     */
-    path(context) {
+    path(context, clean = true) {
         if (!context)
             throw new Error('You can not grab the path from a Tag without context')
 
-        if (typeof this.keys === 'string')
-            return this.keys
+        const path = typeof this.keys === 'string'
+            ? this.keys
+            : this.keys.reduce((path, key, idx) => {
+                const value = this.values[idx]
+                if (value instanceof Tag)
+                    return path + key + value.get(context)
+                return path + key + (value || '')
+            }, '')
 
-        return this.keys.reduce((path, key, idx) => {
-            const value = this.values[idx]
-
-            if (value instanceof Tag)
-                return path + key + value.get(context)
-
-            return path + key + (value || '')
-        }, '')
+        return clean
+            ? cleanPath(path)
+            : path
     }
 
     get(context) {
@@ -167,21 +145,11 @@ export default class Tag {
         if (!handler)
             throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide set handler`)
 
-            if (context instanceof Tag)
-                return ctx => {
-                    const value = context.get(ctx)
-                    this.set(ctx, value)
+        if (context instanceof Tag)
+            return (ctx) => ctx.set(this, context)
 
-                    //return { value, path: this.path(ctx) }
-                }
-
-            if (typeof context === "function")
-                return ctx => {
-                    const value = context(ctx)
-                    this.set(ctx, value)
-
-                    //return { value, action: context, path: this.path(ctx) }
-                }
+        if (context.set)
+            return context.set(this, value)
 
         if (typeof value === "function")
             return this.set(context, value.call(this, context))
@@ -214,7 +182,7 @@ export default class Tag {
     pathToString() {
         if (typeof this.keys === 'string')
             return this.keys
-            
+
         return this.keys.reduce((currentPath, string, idx) => {
             const valueTemplate = this.values[idx]
 

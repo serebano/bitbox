@@ -1,6 +1,8 @@
 import Tag from '../Tag'
 import * as tags from '.'
 
+class Compute extends Tag {}
+
 function compute(args) {
     if (arguments.length === 1) {
         if (args instanceof Tag) return args
@@ -13,7 +15,7 @@ function compute(args) {
 }
 
 compute.array = function(array) {
-	return new Tag('compute.array', {
+	return new Compute('compute.array', {
         compute(context) {
             return this.values.reduce((result, value, index) => {
                 if (typeof value === "function")
@@ -42,7 +44,7 @@ compute.object = function(object) {
     const keys = Object.keys(object)
 	const values = keys.map(key => ensure(object[key]))
 
-	return new Tag('compute.object', {
+	return new Compute('compute.object', {
         resolve(context) {
             return this.keys.reduce((obj, key, idx) => {
                 const value = this.values[idx]
