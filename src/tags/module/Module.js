@@ -1,30 +1,23 @@
 import * as tags from '../'
 
 class Module {
-    constructor(store, path, desc) {
+    constructor(context, path, desc) {
 
         this.path = path.join('.')
         this.name = path.slice().pop()
 
         const module = Object.assign({}, typeof desc === 'function'
-            ? desc.call(this, tags, store)
+            ? desc.call(this, {path:this.path,name:this.name}, tags)
             : desc)
 
-        this.state = module.state || {}
+        Object.assign(this, module)
 
-        store.set(tags.state`${this.path||'.'}`, this.state)
+        tags.state(this.path).set(context, module.state || {})
 
-        this.signals = Object.keys(module.signals || {})
-            .reduce((signals, key) => {
-                const chain = module.signals[key]
-                signals[key] = (props) => store.run(chain, props) && store.deps.commit()
-
-                return signals
-            }, {})
-
+        this.signals = module.signals || {}
         this.modules = Object.keys(module.modules || {})
             .reduce((registered, key) => {
-                registered[key] = new Module(store, path.concat(key), module.modules[key])
+                registered[key] = new Module(context, path.concat(key), module.modules[key])
                 return registered
             }, {})
     }

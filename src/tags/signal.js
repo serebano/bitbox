@@ -1,35 +1,45 @@
 import Tag from '../Tag'
-import {ensurePath} from '../utils'
-import module from './module'
+import {Module} from './module'
 
-const {cache} = Tag
+export class Signal extends Tag {
 
-signal.tag = class Signal extends Tag {
+    constructor(keys, values) {
+        super("signal", keys, values)
+    }
+
     get(context) {
         const path = this.path(context)
-        const root = ensurePath(path)
-        const key = root.pop()
-        const value = module.extract(context.store.module, root)
+        const root = path.split(".")
+        const name = root.pop()
+        const module = Module.extract(context, root)
 
-        if (!value)
-            throw new Error(`Module not found at path: ${path}`)
+        const chain = module.signals[name]
+        if (!chain)
+            throw new Error(`Signal(${name}) not found @${module.path}`)
 
-        return value.signals[key]
+        return {
+            path: module.path,
+            name,
+            chain
+        }
     }
-    set(context, value) {
-        const path = this.path(context)
-        const root = ensurePath(path)
-        const key = root.pop()
-        const target = module.extract(context.store.module, root)
 
-        target.signals[key] = value
+    set(context, value, done) {
+        Tag.resolve(context, value, resolved => {
+            const path = this.path(context)
+            const root = path.split(".")
+            const key = root.pop()
+            const module = Module.extract(context, root)
 
-        return true
+            module.signals[key] = resolved
+
+            done && done(this.path(context, true))
+        })
     }
 }
 
 function signal(keys, ...values) {
-    return new signal.tag("signal", {}, keys, values)
+    return new Signal(keys, values)
 }
 
 export default signal

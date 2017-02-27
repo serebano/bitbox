@@ -1,56 +1,73 @@
 import Tag from '../../Tag'
-import Module from './Module'
+import M from './Module'
 import {ensurePath} from '../../utils'
+// import state from '../state'
+// import signal from '../signal'
 
-export function getModule(target, path) {
-    return ensurePath(path).reduce((mod, key) => {
-        return mod instanceof Module
-            ? mod.modules[key]
-            : undefined
-    }, target)
-}
+export class Module extends Tag {
 
-module.Tag = class ModuleTag extends Tag {
-    extract(target, path) {
-        if ((!path || path === "." || path === "*" || path === "**") && target instanceof Module)
-            return target
-
-        return ensurePath(path).reduce((mod, key) => {
-            return mod instanceof Module
-                ? key === "." || key === "*" || key === "**"
-                    ? mod
-                    : mod.modules[key]
-                : undefined
-        }, target)
+    constructor(keys, values) {
+        super("module")
+        this.keys = keys
+        this.values = values
     }
-    get(context) {
-        const path = this.path(context)
-        const value = this.extract(context.store.module, path)
 
-        if (!value)
-            throw new Error(`Module not found at path: ${path}`)
+    static extract(context, path) {
+        const keys = ensurePath(path)
 
-        return value
+        return keys.reduce((mod, key) => {
+            if (key === "" || key === "*" || key === "**")
+                return mod
+
+            if (!mod || !mod.modules[key])
+                throw new Error(`Module(${key}) not found at path: ${path}`)
+
+            return mod.modules[key]
+        }, context.module)
     }
-    set(context, module) {
-        const path = this.path(context)
+
+    static update(context, path, value) {
+        if (!(context.module instanceof M))
+            return (context.module = new M(context, [], value))
+
         const root = path.split(".")
         const key = root.pop()
-        const parent = getModule(context.store.module, root)
 
-        if (parent && key)
-            return (parent.modules[key] = new Module(context.store, root.concat(key), module))
-        else
-            return (context.store.module = new Module(context.store, [], module))
+        const target = root.length
+            ? Module.extract(context, root)
+            : context.module
 
+        return target.modules[key] = new M(context, root.concat(key), value)
+
+    }
+
+    get(context) {
+        const path = this.path(context)
+        return Module.extract(context, path)
+    }
+
+    set(context, value, done) {
+        Tag.resolve(context, value, (resolved = {}) => {
+            const path = this.path(context)
+
+            //state(path).set(context, resolved.state || {}, (statePath, stateValue) => {
+                //resolved.state = stateValue
+
+                Module.update(context, path, resolved)
+
+                if (done) {
+                    done(this.path(context, true))
+                }
+            //})
+        })
     }
 }
 
 function module(keys, ...values) {
-    return new module.Tag("module", {}, keys, values)
+    return new Module(keys, values)
 }
 
 module.Module = Module
-module.extract = getModule
+//module.extract = getModule
 
 export default module

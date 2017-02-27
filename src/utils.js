@@ -1,3 +1,30 @@
+export function getChangedProps(propsA, propsB) {
+  const propsAKeys = Object.keys(propsA)
+  const propsBKeys = Object.keys(propsB)
+  const changedProps = []
+
+  for (let i = 0; i < propsAKeys.length; i++) {
+    if (propsA[propsAKeys[i]] !== propsB[propsAKeys[i]]) {
+      changedProps.push({path: [propsAKeys[i]]})
+    }
+  }
+
+  for (let i = 0; i < propsBKeys.length; i++) {
+    if (propsA[propsBKeys[i]] !== propsB[propsBKeys[i]]) {
+      changedProps.push({path: [propsBKeys[i]]})
+    }
+  }
+
+  return changedProps
+}
+
+export function getProviders (module) {
+  return (module.provider ? [module.provider] : []).concat(Object.keys(module.modules || {})
+    .reduce((nestedProviders, moduleKey) => {
+      return nestedProviders.concat(getProviders(module.modules[moduleKey]))
+    }, [])
+  )
+}
 
 export function Context(providers, ...args) {
 	providers.reduce((context, Provider) => {

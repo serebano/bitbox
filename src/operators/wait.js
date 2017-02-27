@@ -1,7 +1,7 @@
 function waitFactory(ms, next) {
     function wait(context) {
         return new Promise((resolve) => {
-            setTimeout(() => resolve(next ? next(context) : null), ms)
+            setTimeout(() => resolve(next), ms)
         })
     }
 

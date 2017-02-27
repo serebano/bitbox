@@ -1,29 +1,30 @@
 import Tag from '../Tag'
 
-props.Tag = class PropsTag extends Tag {
+class Props extends Tag {
 
     constructor(keys, values) {
-        super("props")
-        this.keys = keys
-        this.values = values
+        super("props", keys, values)
+    }
+
+    static get(context, path) {
+        return Tag.extract(context, path)
     }
 
     get(context) {
-        const path = this.path(context)
-        return this.extract(context, path)
+        return Tag.extract(context, this.path(context, true))
     }
 
     set(context, value) {
-        return this.resolve(context, value, (resolved) => {
-            const path = this.path(context)
+        return Tag.resolve(context, value, (resolved) => {
+            const path = this.path(context, true)
 
-            return this.update(context, path, resolved)
+            return Tag.update(context, path, resolved)
         })
     }
 }
 
 function props(keys, ...values) {
-    return new props.Tag(keys, values)
+    return new Props(keys, values)
 }
 
 export default props

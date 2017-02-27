@@ -1,80 +1,61 @@
 import Tag from './Tag'
-import Run from './Run'
-import DependencyStore from './deps'
+import Changes from './Changes'
 import * as tags from './tags'
-import {absolutePath} from './utils'
-import ResolveProvider from './providers/resolve'
+import {getProviders} from './utils'
+import ContextFactory from './Context'
 
-/*
-	deps = compute({
-		name: state`app.name`,
-		color: state`app.color`
-	})
-
-	store.on(deps, props => console.log('on', props))
-	store.set(state`app.name`, 'My App')
-
- */
-
-function StoreProvider(store = { module: {} }) {
-    function storeProvider(context, action, props) {
-        context.props = props || {}
-        context.store = store
-
-		context.get = function get(target) {
-			return target.get(context)
-		}
-
-        context.set = function set(target, value) {
-            if (!target.set)
-                throw new Error(`${target} does not provide set`)
-
-            target.set(context, value)
-
-            const path = target.path(context, false)
-
-            return store.deps.emit(path && path !== "."
-				? (target.type + "." + path)
-				: target.type)
-        }
+function StoreContextProvider(store) {
+    return function(context, action, props) {
+        context.get = (target) => store.get(target, context.props)
+        context.set = (target, value) => store.set(target, value, context.props)
 
         return context
     }
-
-    return storeProvider
 }
-
-Store.Provider = StoreProvider
 
 function Store(init = {}, ...providers) {
 
-	const store = {
+    const __store = {
         module: {},
-        deps: new DependencyStore()
+        state: {}
     }
 
-	const run = Run(Store.Provider(store), ResolveProvider, ...providers)
+    const $ctx = (props) => props ? Object.assign({}, __store, { props }) : __store
 
-	store.get = (target, props) => target.get(run.context(null, props))
-	store.set = (target, value, props) => run(context => target.set(context, value), props)
+    tags.module(".").set(__store, init)
 
-	store.set(tags.module `.`, init)
+	const store = {}
+    const changes = new Changes()
 
-	store.connect = (target, listener) => store.deps.add(listener, ...store.paths(target))
-	store.on = (target, listener) => store.deps.add(c => listener(store.get(target)), ...store.paths(target))
+    providers.unshift(StoreContextProvider(store))
 
-	store.path = (target, props) =>  target.path(run.context(null, props))
-	store.paths = (target, props) => target.paths(run.context(null, props))
-	store.tags = (target, props) => target.tags(run.context(null, props))
+    const $ = ContextFactory(...providers.concat(getProviders(__store.module)))
+    store.action = $
 
-	store.context = run.context
+    const emit = (path, target) => {
+        changes.emit(path)
+        if (target.type === "module")
+            $.providers = providers.concat(getProviders(__store.module))
+    }
 
-	store.run = (action, props, done) => run(action, props, result => {
-        console.log(`result`, result)
-        return store.deps.commit()
-    })
+    store.path = (target, props) => target.path($ctx(props))
+    store.paths = (target, props) => target.paths($ctx(props))
+    store.get = (target, props) => target.get($ctx(props))
+    store.set = (target, value, props) => target.set($ctx(props), value, p => emit(p, target))
+    store.resolve = (target, props) => Tag.resolve($ctx(props), target)
+    store.connect = (target, fn, props) => changes.add(fn, ...store.paths(target, props))
+
+    store.run = (target, props) => {
+        props = props || {}
+        const signal = store.get(target, props)
+        props.root = signal.path
+
+        return Promise.all(signal.chain.map(action => store.action(action, props)))
+    }
 
 	return store
 }
+
+
 
 export default Store

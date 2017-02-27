@@ -1,8 +1,6 @@
-import Store from './store'
+import Store from './Store'
 import { set, inc, dec } from './operators'
 import { state, props } from './tags'
-import ProxyProvider from './providers/proxy'
-import Debugger from './providers/debugger'
 
 function App(tags) {
 

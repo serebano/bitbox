@@ -1,7 +1,7 @@
-import {compute} from '../tags'
-
-export default (target, value) => {
+export default (target) => {
     return function increment(context) {
-        return context.set(target, compute(target, value, (a = 0, b = 1) => a + b))
+        const value = context.get(target)
+
+        return context.set(target, (value || 0) + 1)
     }
 }

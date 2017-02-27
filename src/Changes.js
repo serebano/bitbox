@@ -1,4 +1,4 @@
-import { cleanPath, ensurePath, dependencyMatch } from '../utils'
+import { ensurePath, dependencyMatch } from './utils'
 
 class Changes {
 
