@@ -6,6 +6,8 @@ import ContextFactory from './Context'
 
 function StoreContextProvider(store) {
     return function(context, action, props) {
+        context.store = store
+        context.state = store.state
         context.get = (target) => store.get(target, context.props)
         context.set = (target, value) => store.set(target, value, context.props)
 
@@ -20,12 +22,15 @@ function Store(init = {}, ...providers) {
         state: {}
     }
 
-    const $ctx = (props) => props ? Object.assign({}, __store, { props }) : __store
+
+    const $ctx = (props) => Object.assign({}, __store, { store, props, state: store.state })
 
     tags.module(".").set(__store, init)
 
-	const store = {}
     const changes = new Changes()
+	const store = {
+        state: tags.state.create(__store, changes)
+    }
 
     providers.unshift(StoreContextProvider(store))
 
@@ -45,12 +50,12 @@ function Store(init = {}, ...providers) {
     store.resolve = (target, props) => Tag.resolve($ctx(props), target)
     store.connect = (target, fn, props) => changes.add(fn, ...store.paths(target, props))
 
-    store.run = (target, props) => {
+    store.run = (name, chain, props) => {
         props = props || {}
-        const signal = store.get(target, props)
-        props.root = signal.path
+        //const signal = store.get(target, props)
+        //props.root = signal.path
 
-        return Promise.all(signal.chain.map(action => store.action(action, props)))
+        return Promise.all(chain.map(action => store.action(action, props)))
     }
 
 	return store

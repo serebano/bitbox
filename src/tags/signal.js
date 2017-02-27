@@ -17,10 +17,13 @@ export class Signal extends Tag {
         if (!chain)
             throw new Error(`Signal(${name}) not found @${module.path}`)
 
+        return (props) => context.store.run(name, chain, props)
+
         return {
             path: module.path,
             name,
-            chain
+            chain,
+            run: (props) => context.store.run(this, props)
         }
     }
 

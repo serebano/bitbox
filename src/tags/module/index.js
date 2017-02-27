@@ -42,23 +42,18 @@ export class Module extends Tag {
     }
 
     get(context) {
-        const path = this.path(context)
-        return Module.extract(context, path)
+        return Module.extract(context, this.path(context))
     }
 
     set(context, value, done) {
         Tag.resolve(context, value, (resolved = {}) => {
             const path = this.path(context)
 
-            //state(path).set(context, resolved.state || {}, (statePath, stateValue) => {
-                //resolved.state = stateValue
+            Module.update(context, path, resolved)
 
-                Module.update(context, path, resolved)
-
-                if (done) {
-                    done(this.path(context, true))
-                }
-            //})
+            if (done) {
+                done(this.path(context, true))
+            }
         })
     }
 }

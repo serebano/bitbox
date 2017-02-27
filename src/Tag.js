@@ -5,7 +5,9 @@ export default class Tag {
     static extract(context, path) {
         if (!context)
             throw new Error('You can not grab a value from a Tag without getters')
-
+        if (!path)
+            return context
+            
         return extractFrom(context, path)
     }
 
