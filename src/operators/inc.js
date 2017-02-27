@@ -1,7 +1,11 @@
-export default (target) => {
-    return function increment(context) {
-        const value = context.get(target)
+import {compute} from '../tags'
 
-        return context.set(target, (value || 0) + 1)
+export default (target, value) => {
+    const newValue = compute(target, value, (count = 0, add = 1) => count + add)
+
+    function increment(context) {
+        context.set(target, newValue)
     }
+
+    return increment
 }

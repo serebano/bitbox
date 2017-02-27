@@ -7,7 +7,7 @@ export default class Tag {
             throw new Error('You can not grab a value from a Tag without getters')
         if (!path)
             return context
-            
+
         return extractFrom(context, path)
     }
 
@@ -25,18 +25,32 @@ export default class Tag {
         return target[key]
     }
 
-    static resolve(context, value, next) {
-        if (value instanceof Tag)
+    static resolve(context, value, changes) {
+        if (value instanceof Tag) {
+            if (changes) {
+                const type = value.type
+                const path = value.path(context)
+                const changed = changes.filter(c => {
+                    const keys = c.path.slice()
+                    const t = keys.shift()
+                    const p = keys.join(".")
+
+                    return type === t && path === p
+                })
+                if (changed.length) {
+                    console.info(`changed(%c${value}%c)`, `color:yellow`, ``, path, changed)
+                }
+            }
+
             return value.resolve
-                ? Tag.resolve(context, value.resolve(context), next)
-                : Tag.resolve(context, value.get(context), next)
+                ? Tag.resolve(context, value.resolve(context, changes))
+                : Tag.resolve(context, value.get(context))
+        }
 
         if (value instanceof Promise)
-            return value.then(result => Tag.resolve(context, result, next))
+            return value.then(result => Tag.resolve(context, result))
 
-        return next
-            ? next(value)
-            : Promise.resolve(value)
+        return Promise.resolve(value)
     }
 
     constructor(type, keys, values) {
@@ -46,30 +60,44 @@ export default class Tag {
     }
 
     paths(context) {
-        const canChange = (tag) => typeof tag.set === "function"
-
-        return this.tags(canChange(this))
-            .reduce((map, tag) => {
-                if (canChange(tag)) {
-                    map.push(tag.path(context, true))
-                } else {
-                    return map.concat(tag.paths(context))
-                }
-
-                return map
-            }, [])
+        return this.deps().map(tag => tag.path(context, true))
     }
+
+    deps() {
+        return (!!this.set ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
+            const value = this.values[index]
+            return value instanceof Tag
+                ? paths.concat(value.deps())
+                : paths
+        }, []))
+    }
+
+    // paths(context) {
+    //     const canChange = (tag) => typeof tag.set === "function"
+    //
+    //     return this.tags(canChange(this))
+    //         .reduce((map, tag) => {
+    //             if (canChange(tag)) {
+    //                 map.push(tag.path(context, true))
+    //             } else {
+    //                 return map.concat(tag.paths(context))
+    //             }
+    //
+    //             return map
+    //         }, [])
+    // }
 
     /*
       Returns all tags, also nested to identify nested state dependencies
       in components
     */
     tags(self) {
-        return this.values.reduce((paths, value, index) => {
+        return (self ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
+            const value = this.values[index]
             return value instanceof Tag
                 ? paths.concat(value)
                 : paths
-        }, self ? [ this ] : [])
+        }, []))
     }
 
     /*

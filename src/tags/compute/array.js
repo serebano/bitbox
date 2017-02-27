@@ -4,7 +4,7 @@ import {ensure} from './utils'
 export class ComputeArray extends Tag {
     constructor(array) {
         super('compute.array')
-        this.keys = array.keys()
+        this.keys = [...array.keys()]
         this.values = array.map(ensure)
     }
 	resolve(context) {

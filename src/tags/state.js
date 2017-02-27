@@ -1,4 +1,42 @@
 import Tag from '../Tag'
+import {ensurePath} from '../utils'
+
+function StateModel(target, store, changes) {
+
+    function get(path) {
+        if (!path || path === ".")
+            return target.state
+
+        const keys = ensurePath(path)
+        //console.log(`state.get(${path})`, keys)
+
+        return keys.reduce((result, key, index) => {
+            if (index > 0 && result === undefined)
+                throw new Error(`Extracting with path "${path}/${key}[${index}]", but it is not valid`)
+            return result[key]
+        }, target.state)
+    }
+
+    function set(path, value) {
+        if (!path || path === "" || path === ".") {
+            target.state = value
+        } else {
+            const keys = path.split(".")
+            const key = keys.pop()
+            const parent = get(keys)
+
+            parent[key] = value
+        }
+
+        //console.log(`state.set(${path})`, value)
+        changes.push(`state.${path}`)
+    }
+
+    return {
+        get,
+        set
+    }
+}
 
 export class State extends Tag {
 
@@ -9,44 +47,15 @@ export class State extends Tag {
     get(context) {
         if (context.state && context.state.get)
             return context.state.get(this.path(context))
-
-        return Tag.extract(context, this.path(context, true))
     }
 
-    set(context, value, done) {
+    set(context, value) {
         if (context.state && context.state.set)
-            return context.state.set(this.path(context), value)
-
-        Tag.resolve(context, value, (resolved) => {
-            const path = this.path(context, true)
-
-            Tag.update(context, path, resolved)
-            done && done(path, resolved)
-        })
+            return context.state.set(this.path(context), value instanceof Tag ? value.get(context) : value)
     }
 }
 
-state.create = function create(context, changes) {
-    const target = context.state
-
-    return {
-        has: (path) => !!Tag.extract(target, path),
-        get: (path) => {
-            console.log(`state.get`, path)
-            return Tag.extract(target, path)
-        },
-        set: (path, value, done) => {
-            console.log(`state.set`, path, value)
-            
-            const op = Tag.update(target, path, value)
-
-            if (changes && changes.emit)
-                changes.emit(`state.${path}`)
-
-            return op
-        }
-    }
-}
+state.model = StateModel
 
 export default function state(keys, ...values) {
     return new State(keys, values)

@@ -4,12 +4,16 @@ import * as tags from './tags'
 import {getProviders} from './utils'
 import ContextFactory from './Context'
 
-function StoreContextProvider(store) {
-    return function(context, action, props) {
-        context.store = store
+function StoreProvider(store) {
+    return function(context, action) {
+
+        //context.store = store
         context.state = store.state
-        context.get = (target) => store.get(target, context.props)
-        context.set = (target, value) => store.set(target, value, context.props)
+        context.module = store.module
+        context.signal = store.signal
+
+        context.get = (target) => target.get(context)
+        context.set = (target, value) => target.set(context, value)
 
         return context
     }
@@ -17,45 +21,47 @@ function StoreContextProvider(store) {
 
 function Store(init = {}, ...providers) {
 
-    const __store = {
-        module: {},
-        state: {}
-    }
-
-
-    const $ctx = (props) => Object.assign({}, __store, { store, props, state: store.state })
-
-    tags.module(".").set(__store, init)
+    const __store = { module: {}, signal: {}, state: {} }
 
     const changes = new Changes()
-	const store = {
-        state: tags.state.create(__store, changes)
+    const store = { changes }
+
+    store.commit = (force) => changes.commit(force)
+
+    store.state = tags.state.model(__store, store, changes),
+    store.signal = tags.signal.model(__store, store, changes)
+    store.module = tags.module.model(__store, store, changes)
+
+    store.module.set('.', init)
+
+    const action = ContextFactory(StoreProvider(store), ...providers.concat(getProviders(__store.module)))
+
+    store.action = (...args) => {
+        action(...args)
+        store.commit()
     }
 
-    providers.unshift(StoreContextProvider(store))
-
-    const $ = ContextFactory(...providers.concat(getProviders(__store.module)))
-    store.action = $
-
-    const emit = (path, target) => {
-        changes.emit(path)
-        if (target.type === "module")
-            $.providers = providers.concat(getProviders(__store.module))
+    const $ctx = (props) => {
+        return {
+            props: props || {},
+            state: store.state,
+            signal: store.signal,
+            module: store.module
+        }
     }
 
+    store.get = (target, props) => target.get($ctx(props))
+    store.set = (target, value, props) => target.set($ctx(props), value)
     store.path = (target, props) => target.path($ctx(props))
     store.paths = (target, props) => target.paths($ctx(props))
-    store.get = (target, props) => target.get($ctx(props))
-    store.set = (target, value, props) => target.set($ctx(props), value, p => emit(p, target))
-    store.resolve = (target, props) => Tag.resolve($ctx(props), target)
+    store.resolve = (target, props, changes) => Tag.resolve($ctx(props), target, changes)
     store.connect = (target, fn, props) => changes.add(fn, ...store.paths(target, props))
 
-    store.run = (name, chain, props) => {
+    store.run = (path, chain, props) => {
         props = props || {}
-        //const signal = store.get(target, props)
-        //props.root = signal.path
+        props.root = path
 
-        return Promise.all(chain.map(action => store.action(action, props)))
+        return Promise.all(chain.map(action => store.action(action, props))).then(res => changes.commit())
     }
 
 	return store

@@ -1,60 +1,56 @@
 import Tag from '../../Tag'
 import M from './Module'
 import {ensurePath} from '../../utils'
-// import state from '../state'
-// import signal from '../signal'
+
+function ModuleModel(target, store, changes) {
+
+    function get(path) {
+        const keys = ensurePath(path)
+        //console.log(`module.get(${path})`, keys)
+
+        return keys.reduce((mod, key) => {
+            return mod
+                ? mod.modules[key]
+                : undefined
+        }, target.module)
+    }
+
+    function set(path, value) {
+        if (path === ".") {
+            target.module = new M(store, [], value)
+        } else {
+
+            const keys = path.split(".")
+            const key = keys.pop()
+            const parent = get(keys)
+
+            parent.modules[key] = new M(store, keys.concat(key), value)
+        }
+
+        //console.log(`module.set(${path})`, value)
+
+        changes.push(`module.${path}`)
+    }
+
+    return {
+        get,
+        set
+    }
+}
 
 export class Module extends Tag {
-
     constructor(keys, values) {
         super("module")
         this.keys = keys
         this.values = values
     }
-
-    static extract(context, path) {
-        const keys = ensurePath(path)
-
-        return keys.reduce((mod, key) => {
-            if (key === "" || key === "*" || key === "**")
-                return mod
-
-            if (!mod || !mod.modules[key])
-                throw new Error(`Module(${key}) not found at path: ${path}`)
-
-            return mod.modules[key]
-        }, context.module)
-    }
-
-    static update(context, path, value) {
-        if (!(context.module instanceof M))
-            return (context.module = new M(context, [], value))
-
-        const root = path.split(".")
-        const key = root.pop()
-
-        const target = root.length
-            ? Module.extract(context, root)
-            : context.module
-
-        return target.modules[key] = new M(context, root.concat(key), value)
-
-    }
-
     get(context) {
-        return Module.extract(context, this.path(context))
+        if (context.module && context.module.get)
+            return context.module.get(this.path(context))
     }
-
-    set(context, value, done) {
-        Tag.resolve(context, value, (resolved = {}) => {
-            const path = this.path(context)
-
-            Module.update(context, path, resolved)
-
-            if (done) {
-                done(this.path(context, true))
-            }
-        })
+    set(context, value) {
+        if (context.module && context.module.set)
+            return context.module.set(this.path(context), value)
     }
 }
 
@@ -62,7 +58,7 @@ function module(keys, ...values) {
     return new Module(keys, values)
 }
 
+module.model = ModuleModel
 module.Module = Module
-//module.extract = getModule
 
 export default module

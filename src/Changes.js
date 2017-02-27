@@ -178,8 +178,10 @@ class Changes {
 
 		this.keys[path] = this.changes.push({ path, forceChildPathUpdates }) - 1
 
-		if (this.keys[path] >= 10)
+		if (this.keys[path] >= 10) {
 			console.warn(`(deps) ${this.keys[path]} uncommited changes`)
+            return this.commit()
+        }
 
 		return this.keys[path]
 	}

@@ -1,12 +1,13 @@
 import Store from '../../Store'
 import { state } from '../../tags'
+import counts from './counts'
 
-function increase({ set, get }) {
-    set(state`count`, get(state`count`) + 1)
+function increase({ state }) {
+    state.set('count', state.get('count') + 1)
 }
 
-function decrease({ set, get }) {
-    set(state`count`, get(state`count`) - 1)
+function decrease({ state }) {
+    state.set('count', state.get('count') - 1)
 }
 
 const store = Store({
@@ -16,6 +17,9 @@ const store = Store({
     signals: {
         increaseClicked: [ increase ],
         decreaseClicked: [ decrease ]
+    },
+    modules: {
+        counts
     }
 })
 

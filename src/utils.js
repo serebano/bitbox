@@ -1,3 +1,40 @@
+import Tag from './Tag'
+
+export function createResolver(getters) {
+    return {
+        isTag(arg, ...types) {
+            if (!(arg instanceof Tag)) {
+                return false
+            }
+
+            if (types.length) {
+                return types.reduce((isType, type) => {
+                    return isType || type === arg.type
+                }, false)
+            }
+
+            return true
+        },
+        value(arg, overrideProps) {
+            if (arg instanceof Tag) {
+                return arg.get(overrideProps ? Object.assign({}, getters, {
+                    props: overrideProps
+                }) : getters)
+            }
+
+            return arg
+        },
+        path(arg) {
+            if (arg instanceof Tag) {
+                return arg.path(getters)
+            }
+
+            throw new Error('You are extracting a path from an argument that is not a Tag')
+        }
+    }
+}
+
+
 export function getChangedProps(propsA, propsB) {
   const propsAKeys = Object.keys(propsA)
   const propsBKeys = Object.keys(propsB)

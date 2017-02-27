@@ -12,18 +12,27 @@ export class ComputeObject extends Tag {
             return value
         })
     }
-    resolve(context) {
-        const resolved = Promise.all(this.values.map(value => {
-            return Tag.resolve(context, value)
-        }))
+    resolve(context, changes) {
+        // if (changes) {
+        //     const toResolve = changes.map(i => {
+        //         return {
+        //             type: i.path.shift(),
+        //             path: i.path.join(".")
+        //         }
+        //     })
+        //     console.log(`toResolve`, toResolve)
+        // }
+        const resolved = Promise.all(this.values.map(value => Tag.resolve(context, value, changes)))
 
-        return resolved.then(values => this.keys.reduce((obj, key, index) => {
-            obj[key] = typeof values[index] === "function"
-                ? values[index](obj)
-                : values[index]
+        return resolved.then(values => {
+            return this.keys.reduce((obj, key, index) => {
+                obj[key] = typeof values[index] === "function" && !(this.values[index] instanceof Tag)
+                    ? values[index](obj)
+                    : values[index]
 
-            return obj
-        }, {}))
+                return obj
+            }, {})
+        })
     }
     get(context) {
         return this.keys.reduce((obj, key, idx) => {
@@ -32,7 +41,7 @@ export class ComputeObject extends Tag {
             obj[key] = (value instanceof Tag)
                 ? value.get(context)
                 : typeof value === "function"
-                    ? value(context)
+                    ? value(obj)
                     : value
 
             return obj
