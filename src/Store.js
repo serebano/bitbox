@@ -7,7 +7,6 @@ import ContextFactory from './Context'
 function StoreProvider(store) {
     return function(context, action) {
 
-        //context.store = store
         context.state = store.state
         context.module = store.module
         context.signal = store.signal
@@ -37,8 +36,7 @@ function Store(init = {}, ...providers) {
     const action = ContextFactory(StoreProvider(store), ...providers.concat(getProviders(__store.module)))
 
     store.action = (...args) => {
-        action(...args)
-        store.commit()
+        return Promise.resolve(action(...args)).then(() => store.commit())
     }
 
     const $ctx = (props) => {
@@ -52,7 +50,7 @@ function Store(init = {}, ...providers) {
 
     store.get = (target, props) => target.get($ctx(props))
     store.set = (target, value, props) => target.set($ctx(props), value)
-    
+
     store.path = (target, props) => target.path($ctx(props))
     store.paths = (target, props) => target.paths($ctx(props))
     store.resolve = (target, props, changes) => Tag.resolve($ctx(props), target, changes)

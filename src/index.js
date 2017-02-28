@@ -22,8 +22,21 @@ store.action(set(state`user`, {
 const target = compute(computed)
 
 store.connect(target, (changes) => {
+	target.value = {}
 	const paths = store.paths(target)
-	console.log('(on-target)', paths, changes.map(c => c.path.join(".")))
+	const changed = changes.map(c => c.path.join(".")).filter(path => paths.indexOf(path) > -1)
+	console.log('(on-target)', paths, changed)
+	if (changed.length) {
+		changed.forEach(path => {
+			const keys = path.split(".")
+			const type = keys.shift()
+			if (store[type]) {
+				const value = store[type].get(keys)
+				target.value[path] = value
+				console.info(`changed(%c${path}%c)`, `color:yellow`, ``, value)
+			}
+		})
+	}
 	//store.resolve(target, {}, changes).then(resolved => console.log('(on-target)', resolved))
 })
 
