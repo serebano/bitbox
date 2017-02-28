@@ -30,4 +30,4 @@ export class ComputeArray extends Tag {
     }
 }
 
-export default (array) => new ComputeArray(array)
+export default (...array) => new ComputeArray(array)

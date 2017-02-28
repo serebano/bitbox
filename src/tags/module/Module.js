@@ -7,7 +7,11 @@ class Module {
         this.name = path.slice().pop()
 
         const module = Object.assign({}, typeof desc === 'function'
-            ? desc.call(this, { path: this.path, name: this.name }, tags)
+            ? desc.call(this, {
+                path: this.path,
+                name: this.name,
+                store
+            }, tags)
             : desc)
 
         Object.assign(this, module)

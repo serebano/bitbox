@@ -1,6 +1,6 @@
 import Tag from '../../Tag'
 import M from './Module'
-import {ensurePath} from '../../utils'
+import {ensurePath,getProviders} from '../../utils'
 
 function ModuleModel(target, store, changes) {
 
@@ -32,9 +32,14 @@ function ModuleModel(target, store, changes) {
         changes.push(`module.${path}`)
     }
 
+    function providers() {
+        return getProviders(target.module)
+    }
+
     return {
         get,
-        set
+        set,
+        providers
     }
 }
 

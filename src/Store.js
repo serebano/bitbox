@@ -52,6 +52,7 @@ function Store(init = {}, ...providers) {
 
     store.get = (target, props) => target.get($ctx(props))
     store.set = (target, value, props) => target.set($ctx(props), value)
+    
     store.path = (target, props) => target.path($ctx(props))
     store.paths = (target, props) => target.paths($ctx(props))
     store.resolve = (target, props, changes) => Tag.resolve($ctx(props), target, changes)
