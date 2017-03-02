@@ -2,14 +2,19 @@ import Tag from '../../Tag'
 import {ensure} from './utils'
 
 export class ComputeArray extends Tag {
+
+    hasPath = false
+
     constructor(array) {
         super('compute.array')
         this.keys = [...array.keys()]
         this.values = array.map(ensure)
     }
+
 	resolve(context) {
 		return Promise.all(this.values.map(value => Tag.resolve(context, value)))
 	}
+
     get(context) {
         return this.values.reduce((result, value, index) => {
             if (typeof value === "function")
@@ -25,6 +30,7 @@ export class ComputeArray extends Tag {
             return result
         }, [])
     }
+
     toString() {
         return `${this.type}([ ${ this.values.map(value => `${value}`).join(", ") } ])`
     }

@@ -41,13 +41,13 @@ const appTarget = compute({
 
 const appConn = store.connect(appTarget,
 	function Scooby(changes) {
-		appConn.update(store.paths(appTarget))
+		appConn.update(store.resolve.paths(appTarget))
 		//console.log(`Appxx`, changes, u)
 	}
 )
 
 appTarget.add('color', state`color`)
-appConn.update(store.paths(appTarget))
+appConn.update(store.resolve.paths(appTarget))
 
 window.appConn = appConn
 window.appTarget = appTarget

@@ -2,41 +2,22 @@ import View from 'react'
 import {compute} from './tags'
 import {getChangedProps} from './utils'
 
-export class Container extends View.Component {
-    getChildContext() {
-        return {
-			store: this.props.store
-		}
-    }
-    render() {
-        return this.props.children
-    }
-}
-
-Container.propTypes = {
-	store: View.PropTypes.object.isRequired,
-	//get: View.PropTypes.func.isRequired,
-	children: View.PropTypes.node.isRequired
-}
-
-Container.childContextTypes = {
-	store: View.PropTypes.object.isRequired,
-	//get: View.PropTypes.func.isRequired
-}
-
 export default function connectComponent(dependencies, component) {
 
 	const target = compute(dependencies)
 
 	class Component extends View.Component {
+
 		componentWillMount () {
             const listener = (changes) => this.update(this.props, changes)
             listener.displayName = component.name
 
 			this.conn = this.context.store.connect(target, listener, this.props)
 		}
+
 		componentWillReceiveProps (nextProps) {
 			const changes = getChangedProps(this.props, nextProps)
+
 			if (changes.length)
 				this.update(nextProps, changes)
 		}
@@ -51,7 +32,7 @@ export default function connectComponent(dependencies, component) {
 		}
 
 		paths(props) {
-			return this.context.store.paths(target, props)
+			return this.context.store.resolve.paths(target, props)
 		}
 
 		update(props, changes) {
@@ -66,15 +47,30 @@ export default function connectComponent(dependencies, component) {
 	}
 
 	Component.displayName = `${component.displayName || component.name}_Component`
-    //Component.component = component
-    //Component.target = target
 
 	Component.contextTypes = {
 		store: View.PropTypes.object,
-  		//get: View.PropTypes.func
 	}
 
-	//Component.target = target
-
 	return Component
+}
+
+export class Container extends View.Component {
+    getChildContext() {
+        return {
+			store: this.props.store
+		}
+    }
+    render() {
+        return this.props.children
+    }
+}
+
+Container.propTypes = {
+	store: View.PropTypes.object.isRequired,
+	children: View.PropTypes.node.isRequired
+}
+
+Container.childContextTypes = {
+	store: View.PropTypes.object.isRequired,
 }

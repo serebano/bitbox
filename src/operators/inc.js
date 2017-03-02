@@ -1,3 +1,5 @@
+import { update } from './'
+
 export default (target, value = 1) => {
 
     function inc(target, key, value) {
@@ -7,13 +9,5 @@ export default (target, value = 1) => {
         target[key] =+ value
     }
 
-    increment.operator = inc
-
-    function increment({ update }) {
-        update(target, value, inc)
-    }
-
-    increment.displayName = `increment(${String(target)}, ${String(value)})`
-
-    return increment
+    return update(target, inc, value)
 }

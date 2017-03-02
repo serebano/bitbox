@@ -6,6 +6,7 @@ class Changes {
 
     keys = {}
     changes = []
+    listeners = []
 
     constructor({ devtools }) {
         this.map = {}
@@ -14,10 +15,10 @@ class Changes {
 
     connect(paths, entity) {
 
-        const connection = { entity, paths }
+        const connection = { paths }
 
-        connection.add = (...paths) => this.add(entity, ...paths)
-        connection.remove = (...paths) => this.remove(entity, ...paths)
+        connection.add = (...paths) => this.add(entity, paths)
+        connection.remove = (...paths) => this.remove(entity, paths)
 
         connection.update = (newPaths) => {
             const oldPaths = connection.paths
@@ -41,11 +42,14 @@ class Changes {
         }
 
         // add
-        this.add(entity, ...paths)
+        this.add(entity, paths)
 
         if (this.devtools)
             this.devtools.updateComponentsMap(entity, paths)
             //this.devtools.updateComponentsMap(entity, paths.reduce((map, path) => { map[path] = true; return map }, {}))
+
+        Object.assign(entity, connection)
+        this.listeners.push(entity)
 
         return connection
     }
@@ -53,7 +57,7 @@ class Changes {
     /*
       Adds the entity to all the depending paths
     */
-    add(entity, ...paths) {
+    add(entity, paths) {
         for (const depsMapKey of paths) {
             const path = depsMapKey.split('.')
 
@@ -76,16 +80,14 @@ class Changes {
         }
     }
 
-    on(path, entity) {
-        const conn = this.connect([ path ], entity)
-
-        return conn
+    on(...paths) {
+        const entity = paths.pop()
+        return this.connect(paths, entity)
     }
 
     get(path, operator) {
         const keys = ensurePath(path)
         const length = keys.length
-        //console.log(`get(${path})`, operator)
 
         return keys.reduce((changes, key, index) => {
             let step = changes.filter(change => {
@@ -158,7 +160,7 @@ class Changes {
     /*
       Removes the entity from all depending paths
     */
-    remove(entity, ...paths) {
+    remove(entity, paths) {
         for (const depsMapKey of paths) {
             const path = depsMapKey.split('.')
             path.reduce((currentMapLevel, key, index) => {
@@ -182,10 +184,10 @@ class Changes {
         const toAdd = nextPaths.filter(nextPath => prevPaths.indexOf(nextPath) === -1)
 
         if (toRemove.length)
-            this.remove(entity, ...toRemove)
+            this.remove(entity, toRemove)
 
         if (toAdd.length)
-            this.add(entity, ...toAdd)
+            this.add(entity, toAdd)
 
         return {
             added: toAdd,
@@ -273,8 +275,10 @@ class Changes {
             this.devtools.sendComponentsMap(listeners, changes, start, Date.now())
 
         console.info(`[*]`, `${changes.length} changes / ${listeners.length} listeners`)
+        console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')
+
         if (listeners.length)
-            console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount}`).join("\n"))
+            console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount} [ ${listener.paths.join(", ")} ]`).join("\n"))
 
 
 		return changes

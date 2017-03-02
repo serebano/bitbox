@@ -37,6 +37,8 @@ function Store(init = {}, ...providers) {
         }
     }
 
+    store.context = Context
+
     store.get = function get(target, transform, props) {
         if (!(target instanceof Tag))
             throw new Error(`Invalid target: ${target}`)
@@ -49,30 +51,31 @@ function Store(init = {}, ...providers) {
         return target.get(Context(props), transform)
     }
 
-    store.set = (target, value, props) => {
+    store.set = function set(target, value, props) {
         target.set(Context(props), value)
         changes.commit()
     }
 
-    store.path = (target, props) => target.path(Context(props))
-    store.paths = (target, props) => target.paths(Context(props))
-    store.resolve = (target, method, props) => target.resolve(store, method, props)
-    store.connect = (target, func, props) => changes.connect(store.paths(target, props), func)
+    store.resolve = {}
+    store.resolve.path = (target, props) => target.path(Context(props))
+    store.resolve.paths = (target, types, props) => target.paths(Context(props), types)
+    store.resolve.value = (target, props) => target instanceof Tag ? target.get(Context(props)) : target
+
+    store.connect = (target, func, props) => changes.connect(store.resolve.paths(target, ['state'], props), func)
 
     store.commit = (force) => {
         return changes.commit(force)
     }
 
+    providers.unshift(StoreProvider(store))
+    providers.unshift(store.state.provider())
+    providers.unshift(store.signal.provider())
+    providers.push(...store.module.providers())
+
     if (devtools)
         providers.unshift(DebuggerProvider(store))
 
-    const functionTree = new FunctionTree([
-        StoreProvider(store),
-        store.state.provider(),
-        store.signal.provider(),
-        ...providers.concat(store.module.providers())
-    ])
-
+    const functionTree = new FunctionTree(providers)
     const run = functionTree.runTree
 
     store.run = function(action, props) {

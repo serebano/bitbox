@@ -2,6 +2,9 @@ import Tag from '../../Tag'
 import {ComputeArray} from './array'
 
 export class ComputeObject extends Tag {
+
+    hasPath = false
+
     constructor(object) {
         super('compute.object')
 
