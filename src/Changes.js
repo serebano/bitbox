@@ -6,27 +6,53 @@ class Changes {
 
     keys = {}
     changes = []
-    paths = []
 
-    constructor(map = {}) {
-        this.map = map
+    constructor({ devtools }) {
+        this.map = {}
+        this.devtools = devtools
     }
 
-    on(context, target, fn) {
-        const conn = this.add(fn, ...target.paths(context))
+    connect(paths, entity) {
 
-        conn.update = (context) => {
-            const newPaths = target.paths(context)
-            const oldPaths = conn.paths
+        const connection = { entity, paths }
 
-            conn.paths = newPaths
+        connection.add = (...paths) => connection.update(connection.paths.concat(paths))
 
-            return this.update(fn, oldPaths, newPaths)
+        connection.update = (newPaths) => {
+            const oldPaths = connection.paths
+            connection.paths = newPaths
+
+            this.update(entity, oldPaths, newPaths)
+
+            if (this.devtools) {
+                this.devtools.updateComponentsMap(
+                    entity,
+                    newPaths.reduce((map, path) => { map[path] = true; return map }, {}),
+                    oldPaths.reduce((map, path) => { map[path] = true; return map }, {})
+                )
+            }
         }
 
-        return conn
-    }
+        connection.remove = () => {
+            const paths = connection.paths
 
+            this.remove(entity, ...paths)
+
+            if (this.devtools) {
+                this.devtools.updateComponentsMap(entity, null, paths.reduce((map, path) => { map[path] = true; return map }, {}))
+            }
+
+            connection.paths = []
+        }
+
+        // add
+        this.add(entity, ...paths)
+
+        if (this.devtools)
+            this.devtools.updateComponentsMap(entity, paths.reduce((map, path) => { map[path] = true; return map }, {}))
+
+        return connection
+    }
 
     /*
       Adds the entity to all the depending paths
@@ -34,9 +60,6 @@ class Changes {
     add(entity, ...paths) {
         for (const depsMapKey of paths) {
             const path = depsMapKey.split('.')
-
-            if (this.paths.indexOf(depsMapKey) === -1)
-                this.paths.push(depsMapKey)
 
             path.reduce((currentMapLevel, key, index) => {
                 if (!currentMapLevel[key])
@@ -55,42 +78,63 @@ class Changes {
                 return currentMapLevel
             }, this.map)
         }
+    }
 
-        const connection = { paths }
+    on(path, entity) {
+        const conn = this.connect([ path ], entity)
 
-        connection.remove = () => {
-            this.remove(entity, ...connection.paths)
-            connection.paths = []
-        }
+        return conn
+    }
 
-        connection.update = (newPaths) => {
-            const oldPaths = connection.paths
-            connection.paths = newPaths
+    get(path, operator) {
+        const keys = ensurePath(path)
+        const length = keys.length
+        //console.log(`get(${path})`, operator)
 
-            return this.update(entity, oldPaths, newPaths)
-        }
+        return keys.reduce((changes, key, index) => {
+            let step = changes.filter(change => {
+                if (index === length - 1) {
+                    if (key === "*")
+                        return change.path.length === length
+                    if (key === "**")
+                        return change.path.length >= length
+                    if (change.path[index] === key)
+                        return change.path.length === length
 
-        return connection
+                    return false
+                }
+
+                return key === "*" || key === "**" || change.path[index] === key
+            })
+
+            if (operator)
+                step = step.filter(change => change.operator === operator)
+
+            console.log("\t".repeat(index), index, `${keys.slice(0, index).join(".")}.( ${key} ).${keys.slice(index+1).join(".")}`, step.length)
+            step.forEach(s => console.log("\t".repeat(index), '-', s.path.map((p,i) => i === index ? `( ${p} )` : p).join("."), s.operator))
+
+            return step
+
+        }, this.changes)
     }
 
     /*
       Returns entities based on a change map returned from
       the model flush method.
     */
-    get(changesMap) {
-        changesMap = changesMap || this.changes
+    listeners(force) {
+        if (force)
+            return this.getAll()
 
-        return dependencyMatch(changesMap, this.map).reduce((unique, match) => {
+        return dependencyMatch(this.changes, this.map).reduce((unique, match) => {
             return (match.entities || []).reduce((currentUnique, entity) => {
-                if (currentUnique.indexOf(entity) === -1) {
+                if (currentUnique.indexOf(entity) === -1)
                     return currentUnique.concat(entity)
-                }
 
                 return currentUnique
             }, unique)
         }, [])
     }
-
     /*
       Removes the entity from all depending paths
     */
@@ -117,8 +161,11 @@ class Changes {
         const toRemove = prevPaths.filter(prevPath => nextPaths.indexOf(prevPath) === -1)
         const toAdd = nextPaths.filter(nextPath => prevPaths.indexOf(nextPath) === -1)
 
-        this.remove(entity, ...toRemove)
-        this.add(entity, ...toAdd)
+        if (toRemove.length)
+            this.remove(entity, ...toRemove)
+
+        if (toAdd.length)
+            this.add(entity, ...toAdd)
 
         return {
             added: toAdd,
@@ -170,44 +217,56 @@ class Changes {
         return details.allPaths
     }
 
-    push(path, forceChildPathUpdates = false) {
-        path = ensurePath(path)
+    push({ type, path, operator, forceChildPathUpdates = false }) {
 
-		if (path in this.keys)
-			return this.keys[path]
+        path = [ type ].concat(path)
 
-		this.keys[path] = this.changes.push({ path, forceChildPathUpdates }) - 1
+        const key = operator + ":" + path.join(".")
 
-		if (this.keys[path] >= 10) {
-			console.warn(`(deps) ${this.keys[path]} uncommited changes`)
-            return this.commit()
+		if (key in this.keys)
+			return this.keys[key]
+
+		this.keys[key] = this.changes.push({ type, path, operator, forceChildPathUpdates }) - 1
+
+		if (this.keys[key] >= 50) {
+			console.warn(`(deps) ${this.keys[key]} uncommited changes`)
         }
 
-		return this.keys[path]
+        this.debug(...arguments)
+
+		return this.keys[key]
 	}
+
+    debug(change) {
+        console.log(`(changes)`, JSON.stringify(change, null, 4))
+    }
 
     commit(force) {
 
+        const start = Date.now()
 		const changes = this.changes
-
-		this.changes = []
-		this.keys = {}
-
-		const components = force
-			? this.getAll()
-			: this.get(changes)
+		const components = this.listeners(force)
 
 		components.forEach((component) => {
+            if (this.devtools)
+                this.devtools.updateComponentsMap(component)
+
             component(changes)
 		})
 
-		return components
+        const end = Date.now()
+
+        this.changes = []
+    	this.keys = {}
+
+        if (this.devtools && components.length)
+            this.devtools.sendComponentsMap(components, changes, start, end)
+
+		return changes
 	}
 
-    emit(...paths) {
-		paths.forEach(path => {
-            this.push(path)
-        })
+    emit(path, operator, force) {
+        this.push({ path, operator, forceChildPathUpdates: force })
 
 		return this.commit()
 	}

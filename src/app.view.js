@@ -1,5 +1,5 @@
 import React from 'react'
-import Component from './component'
+import Component from './Component'
 
 export const Foo = Component(
 	function({ props, state }) {
@@ -26,12 +26,12 @@ export const Foo = Component(
 )
 
 export const Counter = Component(
-	function({ props, state, signal, path }) {
+	function({ props, state, signal }) {
 		return {
-			count: state `${path.deep}.count`,
-			color: state `${path.deep}.color`,
-			inc: signal `${path.deep}.increment`,
-			dec: signal `${path.deep}.decrement`
+			count: state `.count`,
+			color: state `.color`,
+			inc: signal `.increment`,
+			dec: signal `.decrement`
 		}
 	},
 	function Count({count,color,inc,dec}) {
@@ -46,12 +46,9 @@ export const Counter = Component(
 )
 
 export const Name = Component(
-	function({ state, signal }) {
+	function({ state, signal, compute }) {
 		return {
-			name: [
-				state`app.name`,
-				name => String(name).toUpperCase()
-			],
+			name: compute(state`app.name`, name => String(name).toUpperCase()),
 			nameChanged: signal`app.nameChanged`
 		}
 	},

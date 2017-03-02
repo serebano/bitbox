@@ -1,11 +1,19 @@
-import {compute} from '../tags'
+export default (target, value = 1) => {
 
-export default (target, value) => {
-    const newValue = compute(target, value, (count = 0, add = 1) => count + add)
+    function inc(target, key, value) {
+        if (!(key in target))
+            target[key] = 0
 
-    function increment(context) {
-        context.set(target, newValue)
+        target[key] = target[key] + value
     }
+
+    increment.operator = inc
+    
+    function increment({ update }) {
+        update(target, value, inc)
+    }
+
+    increment.displayName = `increment(${String(target)}, ${String(value)})`
 
     return increment
 }

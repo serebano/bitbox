@@ -1,4 +1,4 @@
-import {extractFrom} from './utils'
+import {extractFrom,ensurePath} from './utils'
 
 export default class Tag {
 
@@ -60,32 +60,17 @@ export default class Tag {
     }
 
     paths(context) {
-        return this.deps().map(tag => tag.path(context, true))
+        return this.deps(context).map(tag => tag.path(context, true))
     }
 
-    deps() {
-        return (!!this.set ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
+    deps(context) {
+        return (context[this.type] && context[this.type].set ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
             const value = this.values[index]
             return value instanceof Tag
-                ? paths.concat(value.deps())
+                ? paths.concat(value.deps(context))
                 : paths
         }, []))
     }
-
-    // paths(context) {
-    //     const canChange = (tag) => typeof tag.set === "function"
-    //
-    //     return this.tags(canChange(this))
-    //         .reduce((map, tag) => {
-    //             if (canChange(tag)) {
-    //                 map.push(tag.path(context, true))
-    //             } else {
-    //                 return map.concat(tag.paths(context))
-    //             }
-    //
-    //             return map
-    //         }, [])
-    // }
 
     /*
       Returns all tags, also nested to identify nested state dependencies
@@ -128,9 +113,45 @@ export default class Tag {
                 : ""
     }
 
-    get(context) {
-        return Tag.extract(context, this.path(context, true))
+    call(context, method, ...args) {
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        if (context[this.type][method])
+            return context[this.type][method](this.path(context), ...args.map(arg => arg instanceof Tag ? arg.get(context) : arg))
+
+        throw new Error(`Invalid method: ${method} in ${this.type} context`)
     }
+
+    get(context) {
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        if (context[this.type].get)
+            return context[this.type].get(this.path(context))
+
+        return ensurePath(this.path(context)).reduce((state, key, index) => {
+            return state ? state[key] : undefined
+        }, context[this.type])
+
+    }
+
+    resolve(context, ...args) {
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        return context[this.type]
+    }
+
+    // update(context, ...args) {
+    //     if (context[this.type] && context[this.type].update)
+    //         return context[this.type].update(this.path(context), ...args)
+    // }
+    //
+    // select(context, extend) {
+    //     if (context[this.type] && context[this.type].select)
+    //         return context[this.type].select(this.path(context), extend)
+    // }
 
     /*
       Produces a string representation of the path

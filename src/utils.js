@@ -1,5 +1,17 @@
 import Tag from './Tag'
 
+export function delay(func, wait) {
+    return function(...args) {
+        const context = this
+        const later = () => {
+            func.apply(context, args)
+        }
+
+        setTimeout(later, wait)
+    }
+}
+
+
 export function createResolver(getters) {
     return {
         isTag(arg, ...types) {
@@ -103,7 +115,9 @@ export function ensurePath(path = []) {
     if (Array.isArray(path)) {
         return path
     } else if (typeof path === 'string') {
-        return path.split('.')
+        return path === "." || path === ""
+            ? []
+            : path.split('.')
     }
 
     return []
@@ -152,6 +166,7 @@ export function dependencyMatch(changes, dependencyMap) {
 
     for (let changeIndex = 0; changeIndex < changes.length; changeIndex++) {
         let currentDependencyMapLevel = dependencyMap
+
         for (let pathKeyIndex = 0; pathKeyIndex < changes[changeIndex].path.length; pathKeyIndex++) {
             if (!currentDependencyMapLevel) {
                 break
@@ -163,6 +178,7 @@ export function dependencyMatch(changes, dependencyMap) {
 
             if (pathKeyIndex === changes[changeIndex].path.length - 1) {
                 const dependency = currentDependencyMapLevel[changes[changeIndex].path[pathKeyIndex]]
+
                 if (dependency) {
                     currentMatches.push(dependency)
 

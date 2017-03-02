@@ -30,9 +30,10 @@ export default function connectComponent(dependencies, component) {
 
 	class Component extends View.Component {
 		componentWillMount () {
-			this.conn = this.context.store.connect(target, (changes) => {
-				this.update(this.props, changes)
-			}, this.props)
+            const listener = (changes) => this.update(this.props, changes)
+            listener.displayName = component.name
+
+			this.conn = this.context.store.connect(target, listener, this.props)
 		}
 		componentWillReceiveProps (nextProps) {
 			const changes = getChangedProps(this.props, nextProps)
@@ -65,13 +66,15 @@ export default function connectComponent(dependencies, component) {
 	}
 
 	Component.displayName = `${component.displayName || component.name}_Component`
+    //Component.component = component
+    //Component.target = target
 
 	Component.contextTypes = {
 		store: View.PropTypes.object,
   		//get: View.PropTypes.func
 	}
 
-	Component.target = target
+	//Component.target = target
 
 	return Component
 }

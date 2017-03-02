@@ -23,12 +23,14 @@ class Module {
 
         Object.keys(this.signals).forEach(name => {
             const chain = module.signals[name]
-            const signal = (props) => store.run(this.path, chain, props)
             const path = this.path ? `${this.path}.${name}` : name
-            signal.displayName = path
-            signal.toString = () => `function ${path}(props) { [Actions] }`
 
-            store.signal.set(path, signal)
+            // const signal = (props) => store.run(this.path, chain, props)
+            //
+            // signal.displayName = path
+            // signal.toString = () => `function ${path}(props) { [Actions] }`
+
+            store.signal.set(path, chain)
         })
 
         this.modules = Object.keys(module.modules || {})

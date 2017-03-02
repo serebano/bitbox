@@ -5,12 +5,13 @@ class Github extends Tag {
 		const path = this.path(context)
 		const keys = path.split(".")
 
-		if (!context.state.get(`_github_cache`))
+		if (!context.state.has(`_github_cache`))
 			context.state.set(`_github_cache`, {})
 
 		const cachedPath = `_github_cache.${keys.join("_")}`
 		const cached = context.state.get(cachedPath)
-		if (cached && (Date.now() - cached.timestamp) < 36000)
+
+		if (cached && (Date.now() - cached.timestamp) < 72000)
 			return cached.value
 
 		return window.fetch("https://api.github.com/"+keys.join("/"))

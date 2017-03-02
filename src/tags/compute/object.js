@@ -12,16 +12,13 @@ export class ComputeObject extends Tag {
             return value
         })
     }
+    add(key, value) {
+        this.keys.push(key)
+        this.values.push(Array.isArray(value) ? new ComputeArray(value) : value)
+
+        return this
+    }
     resolve(context, changes) {
-        // if (changes) {
-        //     const toResolve = changes.map(i => {
-        //         return {
-        //             type: i.path.shift(),
-        //             path: i.path.join(".")
-        //         }
-        //     })
-        //     console.log(`toResolve`, toResolve)
-        // }
         const resolved = Promise.all(this.values.map(value => Tag.resolve(context, value, changes)))
 
         return resolved.then(values => {

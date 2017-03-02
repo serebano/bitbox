@@ -1,18 +1,19 @@
 import Tag from './Tag'
 import Changes from './Changes'
 import * as tags from './tags'
-import {getProviders} from './utils'
+import {getProviders,createResolver} from './utils'
 import ContextFactory from './Context'
+import {FunctionTree,sequence} from 'function-tree'
+import DebuggerProvider from './providers/debugger'
+import {set} from './operators'
+import Model from './Model'
+
 
 function StoreProvider(store) {
-    return function(context, action) {
-
-        context.state = store.state
-        context.module = store.module
-        context.signal = store.signal
-
-        context.get = (target) => target.get(context)
-        context.set = (target, value) => target.set(context, value)
+    return function(context) {
+        context.get = (target, transform) => target.get(store, transform)
+        context.set = (target, value) => target.set(store, value)
+        context.update = (target, ...args) => target.update(store, ...args)
 
         return context
     }
@@ -20,26 +21,16 @@ function StoreProvider(store) {
 
 function Store(init = {}, ...providers) {
 
-    const __store = { module: {}, signal: {}, state: {} }
+    const devtools = init.devtools
+    const changes = new Changes({ devtools })
+    const store = { changes, devtools }
 
-    const changes = new Changes()
-    const store = { changes }
+    store.state = Model('state', {}, store)
+    store.signal = Model('signal', {}, store)
 
-    store.commit = (force) => changes.commit(force)
+    store.module = tags.module.model({module: {}}, store, changes)
 
-    store.state = tags.state.model(__store, store, changes),
-    store.signal = tags.signal.model(__store, store, changes)
-    store.module = tags.module.model(__store, store, changes)
-
-    store.module.set('.', init)
-
-    const action = ContextFactory(StoreProvider(store), ...providers.concat(getProviders(__store.module)))
-
-    store.action = (...args) => {
-        return Promise.resolve(action(...args)).then(() => store.commit())
-    }
-
-    const $ctx = (props) => {
+    function Context(props) {
         return {
             props: props || {},
             state: store.state,
@@ -48,20 +39,83 @@ function Store(init = {}, ...providers) {
         }
     }
 
-    store.get = (target, props) => target.get($ctx(props))
-    store.set = (target, value, props) => target.set($ctx(props), value)
+    store.get = (target, props) => target.get(Context(props))
+    store.path = (target, props) => target.path(Context(props))
+    store.paths = (target, props) => target.paths(Context(props))
+    store.connect = (target, func, props) => changes.connect(store.paths(target, props), func)
 
-    store.path = (target, props) => target.path($ctx(props))
-    store.paths = (target, props) => target.paths($ctx(props))
-    store.resolve = (target, props, changes) => Tag.resolve($ctx(props), target, changes)
-    store.connect = (target, fn, props) => changes.add(fn, ...store.paths(target, props))
+    store.commit = (force) => {
+        if (!force && !Object.keys(changes.changes).length)
+            return
 
-    store.run = (path, chain, props) => {
-        props = props || {}
-        props.root = path
-
-        return Promise.all(chain.map(action => store.action(action, props))).then(res => changes.commit())
+        functionTree.emit('flush', changes.commit(force), Boolean(force))
     }
+
+    if (devtools)
+        providers.unshift(DebuggerProvider(store))
+
+    const functionTree = new FunctionTree([
+        StoreProvider(store),
+        store.state.provider(),
+        store.signal.provider(),
+        ...providers.concat(store.module.providers())
+    ])
+
+    const run = functionTree.runTree
+
+    store.run = function(action, props) {
+        if (typeof action === "function") {
+            return new Promise((resolve, reject) => {
+                run(action.name, sequence(action), props,
+                    (err, exec, result) => err
+                        ? reject(err)
+                        : resolve(result)
+                )
+            })
+        }
+
+        return new Promise((resolve, reject) => {
+            return run(...arguments,
+                (err, exec, result) => err
+                    ? reject(err)
+                    : resolve(result)
+                )
+            }
+        )
+    }
+
+    Model.assign(store.signal, tags.signal.methods(store.run))
+
+    run.on('asyncFunction', (execution, action) => !action.isParallel && store.commit())
+    run.on('parallelStart', () => store.commit())
+    run.on('parallelProgress', (execution, payload, functionsResolving) => functionsResolving === 1 && store.commit())
+    run.on('end', () => store.commit())
+
+    if (devtools) {
+
+        devtools.init(store, functionTree)
+
+        functionTree.on('error', function throwErrorCallback(error) {
+            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 2)
+                functionTree.removeListener('error', throwErrorCallback)
+            else
+                throw error
+        })
+
+    } else {
+        functionTree.on('error', function throwErrorCallback(error) {
+            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 1)
+                functionTree.removeListener('error', throwErrorCallback)
+            else
+                throw error
+        })
+    }
+
+    // add root module
+    store.module.set('.', init)
+
+    changes.commit()
+    functionTree.emit('initialized')
 
 	return store
 }

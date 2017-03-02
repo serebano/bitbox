@@ -1,8 +1,15 @@
 export {default as set} from './set'
+export {default as unset} from './unset'
+export {default as reset} from './reset'
+
 export {default as push} from './push'
+export {default as pop} from './pop'
+export {default as update} from './update'
+
 export {default as inc} from './inc'
 export {default as dec} from './dec'
 export {default as merge} from './merge'
 export {default as on} from './on'
 export {default as sync} from './sync'
 export {default as wait} from './wait'
+export {sequence, parallel} from 'function-tree'

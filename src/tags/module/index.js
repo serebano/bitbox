@@ -4,6 +4,20 @@ import {ensurePath,getProviders} from '../../utils'
 
 function ModuleModel(target, store, changes) {
 
+    function has(path) {
+        const keys = ensurePath(path)
+
+        return keys.reduce((result, key, index) => {
+            if (!result)
+                return false
+
+            if (index === keys.length - 1)
+                return (key in result.modules)
+
+            return result.modules[key]
+        }, target.module)
+    }
+
     function get(path) {
         const keys = ensurePath(path)
         //console.log(`module.get(${path})`, keys)
@@ -29,7 +43,7 @@ function ModuleModel(target, store, changes) {
 
         //console.log(`module.set(${path})`, value)
 
-        changes.push(`module.${path}`)
+        //changes.push(`module.${path}`)
     }
 
     function providers() {
@@ -37,6 +51,7 @@ function ModuleModel(target, store, changes) {
     }
 
     return {
+        has,
         get,
         set,
         providers

@@ -1,6 +1,6 @@
 import { inc, set } from '../../operators'
 
-export default function Counts(mod, {state,props}) {
+function Counts({ store, path }, { state, props, signal }) {
 	return {
 		state: {
 			name: 'Demo store',
@@ -17,6 +17,11 @@ export default function Counts(mod, {state,props}) {
 			colorChanged: [
 				set(state`.color`, props`color`)
 			]
+		},
+		provider(context) {
+			return context
 		}
 	}
 }
+
+export default Counts

@@ -4,43 +4,59 @@ import {ensurePath} from '../utils'
 
 function SignalModel(target, store, changes) {
 
-    function get(path) {
+    function has(path) {
         const keys = ensurePath(path)
-        //console.log(`signal.get(${path})`, keys)
 
         return keys.reduce((result, key, index) => {
-            if (index > 0 && result === undefined)
-                throw new Error(`Extracting with path "${path}/${key}[${index}]", but it is not valid`)
+            if (!result)
+                return false
+
+            if (index === keys.length - 1)
+                return (key in result)
+
             return result[key]
         }, target.signal)
     }
 
-    function set(path, value) {
-        if (!path || path === "" || path === ".") {
-            target.signal = value
-        } else {
-            const keys = path.split(".")
-            const key = keys.pop()
-            const parent = get(keys)
+    function get(path) {
+        const keys = ensurePath(path)
 
-            parent[key] = value
+        return keys.reduce((result, key, index) => {
+            if (index > 0 && result === undefined)
+                throw new Error(`Extracting with path "${path}/${key}[${index}]", but it is not valid`)
+
+            return result[key]
+
+        }, target.signal)
+    }
+
+    function set(path, chain) {
+
+        const signal = (props) => store.run(path, chain, props)
+
+        signal.displayName = path
+        signal.toString = () => `function ${path}(props) { [Actions] }`
+
+
+        if (!path || path === "" || path === ".") {
+            target.signal = signal
+        } else {
+            const root = path.split(".")
+            const name = root.pop()
+            const parent = get(root)
+
+            parent[name] = signal
         }
 
-        //console.log(`signal.set(${path})`, value)
-        changes.push(`signal.${path}`)
+        //changes.push(`signal.${path}`)
     }
 
     function getChain(path) {
-        //console.log(`signal.get(${path})`)
         const root = path.split(".")
         const name = root.pop()
         const module = store.module.get(root)
-        const chain = module.signals[name]
-        const signal = (props) => store.run(name, chain, props)
 
-        signal.toString = () => `function ${path}(props) {}`
-
-        return signal
+        return module.signals[name]
     }
 
     function setChain(path, value) {
@@ -50,11 +66,11 @@ function SignalModel(target, store, changes) {
 
         module.signals[name] = value
 
-        //console.warn(`signal.set(${path})`, value)
-        changes.push(`signal.${path}`)
+        //changes.push(`signal.${path}`)
     }
 
     return {
+        has,
         get,
         set,
         getChain,
@@ -75,6 +91,20 @@ export class Signal extends Tag {
             return context.signal.set(this.path(context), value)
     }
 }
+
+signal.methods = (run) => ({
+    run(...args) {
+        return run(...args)
+    },
+    set(target, key, chain) {
+        const signal = (props) => run(key, chain, props)
+
+        signal.displayName = key
+        signal.toString = () => `function ${key}(props) { [Actions] }`
+
+        target[key] = signal
+    }
+})
 
 signal.model = SignalModel
 

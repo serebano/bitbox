@@ -1,9 +1,11 @@
-export default function set(target, value) {
-    function set(context) {
-        return context.set(target, value)
-    }
+import { update } from './'
 
-    set.toString = () => `set(${target}, ${value})`
-
-    return set
+function set(target, value) {
+    return update(target, value,
+        function set(target, key, value) {
+            target[key] = value
+        }
+    )
 }
+
+export default set

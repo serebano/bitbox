@@ -6,20 +6,34 @@ class Props extends Tag {
         super("props", keys, values)
     }
 
-    static get(context, path) {
-        return Tag.extract(context, path)
-    }
-
-    get(context) {
-        return Tag.extract(context, this.path(context, true))
-    }
+    // static get(context, path) {
+    //     return Tag.extract(context, path)
+    // }
+    //
+    // get(context) {
+    //     return Tag.extract(context, this.path(context, true))
+    // }
 
     set(context, value) {
-        return Tag.resolve(context, value, (resolved) => {
+        return Tag.resolve(context, value).then(resolved => {
             const path = this.path(context, true)
 
-            return Tag.update(context, path, resolved)
+            Tag.update(context, path, resolved)
+            //console.log(`set`, path, this.type, context, value)
+
+            return context[this.type]
         })
+    }
+
+    call(context, method, ...args) {
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        if (!method)
+            return context[this.type]
+
+        if (method === "set")
+            return this.set(context, ...args)
     }
 }
 
