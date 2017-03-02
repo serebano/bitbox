@@ -12,6 +12,9 @@ function Model(type, target = {}, store = {}) {
 			throw new Error(`${type}.update missing operator`)
 
 		args = args.map((arg, idx) => {
+			if (idx === 0 && arg instanceof Tag && arg.type !== type)
+				throw new Error(`Cannot get path for tag ${arg.type} in ${type} model`)
+
 			return arg instanceof Tag
 				? idx === 0
 					? arg.path(store)
