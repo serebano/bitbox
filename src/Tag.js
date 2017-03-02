@@ -113,15 +113,15 @@ export default class Tag {
                 : ""
     }
 
-    call(context, method, ...args) {
-        if (!context[this.type])
-            throw new Error(`Invalid ${this.type} in context`)
-
-        if (context[this.type][method])
-            return context[this.type][method](this.path(context), ...args.map(arg => arg instanceof Tag ? arg.get(context) : arg))
-
-        throw new Error(`Invalid method: ${method} in ${this.type} context`)
-    }
+    // call(context, method, ...args) {
+    //     if (!context[this.type])
+    //         throw new Error(`Invalid ${this.type} in context`)
+    //
+    //     if (context[this.type][method])
+    //         return context[this.type][method](this.path(context), ...args.map(arg => arg instanceof Tag ? arg.get(context) : arg))
+    //
+    //     throw new Error(`Invalid method: ${method} in ${this.type} context`)
+    // }
 
     get(context) {
         if (!context[this.type])
@@ -143,15 +143,10 @@ export default class Tag {
         return context[this.type]
     }
 
-    // update(context, ...args) {
-    //     if (context[this.type] && context[this.type].update)
-    //         return context[this.type].update(this.path(context), ...args)
-    // }
-    //
-    // select(context, extend) {
-    //     if (context[this.type] && context[this.type].select)
-    //         return context[this.type].select(this.path(context), extend)
-    // }
+    update(context, ...args) {
+        if (context[this.type] && context[this.type].update)
+            return context[this.type].update(this.path(context), ...args)
+    }
 
     /*
       Produces a string representation of the path

@@ -21,9 +21,15 @@ const store = Store({
             sequence(`Increase count`, increase)
         ],
         decreaseClicked: [
-            parallel('Clicked',
+            sequence('Clicked',
                 set(state`loading`, true),
-                parallel(`Decrease count`, wait(props`delay`), decrease),
+                parallel(`Decrease count`,
+                    wait(props`delay`), {
+                        then: [
+                            decrease
+                        ]
+                    }
+                ),
                 set(state`loading`, false)
             )
         ]

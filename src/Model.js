@@ -37,7 +37,7 @@ function Model(type, target = {}, store = {}) {
 			return change
 		}
 
-		return path.reduce((currentState, key, index) => {
+		path.reduce((currentState, key, index) => {
 			if (index === path.length - 1) {
 				const currentValue = currentState[key]
 
@@ -48,8 +48,6 @@ function Model(type, target = {}, store = {}) {
 					isComplexObject(currentValue)) {
 
 					changes.push(change)
-
-					return change
 				}
 
 			} else if (!currentState[key]) {
@@ -59,10 +57,15 @@ function Model(type, target = {}, store = {}) {
 			return currentState[key]
 
 		}, target[type])
+
+		return change
+	}
+
+	function set(target, key, value) {
+		target[key] = value
 	}
 
     const model = {
-		type,
 		get(path, transform) {
 			const value = ensurePath(path)
 				.reduce((state, key, index) => state
@@ -73,35 +76,24 @@ function Model(type, target = {}, store = {}) {
 			return transform ? transform(value) : value
 		},
 		set(path, value) {
-			update(path, value,
-				function set(target, key, value) {
-					target[key] = value
-				}
-			)
+			update(path, value, set)
 		},
 		has(path) {
 			return model.get(path, value => value)
 		},
 		provider(options) {
-			return (context, action) => {
+			return function modelProvider(context, action) {
 				context[type] = {
 					get: model.get,
 					has: model.has,
-					set(...args) {
-						debug(update(...args,
-							function set(target, key, value) {
-								target[key] = value
-							}
-						), context, action)
-					},
-					update(...args) {
-						debug(update(...args), context, action)
-					}
+					set: (...args) => debug(update(...args, set), context, action),
+					update: (...args) => debug(update(...args), context, action)
 				}
 
 	            return context
 			}
         },
+		type,
 		update
     }
 

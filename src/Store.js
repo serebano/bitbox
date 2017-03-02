@@ -10,10 +10,11 @@ import Model from './Model'
 
 
 function StoreProvider(store) {
-    return function(context) {
-        context.get = (target, transform) => target.get(store, transform)
-        context.set = (target, value) => target.set(store, value)
-        context.update = (target, ...args) => target.update(store, ...args)
+    return function storeProvider(context) {
+        context.get = (target, transform) => target.get(context, transform)
+        context.set = (target, value) => target.set(context, value)
+        context.update = (target, ...args) => target.update(context, ...args)
+        context.resolve = createResolver(context)
 
         return context
     }
@@ -23,7 +24,7 @@ function Store(init = {}, ...providers) {
 
     const devtools = init.devtools
     const changes = new Changes({ devtools })
-    const store = { changes, devtools }
+    const store = { changes, devtools, providers }
 
     store.state = Model('state', {}, store)
     store.signal = Model('signal', {}, store)
@@ -40,6 +41,7 @@ function Store(init = {}, ...providers) {
     }
 
     store.get = (target, props) => target.get(Context(props))
+    store.set = (target, value, props) => target.resolve(store, props).set(target, value)
     store.path = (target, props) => target.path(Context(props))
     store.paths = (target, props) => target.paths(Context(props))
     store.connect = (target, func, props) => changes.connect(store.paths(target, props), func)
