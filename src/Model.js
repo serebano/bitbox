@@ -29,13 +29,17 @@ function Model(type, target = {}, store = {}) {
 			path: path,
 			args: args,
 			timestamp: Date.now(),
-			operator: operator.name,
+			operator: operator.displayName || operator.name,
 			forceChildPathUpdates: false
 		}
 
 		if (!path.length) {
+			const currentValue = target[type]
+
 			operator(target, type, ...args)
-			changes.push(change)
+
+			if (target[type] !== currentValue)
+				changes.push(change)
 
 			return change
 		}
@@ -46,19 +50,14 @@ function Model(type, target = {}, store = {}) {
 
 				operator(currentState, key, ...args)
 
-				if (currentState[key] !== currentValue ||
-					isComplexObject(currentState[key]) &&
-					isComplexObject(currentValue)) {
-
+				if (currentState[key] !== currentValue || (isComplexObject(currentState[key]) && isComplexObject(currentValue)))
 					changes.push(change)
-				}
 
 			} else if (!currentState[key]) {
 				throw new Error(`The path "${path}" is invalid, can not update state. Does the path "${path.splice(0, path.length - 1).join('.')}" exist?`)
 			}
 
 			return currentState[key]
-
 		}, target[type])
 
 		return change
@@ -67,6 +66,8 @@ function Model(type, target = {}, store = {}) {
 	function set(target, key, value) {
 		target[key] = value
 	}
+
+	set.displayName = 'set'
 
     const model = {
 		get(path, transform) {

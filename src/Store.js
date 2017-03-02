@@ -1,13 +1,10 @@
 import Tag from './Tag'
 import Changes from './Changes'
-import * as tags from './tags'
-import {getProviders,createResolver} from './utils'
-import ContextFactory from './Context'
-import {FunctionTree,sequence} from 'function-tree'
+import { createResolver } from './utils'
+import { FunctionTree, sequence } from 'function-tree'
 import DebuggerProvider from './providers/debugger'
-import {set} from './operators'
 import Model from './Model'
-
+import * as tags from './tags'
 
 function StoreProvider(store) {
     return function storeProvider(context) {
@@ -40,17 +37,30 @@ function Store(init = {}, ...providers) {
         }
     }
 
-    store.get = (target, props) => target.get(Context(props))
-    store.set = (target, value, props) => target.resolve(store, props).set(target, value)
+    store.get = function get(target, transform, props) {
+        if (!(target instanceof Tag))
+            throw new Error(`Invalid target: ${target}`)
+
+        if (typeof transform === "object") {
+            props = transform
+            transform = undefined
+        }
+
+        return target.get(Context(props), transform)
+    }
+
+    store.set = (target, value, props) => {
+        target.set(Context(props), value)
+        changes.commit()
+    }
+
     store.path = (target, props) => target.path(Context(props))
     store.paths = (target, props) => target.paths(Context(props))
+    store.resolve = (target, method, props) => target.resolve(store, method, props)
     store.connect = (target, func, props) => changes.connect(store.paths(target, props), func)
 
     store.commit = (force) => {
-        if (!force && !Object.keys(changes.changes).length)
-            return
-
-        functionTree.emit('flush', changes.commit(force), Boolean(force))
+        return changes.commit(force)
     }
 
     if (devtools)

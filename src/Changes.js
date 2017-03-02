@@ -16,7 +16,8 @@ class Changes {
 
         const connection = { entity, paths }
 
-        connection.add = (...paths) => connection.update(connection.paths.concat(paths))
+        connection.add = (...paths) => this.add(entity, ...paths)
+        connection.remove = (...paths) => this.remove(entity, ...paths)
 
         connection.update = (newPaths) => {
             const oldPaths = connection.paths
@@ -24,13 +25,8 @@ class Changes {
 
             this.update(entity, oldPaths, newPaths)
 
-            if (this.devtools) {
-                this.devtools.updateComponentsMap(
-                    entity,
-                    newPaths.reduce((map, path) => { map[path] = true; return map }, {}),
-                    oldPaths.reduce((map, path) => { map[path] = true; return map }, {})
-                )
-            }
+            if (this.devtools)
+                this.devtools.updateComponentsMap(entity, newPaths, oldPaths)
         }
 
         connection.remove = () => {
@@ -38,9 +34,8 @@ class Changes {
 
             this.remove(entity, ...paths)
 
-            if (this.devtools) {
-                this.devtools.updateComponentsMap(entity, null, paths.reduce((map, path) => { map[path] = true; return map }, {}))
-            }
+            if (this.devtools)
+                this.devtools.updateComponentsMap(entity, null, paths)
 
             connection.paths = []
         }
@@ -49,7 +44,8 @@ class Changes {
         this.add(entity, ...paths)
 
         if (this.devtools)
-            this.devtools.updateComponentsMap(entity, paths.reduce((map, path) => { map[path] = true; return map }, {}))
+            this.devtools.updateComponentsMap(entity, paths)
+            //this.devtools.updateComponentsMap(entity, paths.reduce((map, path) => { map[path] = true; return map }, {}))
 
         return connection
     }
@@ -122,10 +118,7 @@ class Changes {
       Returns entities based on a change map returned from
       the model flush method.
     */
-    listeners(force) {
-        if (force)
-            return this.getAll()
-
+    getListeners() {
         return dependencyMatch(this.changes, this.map).reduce((unique, match) => {
             return (match.entities || []).reduce((currentUnique, entity) => {
                 if (currentUnique.indexOf(entity) === -1)
@@ -135,6 +128,33 @@ class Changes {
             }, unique)
         }, [])
     }
+
+    /*
+      As same entity can appear in multiple paths, this method returns
+      all unique entities. Used by view to render all components
+    */
+    getAllListeners() {
+        const entities = []
+
+        function traverseChildren(children) {
+            for (const childKey in children) {
+                if (children[childKey].entities) {
+                    for (let y = 0; y < children[childKey].entities.length; y++) {
+                        if (entities.indexOf(children[childKey].entities[y]) === -1) {
+                            entities.push(children[childKey].entities[y])
+                        }
+                    }
+                }
+
+                return traverseChildren(children[childKey].children)
+            }
+        }
+
+        traverseChildren(this.map)
+
+        return entities
+    }
+
     /*
       Removes the entity from all depending paths
     */
@@ -172,31 +192,7 @@ class Changes {
             removed: toRemove
         }
     }
-    /*
-      As same entity can appear in multiple paths, this method returns
-      all unique entities. Used by view to render all components
-    */
-    getAll() {
-        const entities = []
 
-        function traverseChildren(children) {
-            for (const childKey in children) {
-                if (children[childKey].entities) {
-                    for (let y = 0; y < children[childKey].entities.length; y++) {
-                        if (entities.indexOf(children[childKey].entities[y]) === -1) {
-                            entities.push(children[childKey].entities[y])
-                        }
-                    }
-                }
-
-                return traverseChildren(children[childKey].children)
-            }
-        }
-
-        traverseChildren(this.map)
-
-        return entities
-    }
     /*
       Converts the changes map from "flush" to an array of paths
     */
@@ -219,54 +215,73 @@ class Changes {
 
     push({ type, path, operator, forceChildPathUpdates = false }) {
 
-        path = [ type ].concat(path)
+        path = [type].concat(path)
 
         const key = operator + ":" + path.join(".")
 
 		if (key in this.keys)
 			return this.keys[key]
 
-		this.keys[key] = this.changes.push({ type, path, operator, forceChildPathUpdates }) - 1
+		this.keys[key] = this.changes.push({ type, path, operator, forceChildPathUpdates, index: this.changes.length })
 
 		if (this.keys[key] >= 50) {
 			console.warn(`(deps) ${this.keys[key]} uncommited changes`)
         }
 
-        this.debug(...arguments)
+        this.debug(...arguments, this.keys[key])
 
 		return this.keys[key]
 	}
 
-    debug(change) {
-        console.log(`(changes)`, JSON.stringify(change, null, 4))
+    debug(e, index) {
+        const args = ["%c'"+(e.path.join(".")||".")+"'%c"].concat(e.args).map(arg => {
+            if (typeof arg === "function")
+                return (arg.displayName || arg.name) || String(arg)
+            if (typeof arg === "object")
+                return JSON.stringify(arg)
+            return String(arg)
+        }).join(", ")
+
+        if (e.action)
+            console.log(`[${index}] ${e.action.name}`, e.action)
+
+        console.log(`[${index}] %c${e.type}%c.%c${e.operator}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
+
     }
 
     commit(force) {
+        if (!force && !this.changes.length)
+            return []
 
         const start = Date.now()
 		const changes = this.changes
-		const components = this.listeners(force)
+		const listeners = force
+            ? this.getAllListeners()
+            : this.getListeners()
 
-		components.forEach((component) => {
+		listeners.forEach((listener) => {
             if (this.devtools)
-                this.devtools.updateComponentsMap(component)
+                this.devtools.updateComponentsMap(listener)
 
-            component(changes)
+            listener(changes)
 		})
-
-        const end = Date.now()
 
         this.changes = []
     	this.keys = {}
 
-        if (this.devtools && components.length)
-            this.devtools.sendComponentsMap(components, changes, start, end)
+        if (this.devtools && listeners.length)
+            this.devtools.sendComponentsMap(listeners, changes, start, Date.now())
+
+        console.info(`[*]`, `${changes.length} changes / ${listeners.length} listeners`)
+        if (listeners.length)
+            console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount}`).join("\n"))
+
 
 		return changes
 	}
 
-    emit(path, operator, force) {
-        this.push({ path, operator, forceChildPathUpdates: force })
+    emit(type, path, operator, force) {
+        this.push({ type, path, operator, forceChildPathUpdates: force })
 
 		return this.commit()
 	}

@@ -136,15 +136,41 @@ export default class Tag {
 
     }
 
-    resolve(context, ...args) {
+    set(context, ...args) {
         if (!context[this.type])
             throw new Error(`Invalid ${this.type} in context`)
 
-        return context[this.type]
+        if (context[this.type].set)
+            return context[this.type].set(this.path(context), ...args)
+    }
+
+    resolve(context, method) {
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        const target = context[this.type]
+        const path = this.path(context)
+
+        if (method) {
+            if (!target[method])
+                throw new Error(`Method "${method}" not found in ${this.type} model`)
+                
+            return target[method]
+        }
+
+        return Object.getOwnPropertyNames(target).reduce((obj, key) => {
+            obj[key] = typeof target[key] === "function"
+                ? target[key].bind(null, path)
+                : target[key]
+            return obj
+        }, {})
     }
 
     update(context, ...args) {
-        if (context[this.type] && context[this.type].update)
+        if (!context[this.type])
+            throw new Error(`Invalid ${this.type} in context`)
+
+        if (context[this.type].update)
             return context[this.type].update(this.path(context), ...args)
     }
 

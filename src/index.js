@@ -3,11 +3,9 @@ import {render} from 'react-dom'
 import {Container} from './Component'
 import * as tags from './tags'
 import * as ops from './operators'
-
 import Model from './Model'
-
-import {compute,state} from './tags'
-import {set,inc,wait,sequence,parallel,push} from './operators'
+import { compute, state } from './tags'
+import { sequence, parallel } from './operators'
 
 // import store from './demo/store'
 // import App from './demo/components/App'
@@ -20,37 +18,22 @@ const {run} = store
 
 const target = compute(computed)
 
-store.connect(target, function Target(changes) {
-	// target.value = {}
-	// const paths = store.paths(target)
-	// const changed = changes.map(c => c.path.join(".")).filter(path => paths.indexOf(path) > -1)
-	// console.log('(on-target)', paths, changed)
-	// if (changed.length) {
-	// 	changed.forEach(path => {
-	// 		const keys = path.split(".")
-	// 		const type = keys.shift()
-	// 		if (store[type]) {
-	// 			const value = store[type].get(keys)
-	// 			target.value[path] = value
-	// 			console.info(`changed(%c${path}%c)`, `color:yellow`, ``, value)
-	// 		}
-	// 	})
-	// }
-	//store.resolve(target, {}, changes).then(resolved => console.log('(on-target)', resolved))
+const targetConn = store.connect(target, function onComputedChange(changes) {
+	console.log(`onComputedChange`, changes, targetConn.paths)
 })
 
-// window.__ = { app: {name:'myapp', count: 10} }
-// window.__ctx = {}
-//
-// const app = window.app = Model('app', { app: {name:'myapp', count: 10} })
-// //app.set = set
-// app.provider(window.__ctx)
-//
-// app.print = function(path, ident = 4) {
-// 	return this.get(path, value => JSON.stringify(value, null, ident))
-// }
+const app = window.app = Model('app', {
+	app: {
+		name:'myapp',
+		count: 10
+	}
+}, store)
 
-//app.set('count', 300)
+app.print = function print(path, ident = 4) {
+	return this.get(path, value => JSON.stringify(value, null, ident))
+}
+
+app.set('count', 300)
 
 const appTarget = compute({
 	count: state`count`
@@ -58,9 +41,8 @@ const appTarget = compute({
 
 const appConn = store.connect(appTarget,
 	function Scooby(changes) {
-		const u = appConn.update(store.paths(appTarget))
-
-		console.log(`Appxx`, changes, u)
+		appConn.update(store.paths(appTarget))
+		//console.log(`Appxx`, changes, u)
 	}
 )
 

@@ -117,6 +117,8 @@ class Devtools {
                     case 'ping':
                         this.sendInitial()
                         break
+                    default:
+                        break
                 }
             }
         } else {
@@ -507,7 +509,7 @@ class Devtools {
         //console.log(`updateComponentsMap`, {component, nextDeps, prevDeps})
 
         if (prevDeps) {
-            for (const depsKey in prevDeps) {
+            for (const depsKey of prevDeps) {
                 const debuggerComponents = this.debuggerComponentsMap[depsKey]
 
                 for (let x = 0; x < debuggerComponents.length; x++) {
@@ -523,7 +525,7 @@ class Devtools {
         }
 
         if (nextDeps) {
-            for (const depsKey in nextDeps) {
+            for (const depsKey of nextDeps) {
                 this.debuggerComponentsMap[depsKey] = (
                     this.debuggerComponentsMap[depsKey] ?
                     this.debuggerComponentsMap[depsKey].concat(componentDetails) :

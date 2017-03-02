@@ -1,5 +1,4 @@
 import Tag from '../Tag'
-import {Module} from './module'
 import {ensurePath} from '../utils'
 
 function SignalModel(target, store, changes) {
@@ -93,8 +92,13 @@ export class Signal extends Tag {
 }
 
 signal.methods = (run) => ({
-    run(...args) {
-        return run(...args)
+    run(target, key, props) {
+        const signal = target[key]
+
+        if (!signal)
+            throw new Error(`Signal ${key} not found`)
+
+        return signal(props)
     },
     set(target, key, chain) {
         const signal = (props) => run(key, chain, props)

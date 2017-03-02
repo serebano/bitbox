@@ -4,11 +4,11 @@ export default (target, value = 1) => {
         if (!(key in target))
             target[key] = 0
 
-        target[key] = target[key] + value
+        target[key] =+ value
     }
 
     increment.operator = inc
-    
+
     function increment({ update }) {
         update(target, value, inc)
     }
