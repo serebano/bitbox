@@ -17,8 +17,14 @@ class Changes {
 
         const connection = { paths }
 
-        connection.add = (...paths) => this.add(entity, paths)
-        connection.remove = (...paths) => this.remove(entity, paths)
+        connection.add = (...paths) => {
+            this.add(entity, paths)
+
+            if (this.devtools) {
+                this.devtools.updateComponentsMap(entity, paths)
+                this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
+            }
+        }
 
         connection.update = (newPaths) => {
             const oldPaths = connection.paths
@@ -26,17 +32,23 @@ class Changes {
 
             this.update(entity, oldPaths, newPaths)
 
-            if (this.devtools)
+            if (this.devtools) {
                 this.devtools.updateComponentsMap(entity, newPaths, oldPaths)
+                this.devtools.sendComponentsMap([entity], newPaths.map(p => ({path:p.split('.')})), 0, 0)
+            }
         }
 
-        connection.remove = () => {
-            const paths = connection.paths
+        connection.remove = (...paths) => {
+            paths = !paths.length
+                ? connection.paths
+                : paths
 
-            this.remove(entity, ...paths)
+            this.remove(entity, paths)
 
-            if (this.devtools)
+            if (this.devtools) {
                 this.devtools.updateComponentsMap(entity, null, paths)
+                this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
+            }
 
             connection.paths = []
         }
@@ -44,12 +56,12 @@ class Changes {
         // add
         this.add(entity, paths)
 
-        if (this.devtools)
+        if (this.devtools) {
             this.devtools.updateComponentsMap(entity, paths)
-            //this.devtools.updateComponentsMap(entity, paths.reduce((map, path) => { map[path] = true; return map }, {}))
+            this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
+        }
 
-        Object.assign(entity, connection)
-        this.listeners.push(entity)
+        this.listeners.push(Object.assign(entity, connection))
 
         return connection
     }
@@ -284,7 +296,10 @@ class Changes {
 		return changes
 	}
 
-    emit(type, path, operator, force) {
+    emit(path, operator, force) {
+        path = ensurePath(path)
+        const type = path.shift()
+
         this.push({ type, path, operator, forceChildPathUpdates: force })
 
 		return this.commit()
