@@ -1,4 +1,6 @@
-import {ensurePath} from './utils'
+//import {ensurePath} from './utils'
+import get from './model/get'
+import set from './model/set'
 
 export default class Tag {
 
@@ -8,23 +10,6 @@ export default class Tag {
         this.type = type
         this.keys = keys
         this.values = values
-    }
-
-    paths(context, types) {
-        return this.tags(types)
-            .filter(tag => tag.hasPath)
-            .map(tag => tag.path(context, true))
-    }
-
-    tags(types) {
-        const match = !types || !types.length || types.indexOf(this.type) > -1
-
-        return (match ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
-            const value = this.values[index]
-            return value instanceof Tag
-                ? paths.concat(value.tags(types))
-                : paths
-        }, []))
     }
 
     /*
@@ -59,24 +44,29 @@ export default class Tag {
     }
 
     get(context) {
-        if (!context[this.type])
-            throw new Error(`Invalid ${this.type} in context`)
+        const model = context[this.type]
 
-        if (context[this.type].get)
-            return context[this.type].get(this.path(context))
+        if (!model) {
+            console.warn(`context:${this.type}`, context)
+            throw new Error(`Invalid model ${this.type} in context`)
+        }
 
-        return ensurePath(this.path(context)).reduce((state, key, index) => {
-            return state ? state[key] : undefined
-        }, context[this.type])
+        if (model.get)
+            return model.get(this.path(context))
 
+        return get(context[this.type], this.path(context))
     }
 
-    set(context, ...args) {
-        if (!context[this.type])
+    set(context, value) {
+        const model = context[this.type]
+
+        if (!model)
             throw new Error(`Invalid ${this.type} in context`)
 
-        if (context[this.type].set)
-            return context[this.type].set(this.path(context), ...args)
+        if (model.set)
+            return model.set(this.path(context), value)
+
+        return set(context[this.type], this.path(context), value)
     }
 
     model(context) {
@@ -94,34 +84,30 @@ export default class Tag {
         }, { path })
     }
 
-    // resolve(context, method) {
-    //     if (!context[this.type])
-    //         throw new Error(`Invalid ${this.type} in context`)
-    //
-    //     const target = context[this.type]
-    //     const path = this.path(context)
-    //
-    //     if (method) {
-    //         if (!target[method])
-    //             throw new Error(`Method "${method}" not found in ${this.type} model`)
-    //
-    //         return target[method]
-    //     }
-    //
-    //     return Object.getOwnPropertyNames(target).reduce((obj, key) => {
-    //         obj[key] = typeof target[key] === "function"
-    //             ? target[key].bind(null, path)
-    //             : target[key]
-    //         return obj
-    //     }, {})
-    // }
+    apply(context, ...args) {
+        const model = context[this.type]
 
-    update(context, ...args) {
-        if (!context[this.type])
+        if (!model)
             throw new Error(`Invalid ${this.type} in context`)
 
-        if (context[this.type].update)
-            return context[this.type].update(this.path(context), ...args)
+        return model.apply(this.path(context), ...args)
+    }
+
+    paths(context, types) {
+        return this.tags(types)
+            .filter(tag => tag.hasPath)
+            .map(tag => tag.path(context, true))
+    }
+
+    tags(types) {
+        const match = !types || !types.length || types.indexOf(this.type) > -1
+
+        return (match ? [this] : []).concat(this.keys.reduce((paths, k, index) => {
+            const value = this.values[index]
+            return value instanceof Tag
+                ? paths.concat(value.tags(types))
+                : paths
+        }, []))
     }
 
     /*

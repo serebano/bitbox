@@ -32,7 +32,7 @@ export default function connectComponent(dependencies, component) {
 		}
 
 		paths(props) {
-			return this.context.store.resolve.paths(target, props)
+			return this.context.store.resolve.paths(target, ['state'], props)
 		}
 
 		update(props, changes) {

@@ -14,6 +14,7 @@ function decrease({ state, props }) {
 
 const store = Store({
     state: {
+        name: 'Demo App',
         count: 0
     },
     signals: {
@@ -38,7 +39,8 @@ const store = Store({
         counts: Counts
     },
     devtools: Devtools({
-        ///remoteDebugger: '192.168.43.152:8686',
+        //remoteDebugger: '192.168.0.46:8585',
+        //remoteDebugger: '192.168.43.152:8686',
         remoteDebugger: 'localhost:8585'
     })
 })

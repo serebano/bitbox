@@ -6,7 +6,7 @@ export default (target, value = 1) => {
         if (!(key in target))
             target[key] = 0
 
-        target[key] =+ value
+        target[key] = target[key] + value
     }
 
     return update(target, inc, value)

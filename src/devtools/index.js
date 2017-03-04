@@ -75,7 +75,7 @@ class Devtools {
             this.store.state[mutation.method](...mutation.args)
         }
 
-        this.store.commit(true)
+        this.store.changes.commit(true)
         this.store.emit('remember', JSON.parse(this.mutations[index].data).datetime)
     }
     /*
@@ -83,11 +83,11 @@ class Devtools {
     */
     reset() {
         //this.store.state.state = JSON.parse(this.initialModelString)
-        this.store.state.reset(JSON.parse(this.initialModelString))
+        this.store.state.set(null, JSON.parse(this.initialModelString))
 
         this.backlog = []
         this.mutations = []
-        this.store.commit(true)
+        this.store.changes.commit(true)
     }
     /*
       Sets up the listeners to Chrome Extension or remote debugger
@@ -100,7 +100,7 @@ class Devtools {
                 switch (message.type) {
                     case 'changeModel':
                         this.store.state.set(message.data.path, message.data.value)
-                        this.store.commit()
+                        this.store.changes.commit()
                         break
                     case 'remember':
                         if (!this.storeMutations) {
@@ -124,7 +124,7 @@ class Devtools {
         } else {
             window.addEventListener('cerebral2.debugger.changeModel', (event) => {
                 this.store.state.set(event.detail.path, event.detail.value)
-                this.store.commit()
+                this.store.changes.commit()
             })
             window.addEventListener('cerebral2.debugger.remember', (event) => {
                 if (!this.storeMutations) {
@@ -483,10 +483,7 @@ class Devtools {
       and send an event to debugger about initial registered components
     */
     extractComponentName(component) {
-        //if (component.displayName)
         return component.displayName || component.name || 'Unknown'
-
-        //return component.constructor.displayName.replace('CerebralWrapping_', '')
     }
     /*
       Updates the map the represents what active state paths and
@@ -505,8 +502,6 @@ class Devtools {
 
         component.componentDetailsId = componentDetails.id
         component.renderCount = componentDetails.renderCount
-
-        //console.log(`updateComponentsMap`, {component, nextDeps, prevDeps})
 
         if (prevDeps) {
             for (const depsKey of prevDeps) {

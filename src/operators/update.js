@@ -1,7 +1,7 @@
 function update(target, operator, ...args) {
 
     function action(context) {
-        return target.update(context, operator, ...args)
+        return target.apply(context, operator, ...args)
     }
 
     action.operator = operator

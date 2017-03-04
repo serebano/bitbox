@@ -1,5 +1,5 @@
 import Tag from '../Tag'
-import Model from '../Model'
+import Model from '../model'
 
 export class State extends Tag {
     constructor(keys, values) {

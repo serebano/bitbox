@@ -1,9 +1,12 @@
 import { inc, set } from '../../operators'
+import { state, props, signal } from '../../tags'
 
-function Counts({ store, path }, { state, props, signal }) {
+function Counts({ name, path }) {
 	return {
 		state: {
 			name: 'Demo store',
+			moduleName: name,
+			modulePath: path,
 			counter: 'foo',
 			counts: {
 				foo: 1,
@@ -12,10 +15,7 @@ function Counts({ store, path }, { state, props, signal }) {
 		},
 		signals: {
 			countClicked: [
-				inc(state`.counts.${state`.counter`}`)
-			],
-			colorChanged: [
-				set(state`.color`, props`color`)
+				inc(state`${path}.counts.${state`${path}.counter`}`)
 			]
 		},
 		provider(context) {
