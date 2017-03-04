@@ -1,5 +1,6 @@
 import Model from '../model/create'
 import Path from '../model/path'
+import apply from '../model/apply'
 
 export default (target, store) => {
 	const root = "signals"
@@ -53,24 +54,9 @@ export default (target, store) => {
 					return handler.get(module.signals, key)
 				},
 				apply(path, trap, ...args) {
-					let changed;
-
-					Path.resolve(root, path).reduce((target, key, index, keys) => {
-						if (index === keys.length - 1) {
-							const state = target[key]
-							const result = trap(target, key, ...args)
-
-							if (state !== target[key])
-								changed = store.changes.push(keys, trap.name, { args, result, state }, true)
-
-							return result
-						}
-
-						if (!(key in target))
-							target[key] = {}
-
-						return handler.get(target, key)
-					}, target)
+					let changed = apply(target, Path.resolve(root, path), trap, ...args)
+					if (changed)
+						store.changes.push(changed.path, changed.method)
 
 					return changed
 				}

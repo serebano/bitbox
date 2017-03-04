@@ -1,6 +1,8 @@
 export default {
-	get(target, key) {
-		return target[key]
+	get(target, key, transform) {
+		return transform
+			? transform(target[key])
+			: target[key]
 	},
 	has(target, key) {
 		return key in target

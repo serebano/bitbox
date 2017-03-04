@@ -9,10 +9,10 @@ export default function connectComponent(dependencies, component) {
 	class Component extends View.Component {
 
 		componentWillMount () {
-            const listener = (changes) => this.update(this.props, changes)
-            listener.displayName = component.name
+            const componentListener = (changes) => this.update(this.props, changes)
+            componentListener.displayName = component.name
 
-			this.conn = this.context.store.connect(target, listener, this.props)
+			this.conn = this.context.store.connect(target, componentListener, this.props)
 		}
 
 		componentWillReceiveProps (nextProps) {

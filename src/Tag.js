@@ -1,6 +1,6 @@
-//import {ensurePath} from './utils'
 import get from './model/get'
 import set from './model/set'
+import apply from './model/apply'
 
 export default class Tag {
 
@@ -46,15 +46,13 @@ export default class Tag {
     get(context) {
         const model = context[this.type]
 
-        if (!model) {
-            console.warn(`context:${this.type}`, context)
+        if (!model)
             throw new Error(`Invalid model ${this.type} in context`)
-        }
 
         if (model.get)
             return model.get(this.path(context))
 
-        return get(context[this.type], this.path(context))
+        return get(model, this.path(context))
     }
 
     set(context, value) {
@@ -66,7 +64,19 @@ export default class Tag {
         if (model.set)
             return model.set(this.path(context), value)
 
-        return set(context[this.type], this.path(context), value)
+        return set(model, this.path(context), value)
+    }
+
+    apply(context, ...args) {
+        const model = context[this.type]
+
+        if (!model)
+            throw new Error(`Invalid ${this.type} in context`)
+
+        if (model.apply)
+            return model.apply(this.path(context), ...args)
+
+        return apply(model, this.path(context), ...args)
     }
 
     model(context) {
@@ -82,15 +92,6 @@ export default class Tag {
                 : target[key]
             return obj
         }, { path })
-    }
-
-    apply(context, ...args) {
-        const model = context[this.type]
-
-        if (!model)
-            throw new Error(`Invalid ${this.type} in context`)
-
-        return model.apply(this.path(context), ...args)
     }
 
     paths(context, types) {

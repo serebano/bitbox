@@ -8,23 +8,20 @@ import Signals from './models/signals'
 import State from './models/state'
 import Changes from './models/changes'
 
-function StoreProvider(store) {
-    return function storeProvider(context) {
-        context.get = (target) => target.get(context)
-        context.set = (target, value) => target.set(context, value)
-        context.apply = (target, ...args) => target.apply(context, ...args)
-
+Store.Provider = function(store) {
+    return function StoreProvider(context) {
         context.resolve = Resolve(context)
-        context.model = Model(context)
 
-        return context
+        return Object.assign(context, Model(context))
     }
 }
 
 function Model(context) {
     const $ = (props) => props
         ? Object.assign({}, context, { props })
-        : context
+        : !context.props
+            ? Object.assign({ props: {} }, context)
+            : context
 
     return {
         get(target, props) {
@@ -48,17 +45,26 @@ function Model(context) {
             context.changes && context.changes.commit()
         },
         connect(target, listener, props) {
-            return context.changes && context.changes.on(
-                context.resolve.paths(target, ['state'], props),
-                listener
-            )
+            if (context.changes) {
+                context.changes.on(
+                    context.resolve.paths(target, ['state'], props),
+                    listener
+                )
+                listener.renew = (props) => listener.update(context.resolve.paths(target, ['state'], props))
+
+                return listener
+            }
         }
     }
 }
 
 
 function Resolve(context) {
-    const $ = (context, props) => props ? Object.assign({}, context, { props }) : context
+    const $ = (props) => props
+        ? Object.assign({}, context, { props })
+        : !context.props
+            ? Object.assign({ props: {} }, context)
+            : context
 
     return {
         type(target) {
@@ -68,7 +74,7 @@ function Resolve(context) {
             return target.type
         },
         path(target, props) {
-            return target.path($(context, props))
+            return target.path($(props))
         },
         paths(target, types, props) {
             if (Array.isArray(target))
@@ -77,11 +83,11 @@ function Resolve(context) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
-            return target.paths($(context, props), types)
+            return target.paths($(props), types)
         },
         value(target, props) {
             return target instanceof Tag
-                ? target.get($(context, props))
+                ? target.get($(props))
                 : target
         },
         model(target) {
@@ -158,7 +164,6 @@ function Store(init = {}) {
 
     Object.assign(store, Model(store), { state, signals, modules, changes, resolve })
 
-
     // add root module
     modules.add({
         state: init.state,
@@ -166,8 +171,9 @@ function Store(init = {}) {
         modules: init.modules
     })
 
-    store.providers.unshift(StoreProvider(store))
+    store.providers.unshift(Store.Provider(store))
     store.providers.unshift(store.state.provider)
+
     if (store.devtools)
         store.providers.unshift(DebuggerProvider(store))
     store.providers = store.providers.concat(store.modules.getProviders())

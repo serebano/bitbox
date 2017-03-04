@@ -4,67 +4,10 @@ class Changes {
 
     static match = dependencyMatch
 
-    //keys = {}
-    //changes = []
-    listeners = []
-
     constructor() {
         this.map = {}
-        //this.devtools = devtools
+        this.listeners = []
     }
-
-    // connect(paths, entity) {
-    //
-    //     const connection = { paths }
-    //
-    //     connection.add = (...paths) => {
-    //         this.add(entity, paths)
-    //
-    //         if (this.devtools) {
-    //             this.devtools.updateComponentsMap(entity, paths)
-    //             this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
-    //         }
-    //     }
-    //
-    //     connection.update = (newPaths) => {
-    //         const oldPaths = connection.paths
-    //         connection.paths = newPaths
-    //
-    //         this.update(entity, oldPaths, newPaths)
-    //
-    //         if (this.devtools) {
-    //             this.devtools.updateComponentsMap(entity, newPaths, oldPaths)
-    //             this.devtools.sendComponentsMap([entity], newPaths.map(p => ({path:p.split('.')})), 0, 0)
-    //         }
-    //     }
-    //
-    //     connection.remove = (...paths) => {
-    //         paths = !paths.length
-    //             ? connection.paths
-    //             : paths
-    //
-    //         this.remove(entity, paths)
-    //
-    //         if (this.devtools) {
-    //             this.devtools.updateComponentsMap(entity, null, paths)
-    //             this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
-    //         }
-    //
-    //         connection.paths = []
-    //     }
-    //
-    //     // add
-    //     this.add(entity, paths)
-    //
-    //     if (this.devtools) {
-    //         this.devtools.updateComponentsMap(entity, paths)
-    //         this.devtools.sendComponentsMap([entity], paths.map(p => ({path:p.split('.')})), 0, 0)
-    //     }
-    //
-    //     this.listeners.push(Object.assign(entity, connection))
-    //
-    //     return connection
-    // }
 
     /*
       Adds the entity to all the depending paths
@@ -91,37 +34,6 @@ class Changes {
             }, this.map)
         }
     }
-
-    // get(path, operator) {
-    //     const keys = ensurePath(path)
-    //     const length = keys.length
-    //
-    //     return keys.reduce((changes, key, index) => {
-    //         let step = changes.filter(change => {
-    //             if (index === length - 1) {
-    //                 if (key === "*")
-    //                     return change.path.length === length
-    //                 if (key === "**")
-    //                     return change.path.length >= length
-    //                 if (change.path[index] === key)
-    //                     return change.path.length === length
-    //
-    //                 return false
-    //             }
-    //
-    //             return key === "*" || key === "**" || change.path[index] === key
-    //         })
-    //
-    //         if (operator)
-    //             step = step.filter(change => change.operator === operator)
-    //
-    //         console.log("\t".repeat(index), index, `${keys.slice(0, index).join(".")}.( ${key} ).${keys.slice(index+1).join(".")}`, step.length)
-    //         step.forEach(s => console.log("\t".repeat(index), '-', s.path.map((p,i) => i === index ? `( ${p} )` : p).join("."), s.operator))
-    //
-    //         return step
-    //
-    //     }, this.changes)
-    // }
 
     /*
       Returns entities based on a change map returned from
@@ -183,6 +95,7 @@ class Changes {
             }, this.map)
         }
     }
+
     /*
       Updates entity based on changed dependencies
     */
@@ -222,83 +135,6 @@ class Changes {
         return details.allPaths
     }
 
-    // push({ type, path, operator, forceChildPathUpdates = false }) {
-    //
-    //     path = [type].concat(path)
-    //
-    //     const key = operator + ":" + path.join(".")
-    //
-	// 	if (key in this.keys)
-	// 		return this.keys[key]
-    //
-	// 	this.keys[key] = this.changes.push({ type, path, operator, forceChildPathUpdates, index: this.changes.length })
-    //
-	// 	if (this.keys[key] >= 50) {
-	// 		console.warn(`(deps) ${this.keys[key]} uncommited changes`)
-    //     }
-    //
-    //     this.debug(...arguments, this.keys[key])
-    //
-	// 	return this.keys[key]
-	// }
-    //
-    // debug(e, index) {
-    //     const args = ["%c'"+(e.path.join(".")||".")+"'%c"].concat(e.args).map(arg => {
-    //         if (typeof arg === "function")
-    //             return (arg.displayName || arg.name) || String(arg)
-    //         if (typeof arg === "object")
-    //             return JSON.stringify(arg)
-    //         return String(arg)
-    //     }).join(", ")
-    //
-    //     if (e.action)
-    //         console.log(`[${index}] ${e.action.name}`, e.action)
-    //
-    //     console.log(`[${index}] %c${e.type}%c.%c${e.operator}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
-    //
-    // }
-    //
-    // commit(force) {
-    //     if (!force && !this.changes.length)
-    //         return []
-    //
-    //     const start = Date.now()
-	// 	const changes = this.changes
-	// 	const listeners = force
-    //         ? this.getAllListeners()
-    //         : this.getListeners(changes)
-    //
-	// 	listeners.forEach((listener) => {
-    //         if (this.devtools)
-    //             this.devtools.updateComponentsMap(listener)
-    //
-    //         listener(changes)
-	// 	})
-    //
-    //     this.changes = []
-    // 	this.keys = {}
-    //
-    //     if (this.devtools && listeners.length)
-    //         this.devtools.sendComponentsMap(listeners, changes, start, Date.now())
-    //
-    //     console.info(`[*]`, `${changes.length} changes / ${listeners.length} listeners`)
-    //     console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')
-    //
-    //     if (listeners.length)
-    //         console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount} [ ${listener.paths.join(", ")} ]`).join("\n"))
-    //
-    //
-	// 	return changes
-	// }
-    //
-    // emit(path, operator, force) {
-    //     path = ensurePath(path)
-    //     const type = path.shift()
-    //
-    //     this.push({ type, path, operator, forceChildPathUpdates: force })
-    //
-	// 	return this.commit()
-	// }
 }
 
 export default Changes

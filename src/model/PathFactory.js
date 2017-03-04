@@ -1,5 +1,7 @@
 import Path from './path'
 import {isComplexObject} from '../utils'
+import apply from '../model/apply'
+import extract from '../model/extract'
 
 export default (root, store) => {
 	const accessors = ["get", "has", "keys", "values"]
@@ -7,9 +9,11 @@ export default (root, store) => {
 	function createModel(target, handler) {
 		return Object.keys(handler).reduce((model, name) => {
 			if (accessors.indexOf(name) > -1)
-				model[name] = (path) => Path.resolve(root, path).reduce(handler.get, target)
+				model[name] = function $extract(path, ...args) {
+					return model.extract(path, handler[name], ...args)
+				}
 			else
-				model[name] = function(path, ...args) {
+				model[name] = function $apply(path, ...args) {
 					return model.apply(path, handler[name], ...args)
 				}
 
@@ -17,32 +21,17 @@ export default (root, store) => {
 
 			return model
 		}, {
-			model(handler) {
-				return createModel(target, handler || {get:handler.get})
+			extract(path, view, ...args) {
+				view = (typeof view === "string") ? handler[view] : view
+
+				return extract(target, Path.resolve(root, path), view, ...args)
 			},
 			apply(path, trap, ...args) {
-				trap = typeof trap === "string"
-					? handler[trap]
-					: trap
+				trap = (typeof trap === "string") ? handler[trap] : trap
+				const changed = apply(target, Path.resolve(root, path), trap, ...args)
 
-				let changed;
-
-				Path.resolve(root, path).reduce((target, key, index, keys) => {
-					if (index === keys.length - 1) {
-						const state = target[key]
-						const result = trap(target, key, ...args)
-
-						if (state !== target[key] || (isComplexObject(target[key]) && isComplexObject(state))) {
-							store.changes.push(keys, trap.name, { args, result, state }, true)
-							changed = { path: keys, method: trap.name, args }
-						}
-					}
-
-					if (name === "set" && !(key in target))
-						target[key] = {}
-
-					return handler.get(target, key)
-				}, target)
+				if (changed)
+					store.changes.push(changed.path, changed.method)
 
 				return changed
 			},
@@ -50,19 +39,14 @@ export default (root, store) => {
 				context[root] = this
 
 				if (context.debugger) {
-					context[root] = createModel(target, {
-						get: handler.get,
-						has: handler.has,
-						set: handler.set,
-					})
+					const model = createModel(target, handler)
+					const apply = model.apply
+					delete model.provider
 
-					const apply = context[root].apply
-
-					context[root].apply = (...args) => {
-						const changed = apply(...args)
-						if (changed) {
-							if (context && context.debug) {
-								//console.info(`!!!(changed)`, changed)
+					context[root] = Object.assign(model, {
+						apply(...args) {
+							const changed = apply(...args)
+							if (changed && context.debug) {
 								context.debug({
 									type: 'mutation',
 									method: changed.method,
@@ -70,7 +54,7 @@ export default (root, store) => {
 								})
 							}
 						}
-					}
+					})
 				}
 
 				return context
