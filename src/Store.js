@@ -1,9 +1,6 @@
 import Tag from './Tag'
-//import Changes from './Changes'
-import { createResolver } from './utils'
 import { FunctionTree, sequence } from 'function-tree'
 import DebuggerProvider from './providers/debugger'
-import Model from './model'
 import * as tags from './tags'
 
 import Modules from './models/modules'
@@ -16,85 +13,91 @@ function StoreProvider(store) {
         context.get = (target) => target.get(context)
         context.set = (target, value) => target.set(context, value)
         context.apply = (target, ...args) => target.apply(context, ...args)
-        context.resolve = createResolver(context)
+
+        context.resolve = Resolve(context)
+        context.model = Model(context)
 
         return context
     }
 }
 
-function Context(store, props) {
+function Model(context) {
+    const $ = (props) => props
+        ? Object.assign({}, context, { props })
+        : context
+
     return {
-        props: props || {},
-        state: store.state,
-        signal: store.signals,
-        module: store.modules
-    }
-}
-
-function Store(init = {}) {
-    const {
-        devtools,
-        providers = []
-    } = init
-
-    const store = {
-        devtools,
-        providers,
         get(target, props) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
-            return target.get(Context(store, props))
+            return target.get($(props))
         },
         set(target, value, props) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
-            target.set(Context(store, props), value)
-            this.changes.commit()
+            target.set($(props), value)
+            context.changes && context.changes.commit()
         },
-        connect(target, func, props) {
-            return this.changes.on(this.resolve.paths(target, ['state'], props), func)
+        apply(target, func, ...args) {
+            if (!(target instanceof Tag))
+                throw new Error(`Invalid target: ${target}`)
+
+            target.apply($(), func, ...args)
+            context.changes && context.changes.commit()
         },
-        resolve: {
-            path(target, props) {
-                return target.path(Context(store, props))
-            },
-            paths(target, types, props) {
-                return target.paths(Context(store, props), types)
-            },
-            value(target, props) {
-                return target instanceof Tag
-                    ? target.get(Context(store, props))
-                    : target
-            }
+        connect(target, listener, props) {
+            return context.changes && context.changes.on(
+                context.resolve.paths(target, ['state'], props),
+                listener
+            )
         }
     }
+}
 
-    store.state = State({}, store)
-    store.signals = Signals({}, store)
-    store.modules = Modules({}, store)
-    store.changes = Changes({}, store)
 
-    // add root module
-    store.modules.add(null, {
-        state: init.state,
-        signals: init.signals,
-        modules: init.modules
-    })
+function Resolve(context) {
+    const $ = (context, props) => props ? Object.assign({}, context, { props }) : context
 
-    providers.unshift(StoreProvider(store))
-    providers.unshift(store.state.provider)
-    providers.push(...store.modules.getProviders())
+    return {
+        type(target) {
+            if (!(target instanceof Tag))
+                throw new Error(`Invalid target: ${target}`)
 
-    if (devtools)
-        providers.unshift(DebuggerProvider(store))
+            return target.type
+        },
+        path(target, props) {
+            return target.path($(context, props))
+        },
+        paths(target, types, props) {
+            if (Array.isArray(target))
+                return target
 
-    const functionTree = new FunctionTree(providers)
+            if (!(target instanceof Tag))
+                throw new Error(`Invalid target: ${target}`)
 
-    store.runTree = functionTree.runTree
+            return target.paths($(context, props), types)
+        },
+        value(target, props) {
+            return target instanceof Tag
+                ? target.get($(context, props))
+                : target
+        },
+        model(target) {
+            if (!(target instanceof Tag))
+                throw new Error(`Invalid target: ${target}`)
 
-    store.run = function(action, props) {
+            return target.model(context)
+        }
+    }
+}
+
+function Run(store) {
+    const functionTree = new FunctionTree(store.providers)
+    const runTree = functionTree.runTree
+
+    functionTree.run = function(action, props) {
         if (typeof action === "function") {
             return new Promise((resolve, reject) => {
                 functionTree.runTree(action.name, sequence(action), props,
@@ -115,14 +118,12 @@ function Store(init = {}) {
         )
     }
 
-    store.runTree.on('asyncFunction', (e, action) => !action.isParallel && store.changes.commit())
-    store.runTree.on('parallelStart', () => store.changes.commit())
-    store.runTree.on('parallelProgress', (e, payload, resolving) => resolving === 1 && store.changes.commit())
-    store.runTree.on('end', () => store.changes.commit())
+    runTree.on('asyncFunction', (e, action) => !action.isParallel && store.changes.commit())
+    runTree.on('parallelStart', () => store.changes.commit())
+    runTree.on('parallelProgress', (e, payload, resolving) => resolving === 1 && store.changes.commit())
+    runTree.on('end', () => store.changes.commit())
 
-    if (devtools) {
-
-        devtools.init(store, functionTree)
+    if (store.devtools) {
 
         functionTree.on('error', function throwErrorCallback(error) {
             if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 2)
@@ -137,9 +138,48 @@ function Store(init = {}) {
         })
     }
 
-    store.changes.commit()
-
     functionTree.emit('initialized')
+
+    return functionTree
+}
+
+function Store(init = {}) {
+
+    const store = {
+        devtools: init.devtools,
+        providers: init.providers || []
+    }
+
+    const state = State({}, store)
+    const signals = Signals({}, store)
+    const modules = Modules({}, store)
+    const changes = Changes({}, store)
+    const resolve = Resolve(store)
+
+    Object.assign(store, Model(store), { state, signals, modules, changes, resolve })
+
+
+    // add root module
+    modules.add({
+        state: init.state,
+        signals: init.signals,
+        modules: init.modules
+    })
+
+    store.providers.unshift(StoreProvider(store))
+    store.providers.unshift(store.state.provider)
+    if (store.devtools)
+        store.providers.unshift(DebuggerProvider(store))
+    store.providers = store.providers.concat(store.modules.getProviders())
+
+    const functionTree = Run(store)
+
+    store.runTree = functionTree.runTree
+
+    if (store.devtools)
+        store.devtools.init(store, functionTree)
+
+    store.changes.commit()
 
 	return store
 }

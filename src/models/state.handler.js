@@ -45,10 +45,10 @@ export default {
 		return target[key] = Object.create(...args)
 	},
 	delete(target, key) {
-		return delete target[key]
+		return (delete target[key])
 	},
 	unset(target, key) {
-		return delete target[key]
+		return (delete target[key])
 	},
 	toArray(target, key) {
 		return target[key] = Object.keys(target[key]).map(k => target[key][k])

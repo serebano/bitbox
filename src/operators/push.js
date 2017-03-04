@@ -1,10 +1,7 @@
-import { update } from './'
+import handler from '../model/handler'
 
 export default (target, ...args) => {
-
-    function push(parent, key, ...values) {
-        parent[key].push(...values)
+    return (context) => {
+        target.apply(context, handler.push, ...args)
     }
-
-    return update(target, push, ...args)
 }

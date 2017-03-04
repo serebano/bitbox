@@ -5,6 +5,7 @@ import * as tags from './tags'
 import * as ops from './operators'
 import Model from './model/create'
 import Path from './model/path'
+import Store from './Store'
 
 import store from './examples/counter/store'
 import App from './examples/counter/App'
@@ -23,7 +24,7 @@ store.changes.on('state.count', onCount)
 
 onCount.add('state.name')
 
-Object.assign(window, { store, Path,  Model, onCount }, tags, ops)
+Object.assign(window, { Store, store, Path,  Model, onCount }, tags, ops)
 
 render((
 	<Container store={store} >

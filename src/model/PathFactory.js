@@ -1,4 +1,5 @@
 import Path from './path'
+import {isComplexObject} from '../utils'
 
 export default (root, store) => {
 	const accessors = ["get", "has", "keys", "values"]
@@ -8,12 +9,22 @@ export default (root, store) => {
 			if (accessors.indexOf(name) > -1)
 				model[name] = (path) => Path.resolve(root, path).reduce(handler.get, target)
 			else
-				model[name] = (path, ...args) => model.apply(path, handler[name], ...args)
+				model[name] = function(path, ...args) {
+					return model.apply(path, handler[name], ...args)
+				}
+
 			model[name].displayName = name
 
 			return model
 		}, {
+			model(handler) {
+				return createModel(target, handler || {get:handler.get})
+			},
 			apply(path, trap, ...args) {
+				trap = typeof trap === "string"
+					? handler[trap]
+					: trap
+
 				let changed;
 
 				Path.resolve(root, path).reduce((target, key, index, keys) => {
@@ -21,13 +32,13 @@ export default (root, store) => {
 						const state = target[key]
 						const result = trap(target, key, ...args)
 
-						if (state !== target[key]) {
+						if (state !== target[key] || (isComplexObject(target[key]) && isComplexObject(state))) {
 							store.changes.push(keys, trap.name, { args, result, state }, true)
 							changed = { path: keys, method: trap.name, args }
 						}
 					}
 
-					if (!(key in target))
+					if (name === "set" && !(key in target))
 						target[key] = {}
 
 					return handler.get(target, key)

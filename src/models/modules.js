@@ -34,6 +34,11 @@ export default (target, store) => {
 					return Path.reduce(path, handler.has, target)
 				},
 				add(path, desc) {
+					if (arguments.length === 1 && typeof path === "object") {
+						desc = path
+						path = []
+					}
+
 					const keys = Path.keys(path)
 					const length = keys.length
 					const module = typeof desc === "function"
@@ -82,8 +87,8 @@ export default (target, store) => {
 								})
 
 							// unset state
-							if (module.state)
-								store.state.unset(keys)
+							//if (module.state)
+							store.state.unset(keys)
 
 							// remove this module
 							handler.remove(target, key)

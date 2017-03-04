@@ -3,7 +3,7 @@ import Model from '../models/signals'
 
 export class Signal extends Tag {
     constructor(keys, values) {
-        super("signal", keys, values)
+        super("signals", keys, values)
     }
 }
 
