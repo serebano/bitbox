@@ -3,7 +3,7 @@ import Model from '../../models/modules'
 
 export class Module extends Tag {
     constructor(keys, values) {
-        super("module", keys, values)
+        super("modules", keys, values)
     }
 }
 

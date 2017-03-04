@@ -68,7 +68,7 @@ export function getChangedProps(propsA, propsB) {
 }
 
 export function getProviders (module) {
-  return (module.provider ? [module.provider] : []).concat(Object.keys(module.modules || {})
+  return (module.provider ? [module.provider] : (module.providers || [])).concat(Object.keys(module.modules || {})
     .reduce((nestedProviders, moduleKey) => {
       return nestedProviders.concat(getProviders(module.modules[moduleKey]))
     }, [])

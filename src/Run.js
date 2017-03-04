@@ -1,70 +1,53 @@
-import Tag from './Tag'
-import ContextFactory from './Context'
-import {isObject} from './utils'
-import * as tags from './tags'
+import { FunctionTree, sequence } from 'function-tree'
 
-const nextAction = result => result
+function Run(store) {
+    const functionTree = new FunctionTree(store.providers)
+    const runTree = functionTree.runTree
 
-/*
-	obj = { name: 'Serebano', age: 32 }
-	run = action.createRun()
+    functionTree.run = function(action, props) {
+        if (typeof action === "function") {
+            return new Promise((resolve, reject) => {
+                functionTree.runTree(action.name, sequence(action), props,
+                    (err, exec, result) => err
+                        ? reject(err)
+                        : resolve(result)
+                )
+            })
+        }
 
-	run( props`keyVals`.set(compute({
-		values: props`.`.get(values),
-		keys: props`.`.get(keys)
-	})), obj)
+        return new Promise((resolve, reject) => {
+            return functionTree.runTree(...arguments,
+                (err, exec, result) => err
+                    ? reject(err)
+                    : resolve(result)
+                )
+            }
+        )
+    }
 
- */
+    runTree.on('asyncFunction', (e, action) => !action.isParallel && store.changes.commit())
+    runTree.on('parallelStart', () => store.changes.commit())
+    runTree.on('parallelProgress', (e, payload, resolving) => resolving === 1 && store.changes.commit())
+    runTree.on('end', () => store.changes.commit())
 
-function Run(...providers) {
+    if (store.devtools) {
 
-	run.context = ContextFactory(...providers)
+        functionTree.on('error', function throwErrorCallback(error) {
+            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 2)
+                functionTree.removeListener('error', throwErrorCallback)
+            else throw error
+        })
+    } else {
+        functionTree.on('error', function throwErrorCallback(error) {
+            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 1)
+                functionTree.removeListener('error', throwErrorCallback)
+            else throw error
+        })
+    }
 
-	function run(target, props = {}, next) {
-		if (target instanceof Tag || typeof target === 'function')
-			return runAction(target, props, next)
+    functionTree.emit('initialized')
 
-		if (Array.isArray(target))
-			return runChain(target, props, next)
-
-		throw new Error(`Invalid target`)
-	}
-
-	function runAction(action, props = {}, next = nextAction) {
-
-		const result = run.context(action, props)
-
-		if (typeof result === "function")
-			return runAction(result, props, next)
-
-		if (result instanceof Promise)
-			return result.then(next)
-
-		if (Array.isArray(result))
-			return runChain(result, props, next, 0)
-
-		return next(result)
-	}
-
-	function runChain(chain, props, next = nextAction, index = 0) {
-		const item = chain[index]
-
-		const runNext = (result) => {
-			props.result = result
-
-			return runChain(chain, props, next, index + 1)
-		}
-
-		if (!item)
-			return next(props)
-
-		if (Array.isArray(item))
-			return runChain(item, props, runNext, 0)
-
-		return runAction(item, props, runNext)
-	}
-
-	return run
+    return functionTree
 }
 
 export default Run

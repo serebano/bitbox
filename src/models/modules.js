@@ -1,6 +1,8 @@
 import Model from '../model/create'
 import Path from '../model/path'
 import {getProviders} from '../utils'
+import apply from '../model/apply'
+import extract from '../model/extract'
 
 export default (target, store) => {
 
@@ -9,6 +11,18 @@ export default (target, store) => {
 			get(target, key) {
 				if (!target || !target.modules)
 					return undefined
+
+				return target.modules[key]
+			},
+			ensure(target, key, value) {
+				if (!target)
+					return undefined
+
+				if (!target.modules)
+					target.modules = {}
+
+				if (!target.modules[key])
+					target.modules[key] = value || {}
 
 				return target.modules[key]
 			},
@@ -34,7 +48,7 @@ export default (target, store) => {
 					return Path.reduce(path, handler.has, target)
 				},
 				add(path, desc) {
-					if (arguments.length === 1 && typeof path === "object") {
+					if (arguments.length === 1 && (typeof path === "object" || typeof path === "function")) {
 						desc = path
 						path = []
 					}
@@ -51,7 +65,7 @@ export default (target, store) => {
 					keys.reduce((target, key, index) => {
 						return index === length - 1
 							? handler.add(target, key, module)
-							: handler.get(target, key)
+							: handler.ensure(target, key, {})
 					}, target)
 
 					// set state
@@ -67,7 +81,9 @@ export default (target, store) => {
 						this.add(keys.concat(moduleKey), module.modules[moduleKey])
 					})
 
-					//store.changes.push(keys, 'add', { module }, true)
+					store.changes.push({ path: ['modules'].concat(keys), keys, method: 'add', args: [desc] })
+
+					return module
 				},
 				remove(path) {
 					Path.reduce(path, (target, key, index, keys) => {
@@ -87,17 +103,32 @@ export default (target, store) => {
 								})
 
 							// unset state
-							//if (module.state)
 							store.state.unset(keys)
 
 							// remove this module
 							handler.remove(target, key)
 
-							//store.changes.push(keys, 'remove', null, true)
+							store.changes.push({ path, keys, method: 'remove' })
 						}
 
 						return handler.get(target, key)
 					}, target)
+				},
+				extract(path, view, ...args) {
+					view = (typeof view === "string") ? handler[view] : view
+
+					return extract(target, Path.resolve(root, path), view, ...args)
+				},
+				apply(path, trap, ...args) {
+					trap = (typeof trap === "string") ? handler[trap] : trap
+					const changed = apply(target, Path.resolve(root, path), trap, ...args)
+
+					if (changed) {
+						//changed.path = [root].concat(changed.path)
+						store.changes.push(changed)
+					}
+
+					return changed
 				},
 				getProviders() {
 					return getProviders(target)

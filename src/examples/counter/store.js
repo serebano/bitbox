@@ -18,38 +18,43 @@ function decrease({ apply, props }) {
     //state.set('count', state.get('count') - (props.by || 1))
 }
 
-const store = Store({
-    state: {
-        name: 'Demo App',
-        items: ['One'],
-        count: 0
-    },
-    signals: {
-        increaseClicked: [
-            sequence(`Increase count`, increase)
-        ],
-        decreaseClicked: [
-            sequence('Clicked',
-                set(state`loading`, true),
-                parallel(`Decrease count`,
-                    wait(props`delay`), {
-                        then: [
-                            decrease
-                        ]
-                    }
-                ),
-                set(state`loading`, false)
-            )
-        ]
-    },
-    modules: {
-        counts: Counts
-    },
-    devtools: Devtools({
-        //remoteDebugger: '192.168.0.46:8585',
-        //remoteDebugger: '192.168.43.152:8686',
-        remoteDebugger: 'localhost:8585'
-    })
-})
+function Demo(module) {
+    return {
+        state: {
+            module,
+            name: 'Demo App',
+            items: ['One'],
+            count: 0
+        },
+        signals: {
+            increaseClicked: [
+                sequence(`Increase count`, increase)
+            ],
+            decreaseClicked: [
+                sequence('Clicked',
+                    set(state`loading`, true),
+                    parallel(`Decrease count`,
+                        wait(props`delay`), {
+                            then: [
+                                decrease
+                            ]
+                        }
+                    ),
+                    set(state`loading`, false)
+                )
+            ]
+        },
+        modules: {
+            counts: Counts
+        },
+        devtools: Devtools({
+            //remoteDebugger: '192.168.0.46:8585',
+            //remoteDebugger: '192.168.43.152:8686',
+            remoteDebugger: 'localhost:8585'
+        })
+    }
+}
+
+const store = Store(Demo)
 
 export default store

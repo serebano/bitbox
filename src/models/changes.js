@@ -22,7 +22,7 @@ export default (target, store) => {
 		},
 		function Changes(target, handler) {
 
-			function debug(e) {
+			function debug(e, index) {
 				const type = e.path.slice().shift()
 		        const args = ["%c'"+(e.path.slice(1).join(".")||".")+"'%c"].concat(e.args).map(arg => {
 		            if (typeof arg === "function") return (arg.displayName || arg.name) || String(arg)
@@ -30,8 +30,8 @@ export default (target, store) => {
 		            return String(arg)
 		        }).join(", ")
 		        if (e.action)
-		            console.log(`[${e.index}] ${e.action.name}`, e.action)
-		        console.log(`[${e.index}] %c${type}%c.%c${e.method}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
+		            console.log(`[${index}] ${e.action.name}`, e.action)
+		        console.log(`[${index}] %c${type}%c.%c${e.method}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
 
 		    }
 
@@ -79,9 +79,8 @@ export default (target, store) => {
 					if (conn.listeners.indexOf(listener) === -1)
 						conn.listeners.push(listener)
 
-					if (devtools) {
+					if (devtools)
 						devtools.updateComponentsMap(listener, paths)
-					}
 
 					return listener
 				},
@@ -93,9 +92,8 @@ export default (target, store) => {
 					if (!listener.paths.length)
 						conn.listeners.splice(conn.listeners.indexOf(listener), 1)
 
-					if (devtools) {
+					if (devtools)
 						devtools.updateComponentsMap(listener, null, paths)
-					}
 				},
 				update(newPaths, listener) {
 		            const oldPaths = listener.paths
@@ -105,31 +103,25 @@ export default (target, store) => {
 					if (!listener.paths.length)
 						conn.listeners.splice(conn.listeners.indexOf(listener), 1)
 
-		            if (devtools) {
+		            if (devtools)
 		                devtools.updateComponentsMap(listener, newPaths, oldPaths)
-		            }
 		        },
-				push(path, method, meta, commit) {
-					path = Path.keys(path)
-					const change = {
-						path,
-						method,
-						index: this.size,
-						forceChildPathUpdates: false
-					}
+				push(change) {
 
-					const key = [method].concat(path).join(".")
+					const key = [change.method].concat(change.keys).join(".")
 
 					if (key in this.keys)
 						return this.keys[key]
 
-					this.keys[key] = handler.push(target, change)
+					this.keys[key] = handler.push(target, {
+						path: change.keys,
+						method: change.method,
+						forceChildPathUpdates: false
+					})
 
-					debug({ ...change, ...meta })
+					debug(change, this.size)
+
 					return change
-					// return commit
-					// 	? this.commit()
-					// 	: change
 				},
 				commit(force) {
 					if (!force && !target.changes.length)

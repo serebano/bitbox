@@ -31,7 +31,7 @@ export default (root, store) => {
 				const changed = apply(target, Path.resolve(root, path), trap, ...args)
 
 				if (changed)
-					store.changes.push(changed.path, changed.method)
+					store.changes.push(changed)
 
 				return changed
 			},

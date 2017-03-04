@@ -16,7 +16,6 @@ export default (target, store) => {
 			set(target, key, chain) {
 				return target[key] = (props) => {
 					store.runTree(key, chain, props)
-					//(err,res) => console.log(`on-done`, err, res)
 				}
 			},
 			unset(target, key) {
@@ -31,14 +30,8 @@ export default (target, store) => {
 
 					return Path.resolve(root, path).reduce(handler.get, target)
 				},
-				set(path, chain) {
-					return this.apply(path, handler.set, chain)
-				},
 				add(path, chain) {
 					return this.apply(path, handler.set, chain)
-				},
-				unset(path) {
-					return this.apply(path, handler.unset)
 				},
 				remove(path) {
 					return this.apply(path, handler.unset)
@@ -54,9 +47,10 @@ export default (target, store) => {
 					return handler.get(module.signals, key)
 				},
 				apply(path, trap, ...args) {
-					let changed = apply(target, Path.resolve(root, path), trap, ...args)
+					const changed = apply(target, Path.resolve(root, path), trap, ...args)
+
 					if (changed)
-						store.changes.push(changed.path, changed.method)
+						store.changes.push(changed)
 
 					return changed
 				}
