@@ -1,5 +1,6 @@
 import Tag from '../Tag'
-import Model from '../model'
+import Model from '../models/state'
+import handler from '../models/state.handler'
 
 export class State extends Tag {
     constructor(keys, values) {
@@ -7,7 +8,9 @@ export class State extends Tag {
     }
 }
 
-state.model = (target, store) => Model("state", target, store)
+state.handler = handler
+state.tag = State
+state.model = Model
 
 function state(keys, ...values) {
     return new State(keys, values)
