@@ -4,10 +4,10 @@ import {Container} from './Component'
 import * as tags from './tags'
 import {compute,state,props} from './tags'
 import * as ops from './operators'
-import Model from './model/create'
+import Model from './model'
 import Path from './model/path'
 import Store from './Store'
-
+import ModelFactory from './model/factory'
 import store from './examples/counter/store'
 import App from './examples/counter/App'
 
@@ -34,7 +34,7 @@ function onCount(e) {
 
 store.connect(countProps, onCount)
 
-Object.assign(window, { Store, store, Path,  Model, onCount }, tags, ops)
+Object.assign(window, { ModelFactory, Store, store, Path,  Model, onCount }, tags, ops)
 
 render((
 	<Container store={store} >

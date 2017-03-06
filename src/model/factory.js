@@ -1,8 +1,9 @@
-import Path from '../model/path'
-import apply from '../model/apply'
-import extract from '../model/extract'
+import Path from './path'
+import apply from './apply'
+import extract from './extract'
+import baseHandler from './handler'
 
-function State(target, store, root = 'state') {
+function Model(target, store, root) {
     return {
         get(path, view) {
             return this.extract(path, function get(target, key) {
@@ -41,7 +42,7 @@ function State(target, store, root = 'state') {
         provider(context, action) {
             context[root] = this
             if (context.debugger) {
-                const model = State(target, store, root)
+                const model = Model(target, store, root)
                 const apply = model.apply
                 delete model.provider
 
@@ -64,4 +65,4 @@ function State(target, store, root = 'state') {
     }
 }
 
-export default State
+export default Model

@@ -44,7 +44,7 @@ function Model(context) {
 
             const result = target.apply($(), func, ...args)
             context.changes && context.changes.commit()
-            
+
             return result
         },
         connect(target, listener, props) {
@@ -62,10 +62,11 @@ function Model(context) {
 }
 
 function Create(store = {}) {
+    store.changes   = Changes({}, store)
+
     store.state     = State({}, store)
     store.signals   = Signals({}, store)
     store.modules   = Modules({}, store)
-    store.changes   = Changes({}, store)
     store.resolve   = Resolve(store)
 
     return Object.assign(store, Model(store))

@@ -81,7 +81,7 @@ export default (target, store) => {
 						this.add(keys.concat(moduleKey), module.modules[moduleKey])
 					})
 
-					store.changes.push({ path: ['modules'].concat(keys), keys, method: 'add', args: [desc] })
+					//store.changes.push({ path: ['modules'].concat(keys), keys, method: 'add', args: [desc] })
 
 					return module
 				},
@@ -108,7 +108,7 @@ export default (target, store) => {
 							// remove this module
 							handler.remove(target, key)
 
-							store.changes.push({ path, keys, method: 'remove' })
+							//store.changes.push({ path, keys, method: 'remove' })
 						}
 
 						return handler.get(target, key)

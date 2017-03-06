@@ -1,60 +1,37 @@
-import Model from '../model/create'
 import Path from '../model/path'
 import apply from '../model/apply'
 
-export default (target, store) => {
-	const root = "signals"
-
-	return new Model(target,
-		{
-			get(target, key) {
+function Signals(target, store, root = 'signals') {
+	return {
+		get(path, chain) {
+			return Path.resolve(root, path).reduce(function get(target, key) {
 				return target[key]
-			},
-			has(target, key) {
-				return key in target
-			},
-			set(target, key, chain) {
-				return target[key] = (props) => {
+			}, target)
+		},
+		add(path, chain) {
+			return this.apply(path, function add(target, key, chain) {
+				target[key] = (props) => {
 					store.runTree(key, chain, props)
 				}
-			},
-			unset(target, key) {
-				delete target[key]
-			}
+			}, chain)
 		},
-		function Signals(target, handler) {
-			return {
-				get(path, chain) {
-					if (chain)
-						return this.chain(path)
+		remove(path) {
+			return this.apply(path, function remove(target, key) {
+				delete target[key]
+			})
+		},
+		run(path, props) {
+			return this.get(path)(props)
+		},
+		apply(path, trap, ...args) {
+			const changed = apply(target, Path.resolve(root, path), trap, ...args)
 
-					return Path.resolve(root, path).reduce(handler.get, target)
-				},
-				add(path, chain) {
-					return this.apply(path, handler.set, chain)
-				},
-				remove(path) {
-					return this.apply(path, handler.unset)
-				},
-				run(path, props) {
-					return this.get(path)(props)
-				},
-				chain(path) {
-					const keys = Path.keys(path)
-					const key = keys.pop()
-					const module = store.modules.get(keys)
+			if (changed)
+				store.changes.push(changed)
 
-					return handler.get(module.signals, key)
-				},
-				apply(path, trap, ...args) {
-					const changed = apply(target, Path.resolve(root, path), trap, ...args)
-
-					if (changed)
-						store.changes.push(changed)
-
-					return changed
-				}
-			}
+			return changed
 		}
-	)
+	}
 }
+
+export default Signals

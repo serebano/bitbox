@@ -6,7 +6,7 @@ export default (target, store) => {
 
 	target.changes = []
 
-	const { devtools } = store
+	//const { devtools } = store
 	const conn = new Changes()
 
 	return new Model(target,
@@ -79,8 +79,8 @@ export default (target, store) => {
 					if (conn.listeners.indexOf(listener) === -1)
 						conn.listeners.push(listener)
 
-					if (devtools)
-						devtools.updateComponentsMap(listener, paths)
+					if (store.devtools)
+						store.devtools.updateComponentsMap(listener, paths)
 
 					return listener
 				},
@@ -92,8 +92,8 @@ export default (target, store) => {
 					if (!listener.paths.length)
 						conn.listeners.splice(conn.listeners.indexOf(listener), 1)
 
-					if (devtools)
-						devtools.updateComponentsMap(listener, null, paths)
+					if (store.devtools)
+						store.devtools.updateComponentsMap(listener, null, paths)
 				},
 				update(newPaths, listener) {
 		            const oldPaths = listener.paths
@@ -103,8 +103,8 @@ export default (target, store) => {
 					if (!listener.paths.length)
 						conn.listeners.splice(conn.listeners.indexOf(listener), 1)
 
-		            if (devtools)
-		                devtools.updateComponentsMap(listener, newPaths, oldPaths)
+		            if (store.devtools)
+		                store.devtools.updateComponentsMap(listener, newPaths, oldPaths)
 		        },
 				push(change) {
 
@@ -134,8 +134,8 @@ export default (target, store) => {
 			            : conn.getListeners(changes)
 
 					listeners.forEach((listener) => {
-			            if (devtools)
-			                devtools.updateComponentsMap(listener)
+			            if (store.devtools)
+			                store.devtools.updateComponentsMap(listener)
 
 			            listener(changes)
 					})
@@ -143,13 +143,13 @@ export default (target, store) => {
 			        target.changes = []
 			    	this.keys = {}
 
-			        if (devtools && listeners.length)
-			            devtools.sendComponentsMap(listeners, changes, start, Date.now())
+			        if (store.devtools && listeners.length)
+			            store.devtools.sendComponentsMap(listeners, changes, start, Date.now())
 
-			        console.info(`[*]`, `${changes.length} changes / ${listeners.length} listeners`)
+			        console.info(`[%c*%c]`, `color:red`, ``, `${changes.length} (changes) * ${listeners.length} (listeners)`)
 			        //console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')
 			        if (listeners.length)
-			            console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount} [ ${listener.paths.join(", ")} ]`).join("\n"))
+			            console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount} [ ${listener.paths.filter(path => changes.filter(cpath => cpath.path.join(".") === path).length).join(", ")} ]`).join("\n"))
 
 
 					return changes
