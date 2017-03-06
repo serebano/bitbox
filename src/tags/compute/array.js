@@ -6,14 +6,8 @@ export class ComputeArray extends Tag {
     hasPath = false
 
     constructor(array) {
-        super('compute.array')
-        this.keys = [...array.keys()]
-        this.values = array.map(ensure)
+        super('compute.array', [ ...array.keys() ], array.map(ensure))
     }
-
-	resolve(context) {
-		return Promise.all(this.values.map(value => Tag.resolve(context, value)))
-	}
 
     get(context) {
         return this.values.reduce((result, value, index) => {

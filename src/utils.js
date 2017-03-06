@@ -1,5 +1,3 @@
-import Tag from './Tag'
-
 export function delay(func, wait) {
     return function(...args) {
         const context = this
@@ -11,74 +9,35 @@ export function delay(func, wait) {
     }
 }
 
+export function getChangedProps(propsA, propsB) {
+    const propsAKeys = Object.keys(propsA)
+    const propsBKeys = Object.keys(propsB)
+    const changedProps = []
 
-export function createResolver(getters) {
-    return {
-        isTag(arg, ...types) {
-            if (!(arg instanceof Tag)) {
-                return false
-            }
-
-            if (types.length) {
-                return types.reduce((isType, type) => {
-                    return isType || type === arg.type
-                }, false)
-            }
-
-            return true
-        },
-        value(arg, overrideProps) {
-            if (arg instanceof Tag) {
-                return arg.get(overrideProps ? Object.assign({}, getters, {
-                    props: overrideProps
-                }) : getters)
-            }
-
-            return arg
-        },
-        path(arg) {
-            if (arg instanceof Tag) {
-                return arg.path(getters)
-            }
-
-            throw new Error('You are extracting a path from an argument that is not a Tag')
+    for (let i = 0; i < propsAKeys.length; i++) {
+        if (propsA[propsAKeys[i]] !== propsB[propsAKeys[i]]) {
+            changedProps.push({
+                path: [propsAKeys[i]]
+            })
         }
     }
-}
 
-
-export function getChangedProps(propsA, propsB) {
-  const propsAKeys = Object.keys(propsA)
-  const propsBKeys = Object.keys(propsB)
-  const changedProps = []
-
-  for (let i = 0; i < propsAKeys.length; i++) {
-    if (propsA[propsAKeys[i]] !== propsB[propsAKeys[i]]) {
-      changedProps.push({path: [propsAKeys[i]]})
+    for (let i = 0; i < propsBKeys.length; i++) {
+        if (propsA[propsBKeys[i]] !== propsB[propsBKeys[i]]) {
+            changedProps.push({
+                path: [propsBKeys[i]]
+            })
+        }
     }
-  }
 
-  for (let i = 0; i < propsBKeys.length; i++) {
-    if (propsA[propsBKeys[i]] !== propsB[propsBKeys[i]]) {
-      changedProps.push({path: [propsBKeys[i]]})
-    }
-  }
-
-  return changedProps
-}
-
-export function getProviders (module) {
-  return (module.provider ? [module.provider] : (module.providers || [])).concat(Object.keys(module.modules || {})
-    .reduce((nestedProviders, moduleKey) => {
-      return nestedProviders.concat(getProviders(module.modules[moduleKey]))
-    }, [])
-  )
+    return changedProps
 }
 
 export function Context(providers, ...args) {
-	providers.reduce((context, Provider) => {
-		return Provider(context, ...args)
-	}, this)
+    if (!(this instanceof Context))
+        return new Context(...arguments)
+
+    return providers.reduce((context, Provider) => Provider(context, ...args), this)
 }
 
 
@@ -91,56 +50,55 @@ export function ensureStrictPath(path, value) {
 }
 
 export function absolutePath(target, context) {
-	return target.type + "." + target.path(context)
+    return target.type + "." + target.path(context)
 }
 
 export function extractFrom(target, path) {
-	if (!target)
-		throw new Error(`Invalid target, extracting with path: ${path}`)
+    if (!target)
+        throw new Error(`Invalid target, extracting with path: ${path}`)
 
-	const keys = !Array.isArray(path)
-		? path.split('.')
-		: path
+    const keys = !Array.isArray(path) ?
+        path.split('.') :
+        path
 
-	return keys.reduce((result, key, index) => {
-		if (index > 0 && result === undefined) {
-			console.log(`target`, target, key, index, result)
-			throw new Error(`A tag is extracting with path "${path}/${key}[${index}]", but it is not valid`)
-		}
-		return key === "" || key === "*" || key === "**" ? result : result[key]
-	}, target)
+    return keys.reduce((result, key, index) => {
+        if (index > 0 && result === undefined) {
+            console.log(`target`, target, key, index, result)
+            throw new Error(`A tag is extracting with path "${path}/${key}[${index}]", but it is not valid`)
+        }
+        return key === "" || key === "*" || key === "**" ? result : result[key]
+    }, target)
 }
 
 export function ensurePath(path = []) {
     if (Array.isArray(path)) {
         return path
     } else if (typeof path === 'string') {
-        return path === "." || path === ""
-            ? []
-            : path.split('.')
+        return path === "." || path === "" ?
+            [] :
+            path.split('.')
     }
 
     return []
 }
 
 export function isValidResult(result) {
-  return (
-    !result ||
-    (
-      typeof result === 'object' &&
-      !Array.isArray(result)
+    return (!result ||
+        (
+            typeof result === 'object' &&
+            !Array.isArray(result)
+        )
     )
-  )
 }
 
-export function isPromise (result) {
+export function isPromise(result) {
     return result && typeof result.then === 'function' && typeof result.catch === 'function'
 }
 
 export function cleanPath(path) {
-    return path.indexOf('*') > -1
-        ? path.replace(/\.\*\*|\.\*/, '')
-        : path
+    return path.indexOf('*') > -1 ?
+        path.replace(/\.\*\*|\.\*/, '') :
+        path
 }
 
 export function isObject(obj) {

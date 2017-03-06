@@ -3,6 +3,7 @@ import {
     delay
 } from './utils'
 import Path from 'function-tree/lib/Path'
+
 const PLACEHOLDER_INITIAL_MODEL = 'PLACEHOLDER_INITIAL_MODEL'
 const PLACEHOLDER_DEBUGGING_DATA = '$$DEBUGGING_DATA$$'
 const VERSION = 'v1'

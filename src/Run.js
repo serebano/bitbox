@@ -2,6 +2,12 @@ import { FunctionTree, sequence } from 'function-tree'
 
 function Run(store) {
     const functionTree = new FunctionTree(store.providers.get())
+
+    store.changes.on('providers', function UpdateProviders(changes) {
+        const newProviders = store.providers.get()
+        functionTree.contextProviders = newProviders
+    })
+
     const runTree = functionTree.runTree
 
     functionTree.run = function(action, props) {
@@ -37,12 +43,15 @@ function Run(store) {
                 functionTree.removeListener('error', throwErrorCallback)
             else throw error
         })
+
     } else {
+
         functionTree.on('error', function throwErrorCallback(error) {
             if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 1)
                 functionTree.removeListener('error', throwErrorCallback)
             else throw error
         })
+
     }
 
     functionTree.emit('initialized')

@@ -32,12 +32,12 @@ function Providers(target, store) {
         add(provider) {
             if (!this.has(provider))
                 return this.apply(null, function add(target, key, provider) {
-                    target[key].push(provider)
+                    target[key] = target[key].concat(provider)
                 }, provider)
         },
         remove(provider) {
             this.apply(null, function remove(target, key, provider) {
-                target[key].splice(target[key].indexOf(provider), 1)
+                target[key] = target[key].filter(i => i !== provider)
             }, provider)
         },
         clear() {

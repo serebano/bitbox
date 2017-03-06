@@ -1,4 +1,4 @@
-import { ensurePath, dependencyMatch } from './utils'
+import { dependencyMatch } from './utils'
 
 class Changes {
 
@@ -6,7 +6,6 @@ class Changes {
 
     constructor() {
         this.map = {}
-        this.listeners = []
     }
 
     /*

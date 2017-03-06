@@ -1,4 +1,3 @@
-import Model from '../model/create'
 import Path from '../model/path'
 import DepsStore from '../Changes'
 import Changes from '../model/changes'
@@ -103,10 +102,9 @@ export default function ChangesModel(target = {}, store) {
 				listener(changes)
 			})
 
-			//target.changes = new Changes()
-
-			if (store.devtools && listeners.length)
+			if (store.devtools && listeners.length) {
 				store.devtools.sendComponentsMap(listeners, changes, start, Date.now())
+			}
 
 			console.info(`[%c*%c]`, `color:red`, ``, `${changes.length} (changes) * ${listeners.length} (listeners)`)
 			//console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')

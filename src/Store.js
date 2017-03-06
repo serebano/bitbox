@@ -1,6 +1,5 @@
 import Tag from './Tag'
 import DebuggerProvider from './providers/debugger'
-import * as tags from './tags'
 
 import Modules from './models/modules'
 import Signals from './models/signals'
@@ -70,11 +69,11 @@ function Store(module, store = {}) {
 
     Object.assign(store, Model(store))
 
-    store.providers.add(Store.Provider(store))
-    store.providers.add(State.Provider(store))
-
     if (store.devtools)
         store.providers.add(DebuggerProvider(store))
+        
+    store.providers.add(Store.Provider(store))
+    store.providers.add(State.Provider(store))
 
     store.modules.add(module)
 

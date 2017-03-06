@@ -1,7 +1,7 @@
 import Tag from '../../Tag'
-import * as tags from '../'
 import array, {ComputeArray} from './array'
 import object, {ComputeObject} from './object'
+import * as tags from '../'
 
 function compute(args) {
     if (!arguments.length)

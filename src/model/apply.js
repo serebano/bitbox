@@ -7,7 +7,7 @@ function apply(target, path, method, ...args) {
     Path.keys(path).reduce((target, key, index, keys) => {
         if (index === keys.length - 1) {
             const state = target[key]
-            const result = method(target, key, ...args)
+            method(target, key, ...args)
 
             if (state !== target[key] || (isComplexObject(target[key]) && isComplexObject(state))) {
                 change = { path: keys, method: method.name, args }

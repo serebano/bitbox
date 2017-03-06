@@ -1,5 +1,5 @@
-import { inc, set } from '../../operators'
-import { state, props, signal } from '../../tags'
+import { inc } from '../../operators'
+import { state } from '../../tags'
 
 function Counts({ name, path }) {
 	return {

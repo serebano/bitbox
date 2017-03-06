@@ -8,6 +8,19 @@ function Resolve(context) {
             : context
 
     return {
+        isTag(arg, ...types) {
+            if (!(arg instanceof Tag)) {
+                return false
+            }
+
+            if (types.length) {
+                return types.reduce((isType, type) => {
+                    return isType || type === arg.type
+                }, false)
+            }
+
+            return true
+        },
         type(target) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
@@ -31,11 +44,11 @@ function Resolve(context) {
                 ? target.get($(props))
                 : target
         },
-        model(target) {
+        model(target, extend) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
-            return target.model(context)
+            return target.model(context, extend)
         }
     }
 }

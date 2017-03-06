@@ -8,7 +8,7 @@ function Changes(changes = []) {
 	return changes
 }
 
-Changes.prototype = new Array
+Changes.prototype = []
 Changes.prototype.last = function last() {
 	return this[this.length - 1]
 }
@@ -30,7 +30,7 @@ Changes.prototype.push = function push(change) {
 function debug(e, index) {
 	const type = e.path.slice().shift()
 	const args = ["%c'"+(e.path.slice(1).join(".")||".")+"'%c"].concat(e.args).map(arg => {
-		if (typeof arg === "function") return (arg.displayName || arg.name) || String(arg)
+		if (typeof arg === "function") return 'function ' + (arg.displayName || arg.name) || String(arg)
 		if (typeof arg === "object") return JSON.stringify(arg)
 		return String(arg)
 	}).join(", ")

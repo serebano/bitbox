@@ -1,6 +1,5 @@
 import Model from '../model'
 import Path from '../model/path'
-import {getProviders} from '../utils'
 
 export default (target, store) => {
 
@@ -55,7 +54,7 @@ export default (target, store) => {
 					if (!target.modules)
 						target.modules = {}
 
-					target.modules[key] = module
+					return target.modules[key] = module
 				} else {
 					return ensure(target, key, {})
 				}
