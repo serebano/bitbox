@@ -10,7 +10,7 @@ function apply(target, path, method, ...args) {
             const result = method(target, key, ...args)
 
             if (state !== target[key] || (isComplexObject(target[key]) && isComplexObject(state))) {
-                change = { path, keys, key, method: method.name, args }
+                change = { path: keys, method: method.name, args }
             }
         }
 

@@ -10,6 +10,7 @@ import Store from './Store'
 import ModelFactory from './model/factory'
 import store from './examples/counter/store'
 import App from './examples/counter/App'
+import Changes from './models/changes'
 
 const countProps = compute({
 	name: state`name`,
@@ -34,7 +35,7 @@ function onCount(e) {
 
 store.connect(countProps, onCount)
 
-Object.assign(window, { ModelFactory, Store, store, Path,  Model, onCount }, tags, ops)
+Object.assign(window, { Changes, Store, store, Path,  Model, onCount }, tags, ops)
 
 render((
 	<Container store={store} >

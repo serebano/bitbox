@@ -1,6 +1,4 @@
 import get from './model/get'
-import set from './model/set'
-import apply from './model/apply'
 
 export default class Tag {
 
@@ -55,43 +53,13 @@ export default class Tag {
         return get(model, this.path(context))
     }
 
-    set(context, value) {
-        const model = context[this.type]
-
-        if (!model)
-            throw new Error(`Invalid ${this.type} in context`)
-
-        if (model.set)
-            return model.set(this.path(context), value)
-
-        return set(model, this.path(context), value)
-    }
-
-    apply(context, ...args) {
-        const model = context[this.type]
-
-        if (!model)
-            throw new Error(`Invalid ${this.type} in context`)
-
-        if (model.apply)
-            return model.apply(this.path(context), ...args)
-
-        return apply(model, this.path(context), ...args)
-    }
-
     model(context) {
         if (!context[this.type])
             throw new Error(`Invalid ${this.type} in context`)
 
-        const target = context[this.type]
-        const path = this.path(context)
-
-        return Object.getOwnPropertyNames(target).reduce((obj, key) => {
-            obj[key] = typeof target[key] === "function"
-                ? target[key].bind(null, path)
-                : target[key]
-            return obj
-        }, { path })
+        return Object.assign({}, context[this.type], {
+            path: this.path(context, true)
+        })
     }
 
     paths(context, types) {

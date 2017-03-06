@@ -5,17 +5,11 @@ import { wait, sequence, parallel, set } from '../../operators'
 import Counts from './counts'
 
 function increase({ state, props }) {
-    state.apply(`count`, function increment(target, key, by) {
-        target[key] = target[key] + by
-    }, props.by || 1)
-    //state.set('count', state.get('count') + (props.by || 1))
+    state.set('count', state.get('count') + (props.by || 1))
 }
 
-function decrease({ apply, props }) {
-    apply(state`count`, function decrement(target, key, by) {
-        target[key] = target[key] - by
-    }, props.by || 1)
-    //state.set('count', state.get('count') - (props.by || 1))
+function decrease({ state, props }) {
+    state.set('count', state.get('count') - (props.by || 1))
 }
 
 function Demo(module) {
