@@ -1,13 +1,12 @@
-import { update } from './'
-
 export default (target, value = 1) => {
 
-    function inc(target, key, value) {
-        if (!(key in target))
-            target[key] = 0
+    function inc(context) {
+        const model = context.model(target)
 
-        target[key] = target[key] + value
+        model.set(null, model.get(null, (state = 0) => {
+            return state + context.resolve.value(value)
+        }))
     }
 
-    return update(target, inc, value)
+    return inc
 }
