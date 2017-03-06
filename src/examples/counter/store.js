@@ -1,5 +1,5 @@
 import Store from '../../Store'
-import Devtools from '../../devtools'
+import Devtools from '../../Devtools'
 import { state, props } from '../../tags'
 import { wait, sequence, parallel, set } from '../../operators'
 import Counts from './counts'
@@ -41,14 +41,19 @@ function Demo(module) {
         modules: {
             counts: Counts
         },
-        devtools: Devtools({
-            //remoteDebugger: '192.168.0.46:8585',
-            //remoteDebugger: '192.168.43.152:8686',
-            remoteDebugger: 'localhost:8585'
-        })
+        provider(context) {
+            return context
+        }
     }
 }
 
-const store = Store(Demo)
+const store = Store(Demo, {
+    devtools: Devtools({
+        //remoteDebugger: '192.168.0.46:8585',
+        //remoteDebugger: '192.168.43.152:8686',
+        remoteDebugger: 'localhost:8585'
+    })
+})
+
 
 export default store

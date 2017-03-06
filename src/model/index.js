@@ -40,6 +40,9 @@ function Model(target = {}, extend) {
             const changed = apply(target, Path.resolve(this.path, path), trap, ...args)
 
             if (changed) {
+                if (changed.method === "set" || changed.method === "remove")
+                    changed.forceChildPathUpdates = true
+
                 changes.push(changed)
                 this.onChange && this.onChange(changed)
             }

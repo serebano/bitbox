@@ -1,16 +1,7 @@
 import Tag from '../../Tag'
-import Model from '../../models/modules'
-
-export class Module extends Tag {
-    constructor(keys, values) {
-        super("modules", keys, values)
-    }
-}
-
-module.model = Model
 
 function module(keys, ...values) {
-    return new Module(keys, values)
+    return new Tag('modules', keys, values)
 }
 
 export default module

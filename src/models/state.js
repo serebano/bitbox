@@ -1,6 +1,3 @@
-import Path from '../model/path'
-import apply from '../model/apply'
-import extract from '../model/extract'
 import Model from '../model'
 
 function State(target, store) {

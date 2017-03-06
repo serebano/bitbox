@@ -6,6 +6,7 @@ import Modules from './models/modules'
 import Signals from './models/signals'
 import State from './models/state'
 import Changes from './models/changes'
+import Providers from './models/providers'
 import Resolve from './Resolve'
 import Run from './Run'
 
@@ -56,12 +57,12 @@ Store.Provider = function(store) {
     }
 }
 
-function Store(init) {
+function Store(module, store = {}) {
 
     const target = {}
-    const store = {}
 
     store.changes   = Changes(target, store)
+    store.providers = Providers(target, store)
     store.state     = State(target, store)
     store.signals   = Signals(target, store)
     store.modules   = Modules(target, store)
@@ -69,29 +70,20 @@ function Store(init) {
 
     Object.assign(store, Model(store))
 
-    const {
-        devtools,
-        providers = []
-    } = store.modules.add(init)
+    store.providers.add(Store.Provider(store))
+    store.providers.add(State.Provider(store))
 
-    store.devtools = devtools
+    if (store.devtools)
+        store.providers.add(DebuggerProvider(store))
 
-    providers.unshift(Store.Provider(store))
-    providers.unshift(State.Provider(store))
-
-    if (devtools)
-        providers.unshift(DebuggerProvider(store))
-
-    store.providers = providers.concat(store.modules.getProviders())
+    store.modules.add(module)
 
     const functionTree = Run(store)
 
     store.runTree = functionTree.runTree
 
-    if (devtools)
-        devtools.init(store, functionTree)
-
-    store.changes.commit()
+    if (store.devtools)
+        store.devtools.init(store, functionTree)
 
 	return store
 }

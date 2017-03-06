@@ -19,7 +19,7 @@ Changes.prototype.push = function push(change) {
 	const index = Array.prototype.push.call(this, {
 		path: change.path,
 		method: change.method,
-		forceChildPathUpdates: false
+		forceChildPathUpdates: change.forceChildPathUpdates
 	})
 
 	debug(change, index)
@@ -36,7 +36,7 @@ function debug(e, index) {
 	}).join(", ")
 	if (e.action)
 		console.log(`[${index}] ${e.action.name}`, e.action)
-	console.log(`[${index}] %c${type}%c.%c${e.method}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
+	console.log(`[${index}/${Boolean(e.forceChildPathUpdates)}] %c${type}%c.%c${e.method}%c(${args}%c)`, `color:#e5c07b`, `color:#abb2bf`, `color:#61afef`, `color:#abb2bf`, `color:#98c379`, `color:#5c6370`, 'color:#abb2bf')
 
 }
 

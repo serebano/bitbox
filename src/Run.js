@@ -1,7 +1,7 @@
 import { FunctionTree, sequence } from 'function-tree'
 
 function Run(store) {
-    const functionTree = new FunctionTree(store.providers)
+    const functionTree = new FunctionTree(store.providers.get())
     const runTree = functionTree.runTree
 
     functionTree.run = function(action, props) {

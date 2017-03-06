@@ -18,6 +18,7 @@ export default (target, store) => {
 	}
 
 	return Model(target, {
+		path: [],
 		get(path) {
 			return this.extract(path, function get(target, key) {
 				if (!target || !target.modules)
@@ -46,6 +47,9 @@ export default (target, store) => {
 				}) || {}
 				: desc || {}
 
+			if (module.provider)
+				module.providers = (module.providers||[]).concat(module.provider)
+
 			keys.reduce((target, key, index) => {
 				if (index === length - 1) {
 					if (!target.modules)
@@ -60,6 +64,13 @@ export default (target, store) => {
 			// set state
 			store.state.set(keys, module.state || {})
 
+			// add providers
+			if (module.providers)
+				module.providers.forEach(provider => {
+					provider.displayName = `${keys.join(".")}.${provider.name}`
+					store.providers.add(provider)
+				})
+
 			// set signals
 			Object.keys(module.signals || {}).forEach(signalKey => {
 				store.signals.add(keys.concat(signalKey), module.signals[signalKey])
@@ -70,14 +81,18 @@ export default (target, store) => {
 				this.add(keys.concat(moduleKey), module.modules[moduleKey])
 			})
 
-			//store.changes.push({ path: ['modules'].concat(keys), keys, method: 'add', args: [desc] })
+			store.changes.push({
+				path: ['modules'].concat(keys),
+				method: 'add',
+				args: [desc]
+			})
 
-			return module
+			store.changes.commit()
 		},
 		remove(path) {
-			Path.reduce(path, (target, key, index, keys) => {
+			Path.reduce(path, (step, key, index, keys) => {
 				if (index === keys.length - 1) {
-					const module = target[key]
+					const module = step.modules[key]
 
 					// remove submodules
 					if (module.modules)
@@ -85,26 +100,35 @@ export default (target, store) => {
 							this.remove(keys.concat(moduleKey))
 						})
 
-					// unset signals
+					// remove providers
+					if (module.providers)
+						module.providers.forEach(provider => {
+							store.providers.remove(provider)
+						})
+
+					// remove signals
 					if (module.signals)
 						Object.keys(module.signals).forEach(signalKey => {
 							store.signals.remove(keys.concat(signalKey))
 						})
 
-					// unset state
-					store.state.unset(keys)
+					// remove state
+					store.state.remove(keys)
 
 					// remove this module
-					delete target[key]
+					delete step.modules[key]
 
-					//store.changes.push({ path, keys, method: 'remove' })
+					store.changes.push({
+						path: ['modules'].concat(keys),
+						method: 'remove',
+						args: []
+					})
+
+					store.changes.commit()
 				}
 
-				return target[key]
+				return step.modules[key]
 			}, target)
-		},
-		getProviders() {
-			return getProviders(target)
 		}
 	})
 
