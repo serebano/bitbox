@@ -53,13 +53,13 @@ export default class Tag {
         return get(model, this.path(context))
     }
 
-    model(context) {
+    model(context, extend) {
         if (!context[this.type])
             throw new Error(`Invalid ${this.type} in context`)
 
         return Object.assign({}, context[this.type], {
             path: this.path(context, true)
-        })
+        }, extend)
     }
 
     paths(context, types) {
