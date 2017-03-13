@@ -1,4 +1,5 @@
 import Tag from './Tag'
+import Model from './model'
 // models
 import Modules from './models/modules'
 import Signals from './models/signals'
@@ -26,13 +27,8 @@ function Store(module, store = {}) {
         signals: Signals(target, store),
         modules: Modules(target, store),
         resolve: Resolve(store),
-        connect(target, listener, props) {
-            store.changes.on(store.resolve.paths(target, ['state'], props), listener)
-            listener.renew = (props) => listener.update(store.resolve.paths(target, ['state'], props))
-
-            return listener
-        },
-        model(target, props) {
+        model: Model(target),
+        _model(target, props) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
@@ -44,6 +40,12 @@ function Store(module, store = {}) {
                     asyncTimeout = setTimeout(() => store.changes.commit())
                 }
             })
+        },
+        connect(target, listener, props) {
+            store.changes.on(store.resolve.paths(target, ['state'], props), listener)
+            listener.renew = (props) => listener.update(store.resolve.paths(target, ['state'], props))
+
+            return listener
         },
         get(target, props) {
             if (!(target instanceof Tag))

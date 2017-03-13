@@ -8,7 +8,7 @@ function Model(target = {}, extend) {
     const changes = new Changes(target.changes)
 
     return Object.assign({
-        path: 'root',
+        path: [],
         get(path, view) {
             return this.extract(path, function get(target, key) {
                 return view
