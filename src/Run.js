@@ -8,9 +8,7 @@ function Run(store) {
         functionTree.contextProviders = newProviders
     })
 
-    const runTree = functionTree.runTree
-
-    functionTree.run = function(action, props) {
+    functionTree.runAction = function(action, props) {
         if (typeof action === "function") {
             return new Promise((resolve, reject) => {
                 functionTree.runTree(action.name, sequence(action), props,
@@ -31,10 +29,10 @@ function Run(store) {
         )
     }
 
-    runTree.on('asyncFunction', (e, action) => !action.isParallel && store.changes.commit())
-    runTree.on('parallelStart', () => store.changes.commit())
-    runTree.on('parallelProgress', (e, payload, resolving) => resolving === 1 && store.changes.commit())
-    runTree.on('end', () => store.changes.commit())
+    functionTree.on('asyncFunction', (e, action) => !action.isParallel && store.changes.commit())
+    functionTree.on('parallelStart', () => store.changes.commit())
+    functionTree.on('parallelProgress', (e, payload, resolving) => resolving === 1 && store.changes.commit())
+    functionTree.on('end', () => store.changes.commit())
 
     if (store.devtools) {
 

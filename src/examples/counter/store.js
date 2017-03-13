@@ -12,7 +12,7 @@ function decrease({ state, props }) {
     state.set('count', state.get('count') - (props.by || 1))
 }
 
-function Demo(module) {
+function Demo(module, store) {
     return {
         state: {
             module,

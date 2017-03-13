@@ -1,7 +1,12 @@
-import {compute} from '../tags'
-
 export default (target, value) => {
-    return function decrement(context) {
-        return context.set(target, compute(target, value, (a = 0, b = 1) => a - b))
+
+    function decrement(context) {
+        const model = context.model(target)
+
+        model.set(null, model.get(null, (state = 0) => {
+            return state - context.resolve.value(value || 1)
+        }))
     }
+
+    return decrement
 }

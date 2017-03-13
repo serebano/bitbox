@@ -25,28 +25,4 @@ function State(target, store) {
     })
 }
 
-State.Provider = function(store) {
-    return function StateProvider(context) {
-        context.state = store.state
-
-        if (context.debugger) {
-            let asyncTimeout
-            context.state.onChange = (e) => {
-                context.debug({
-                    type: 'mutation',
-                    method: e.method,
-                    args: [ e.path.slice(1), ...e.args ]
-                })
-
-                clearTimeout(asyncTimeout)
-                asyncTimeout = setTimeout(() => store.changes.commit())
-
-                delete context.state.onChange
-            }
-        }
-
-        return context
-    }
-}
-
 export default State

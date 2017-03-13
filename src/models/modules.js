@@ -43,7 +43,7 @@ export default (target, store) => {
 				? desc({
 					path: keys.join("."),
 					name: keys[length-1]
-				}) || {}
+				}, store) || {}
 				: desc || {}
 
 			if (module.provider)

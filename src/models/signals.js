@@ -7,7 +7,7 @@ function Signals(target, store) {
 		add(path, chain) {
 			return this.apply(path, function add(target, key, chain) {
 				target[key] = (props) => {
-					store.runTree(path.join("."), chain, props)
+					store.run(path.join("."), chain, props)
 				}
 			}, chain)
 		}

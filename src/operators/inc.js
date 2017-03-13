@@ -1,6 +1,6 @@
 export default (target, value) => {
 
-    function inc(context) {
+    function increment(context) {
         const model = context.model(target)
 
         model.set(null, model.get(null, (state = 0) => {
@@ -8,5 +8,5 @@ export default (target, value) => {
         }))
     }
 
-    return inc
+    return increment
 }

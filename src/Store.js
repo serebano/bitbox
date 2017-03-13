@@ -1,92 +1,72 @@
 import Tag from './Tag'
-import DebuggerProvider from './providers/debugger'
-
+// models
 import Modules from './models/modules'
 import Signals from './models/signals'
 import State from './models/state'
 import Changes from './models/changes'
 import Providers from './models/providers'
+// providers
+import DebuggerProvider from './providers/debugger'
+import StoreProvider from './providers/store'
+import StateProvider from './providers/state'
+//
 import Resolve from './Resolve'
 import Run from './Run'
 
-function Model(context) {
-    const $ = (props) => props
-        ? Object.assign({}, context, { props })
-        : !context.props
-            ? Object.assign({ props: {} }, context)
-            : context
 
-    return {
-        get(target, props) {
-            if (!(target instanceof Tag))
-                throw new Error(`Invalid target: ${target}`)
+function Store(module, store = {}) {
 
-            return target.get($(props))
+    const target = {}
+    const assign = (props) => Object.assign({}, store, { props: props || {} })
+
+    Object.assign(store, {
+        providers: Providers(target, store),
+        changes: Changes(target, store),
+        state: State(target, store),
+        signals: Signals(target, store),
+        modules: Modules(target, store),
+        resolve: Resolve(store),
+        connect(target, listener, props) {
+            store.changes.on(store.resolve.paths(target, ['state'], props), listener)
+            listener.renew = (props) => listener.update(store.resolve.paths(target, ['state'], props))
+
+            return listener
         },
         model(target, props) {
             if (!(target instanceof Tag))
                 throw new Error(`Invalid target: ${target}`)
 
-            const model = target.model($(props))
             let asyncTimeout
 
-            model.onChange = (e) => {
-                clearTimeout(asyncTimeout)
-                asyncTimeout = setTimeout(() => context.changes.commit())
-            }
-
-            return model
+            return target.model(assign(props), {
+                onChange(e) {
+                    clearTimeout(asyncTimeout)
+                    asyncTimeout = setTimeout(() => store.changes.commit())
+                }
+            })
         },
-        connect(target, listener, props) {
-            context.changes.on(context.resolve.paths(target, ['state'], props), listener)
-            listener.renew = (props) => listener.update(context.resolve.paths(target, ['state'], props))
+        get(target, props) {
+            if (!(target instanceof Tag))
+                throw new Error(`Invalid target: ${target}`)
 
-            return listener
+            return target.get(assign(props))
         }
-    }
-}
-
-Store.Provider = function(store) {
-    return function StoreProvider(context) {
-        context.get = (target) => target.get(context)
-        context.model = (target) => target.model(context)
-        context.resolve = Resolve(context)
-
-        return context
-    }
-}
-
-function Store(module, store = {}) {
-
-    const target = {}
-
-    store.changes   = Changes(target, store)
-    store.providers = Providers(target, store)
-    store.state     = State(target, store)
-    store.signals   = Signals(target, store)
-    store.modules   = Modules(target, store)
-    store.resolve   = Resolve(store)
-
-    Object.assign(store, Model(store))
+    })
 
     if (store.devtools)
         store.providers.add(DebuggerProvider(store))
-        
-    store.providers.add(Store.Provider(store))
-    store.providers.add(State.Provider(store))
+
+    store.providers.add(StoreProvider(store))
+    store.providers.add(StateProvider(store))
 
     store.modules.add(module)
 
-    const functionTree = Run(store)
-
-    store.runTree = functionTree.runTree
+    store.run = Run(store).runTree
 
     if (store.devtools)
-        store.devtools.init(store, functionTree)
+        store.devtools.init(store)
 
 	return store
 }
-
-
 
 export default Store

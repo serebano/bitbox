@@ -61,12 +61,12 @@ class Devtools {
       prevent any new signals firing off when in "remember state"
     */
     remember(index) {
-        this.store.state.reset(JSON.parse(this.initialModelString))
+        this.store.state.set(null, JSON.parse(this.initialModelString))
 
         if (index === 0) {
-            this.run.runTree = this.originalRunTreeFunction
+            this.store.run.runTree = this.originalRunTreeFunction
         } else {
-            this.run.runTree = (name) => {
+            this.store.run.runTree = (name) => {
                 console.warn(`The signal "${name}" fired while debugger is remembering state, it was ignored`)
             }
         }
@@ -76,8 +76,8 @@ class Devtools {
             this.store.state[mutation.method](...mutation.args)
         }
 
-        this.store.changes.commit(true)
-        this.store.emit('remember', JSON.parse(this.mutations[index].data).datetime)
+        this.store.changes.commit()
+        //this.store.emit('remember', JSON.parse(this.mutations[index].data).datetime)
     }
     /*
 
@@ -154,11 +154,10 @@ class Devtools {
         - Debugger sends "ping"
         - Devtools sends "init"
     */
-    init(store, run) {
+    init(store) {
         this.store = store
-        this.run = run
 
-        this.originalRunTreeFunction = run.runTree
+        this.originalRunTreeFunction = store.run
 
         if (this.storeMutations) {
             this.initialModelString = JSON.stringify(store.state.get())
@@ -258,7 +257,7 @@ class Devtools {
       called again
     */
     watchExecution() {
-        this.run.on('start', (execution) => {
+        this.store.run.on('start', (execution) => {
             const message = JSON.stringify({
                 type: 'executionStart',
                 data: {
@@ -277,7 +276,7 @@ class Devtools {
                 this.backlog.push(message)
             }
         })
-        this.run.on('end', (execution) => {
+        this.store.run.on('end', (execution) => {
             const message = JSON.stringify({
                 type: 'executionEnd',
                 data: {
@@ -294,7 +293,7 @@ class Devtools {
                 this.backlog.push(message)
             }
         })
-        this.run.on('pathStart', (path, execution, funcDetails) => {
+        this.store.run.on('pathStart', (path, execution, funcDetails) => {
             const message = JSON.stringify({
                 type: 'executionPathStart',
                 data: {
@@ -312,7 +311,7 @@ class Devtools {
                 this.backlog.push(message)
             }
         })
-        this.run.on('functionStart', (execution, funcDetails, payload) => {
+        this.store.run.on('functionStart', (execution, funcDetails, payload) => {
             const message = JSON.stringify({
                 type: 'execution',
                 data: {
@@ -331,7 +330,7 @@ class Devtools {
                 this.backlog.push(message)
             }
         })
-        this.run.on('functionEnd', (execution, funcDetails, payload, result) => {
+        this.store.run.on('functionEnd', (execution, funcDetails, payload, result) => {
             if (!result || (result instanceof Path && !result.payload)) {
                 return
             }
@@ -353,7 +352,7 @@ class Devtools {
                 this.backlog.push(message)
             }
         })
-        this.run.on('error', (error, execution, funcDetails) => {
+        this.store.run.on('error', (error, execution, funcDetails) => {
             const message = JSON.stringify({
                 type: 'executionFunctionError',
                 data: {
