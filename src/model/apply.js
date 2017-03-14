@@ -1,26 +1,36 @@
-import Path from './path'
-import {isComplexObject} from '../utils'
+import Path from "./path";
+import { isComplexObject } from "../utils";
 
-function apply(target, path, method, ...args) {
+function apply(target, path, method, args = []) {
     let change = null;
 
-    Path.keys(path).reduce((target, key, index, keys) => {
-        if (index === keys.length - 1) {
-            const state = target[key]
-            method(target, key, ...args)
+    Path.keys(path).reduce(
+        (target, key, index, keys) => {
+            if (index === keys.length - 1) {
+                const state = target[key];
+                method(target, key, ...args);
 
-            if (state !== target[key] || (isComplexObject(target[key]) && isComplexObject(state))) {
-                change = { path: keys, method: method.name, args }
+                if (
+                    state !== target[key] ||
+                    (isComplexObject(target[key]) && isComplexObject(state))
+                ) {
+                    change = {
+                        key,
+                        path: keys,
+                        method: method.displayName || method.name,
+                        args
+                    };
+                }
             }
-        }
 
-        if (!(key in target))
-            target[key] = {}
+            if (!(key in target)) target[key] = {};
 
-        return target[key]
-    }, target)
+            return target[key];
+        },
+        target
+    );
 
-    return change
+    return change;
 }
 
-export default apply
+export default apply;

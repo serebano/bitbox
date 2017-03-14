@@ -27,8 +27,7 @@ class Devtools {
         this.storeMutations = typeof options.storeMutations === "undefined"
             ? true
             : options.storeMutations;
-        this.preventExternalMutations = typeof options.preventExternalMutations ===
-            "undefined"
+        this.preventExternalMutations = typeof options.preventExternalMutations === "undefined"
             ? true
             : options.preventExternalMutations;
         this.preventPropsReplacement = options.preventPropsReplacement || false;
@@ -42,8 +41,7 @@ class Devtools {
         this.originalRunTreeFunction = null;
         this.ws = null;
         this.isResettingDebugger = false;
-        this.isBrowserEnv = typeof document !== "undefined" &&
-            typeof window !== "undefined";
+        this.isBrowserEnv = typeof document !== "undefined" && typeof window !== "undefined";
         this.allowedTypes = []
             .concat(this.isBrowserEnv ? [File, FileList, Blob, ImageData] : [])
             .concat(options.allowedTypes || []);
@@ -64,7 +62,7 @@ class Devtools {
     prevent any new signals firing off when in "remember state"
   */
     remember(index) {
-        this.controller.model.state = JSON.parse(this.initialModelString);
+        this.controller.model.reset(JSON.parse(this.initialModelString));
 
         if (index === 0) {
             this.controller.runTree = this.originalRunTreeFunction;
@@ -82,16 +80,13 @@ class Devtools {
         }
 
         this.controller.flush(true);
-        this.controller.emit(
-            "remember",
-            JSON.parse(this.mutations[index].data).datetime
-        );
+        this.controller.emit("remember", JSON.parse(this.mutations[index].data).datetime);
     }
     /*
 
   */
     reset() {
-        this.controller.model.state = JSON.parse(this.initialModelString);
+        this.controller.model.reset(JSON.parse(this.initialModelString));
         this.backlog = [];
         this.mutations = [];
         this.controller.flush(true);
@@ -106,10 +101,7 @@ class Devtools {
                 const message = JSON.parse(event.data);
                 switch (message.type) {
                     case "changeModel":
-                        this.controller.model.set(
-                            message.data.path,
-                            message.data.value
-                        );
+                        this.controller.model.set(message.data.path, message.data.value);
                         this.controller.flush();
                         break;
                     case "remember":
@@ -133,10 +125,7 @@ class Devtools {
             };
         } else {
             window.addEventListener("cerebral2.debugger.changeModel", event => {
-                this.controller.model.set(
-                    event.detail.path,
-                    event.detail.value
-                );
+                this.controller.model.set(event.detail.path, event.detail.value);
                 this.controller.flush();
             });
             window.addEventListener("cerebral2.debugger.remember", event => {
@@ -151,15 +140,9 @@ class Devtools {
                 this.reset();
             });
             // When debugger responds a client ping
-            window.addEventListener(
-                "cerebral2.debugger.pong",
-                this.sendInitial
-            );
+            window.addEventListener("cerebral2.debugger.pong", this.sendInitial);
             // When debugger pings the client
-            window.addEventListener(
-                "cerebral2.debugger.ping",
-                this.sendInitial
-            );
+            window.addEventListener("cerebral2.debugger.ping", this.sendInitial);
         }
     }
     /*
@@ -337,57 +320,49 @@ class Devtools {
                 this.backlog.push(message);
             }
         });
-        this.controller.on(
-            "functionStart",
-            (execution, funcDetails, payload) => {
-                const message = JSON.stringify({
-                    type: "execution",
-                    source: "c",
-                    data: {
-                        execution: {
-                            executionId: execution.id,
-                            functionIndex: funcDetails.functionIndex,
-                            payload,
-                            data: null
-                        }
+        this.controller.on("functionStart", (execution, funcDetails, payload) => {
+            const message = JSON.stringify({
+                type: "execution",
+                source: "c",
+                data: {
+                    execution: {
+                        executionId: execution.id,
+                        functionIndex: funcDetails.functionIndex,
+                        payload,
+                        data: null
                     }
-                });
-
-                if (this.isConnected) {
-                    this.sendMessage(message);
-                } else {
-                    this.backlog.push(message);
                 }
+            });
+
+            if (this.isConnected) {
+                this.sendMessage(message);
+            } else {
+                this.backlog.push(message);
             }
-        );
-        this.controller.on(
-            "functionEnd",
-            (execution, funcDetails, payload, result) => {
-                if (!result || (result instanceof Path && !result.payload)) {
-                    return;
-                }
+        });
+        this.controller.on("functionEnd", (execution, funcDetails, payload, result) => {
+            if (!result || (result instanceof Path && !result.payload)) {
+                return;
+            }
 
-                const message = JSON.stringify({
-                    type: "executionFunctionEnd",
-                    source: "c",
-                    data: {
-                        execution: {
-                            executionId: execution.id,
-                            functionIndex: funcDetails.functionIndex,
-                            output: result instanceof Path
-                                ? result.payload
-                                : result
-                        }
+            const message = JSON.stringify({
+                type: "executionFunctionEnd",
+                source: "c",
+                data: {
+                    execution: {
+                        executionId: execution.id,
+                        functionIndex: funcDetails.functionIndex,
+                        output: result instanceof Path ? result.payload : result
                     }
-                });
-
-                if (this.isConnected) {
-                    this.sendMessage(message);
-                } else {
-                    this.backlog.push(message);
                 }
+            });
+
+            if (this.isConnected) {
+                this.sendMessage(message);
+            } else {
+                this.backlog.push(message);
             }
-        );
+        });
         this.controller.on("error", (error, execution, funcDetails) => {
             const message = JSON.stringify({
                 type: "executionFunctionError",
@@ -440,9 +415,7 @@ class Devtools {
             source: "c",
             version: this.VERSION,
             data: {
-                initialModel: this.initialModelString
-                    ? PLACEHOLDER_INITIAL_MODEL
-                    : initialModel
+                initialModel: this.initialModelString ? PLACEHOLDER_INITIAL_MODEL : initialModel
             }
         }).replace(`"${PLACEHOLDER_INITIAL_MODEL}"`, this.initialModelString);
 
@@ -478,11 +451,7 @@ class Devtools {
         const type = "execution";
         let mutationString = "";
 
-        if (
-            this.storeMutations &&
-            debuggingData &&
-            debuggingData.type === "mutation"
-        ) {
+        if (this.storeMutations && debuggingData && debuggingData.type === "mutation") {
             mutationString = JSON.stringify(debuggingData);
         }
 
@@ -492,9 +461,7 @@ class Devtools {
                 functionIndex: functionDetails.functionIndex,
                 payload: payload,
                 datetime: context.execution.datetime,
-                data: mutationString
-                    ? PLACEHOLDER_DEBUGGING_DATA
-                    : debuggingData
+                data: mutationString ? PLACEHOLDER_DEBUGGING_DATA : debuggingData
             }
         };
 
@@ -548,8 +515,7 @@ class Devtools {
         const componentDetails = {
             name: this.extractComponentName(component),
             renderCount: component.renderCount || 0,
-            id: component.componentDetailsId ||
-                this.debuggerComponentDetailsId++
+            id: component.componentDetailsId || this.debuggerComponentDetailsId++
         };
 
         if (arguments.length === 1) {
@@ -564,10 +530,7 @@ class Devtools {
                 const debuggerComponents = this.debuggerComponentsMap[depsKey];
 
                 for (let x = 0; x < debuggerComponents.length; x++) {
-                    if (
-                        debuggerComponents[x].id ===
-                        component.componentDetailsId
-                    ) {
+                    if (debuggerComponents[x].id === component.componentDetailsId) {
                         debuggerComponents.splice(x, 1);
                         if (debuggerComponents.length === 0) {
                             delete this.debuggerComponentsMap[depsKey];
@@ -580,12 +543,8 @@ class Devtools {
 
         if (nextDeps) {
             for (const depsKey of nextDeps) {
-                this.debuggerComponentsMap[
-                    depsKey
-                ] = this.debuggerComponentsMap[depsKey]
-                    ? this.debuggerComponentsMap[depsKey].concat(
-                          componentDetails
-                      )
+                this.debuggerComponentsMap[depsKey] = this.debuggerComponentsMap[depsKey]
+                    ? this.debuggerComponentsMap[depsKey].concat(componentDetails)
                     : [componentDetails];
             }
         }
@@ -608,9 +567,7 @@ class Devtools {
                         start: start,
                         duration: end - start,
                         changes: changes,
-                        components: componentsToRender.map(
-                            this.extractComponentName
-                        )
+                        components: componentsToRender.map(this.extractComponentName)
                     }
                 }
             })

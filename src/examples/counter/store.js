@@ -13,6 +13,10 @@ function decrease({ state, props }) {
 }
 
 function Demo(module, store) {
+    store.fnTree.on("flush", (changes, force) => {
+        console.log(`on flush`, { force, changes });
+    });
+
     return {
         state: {
             module,

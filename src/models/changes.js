@@ -1,118 +1,126 @@
-import Path from '../model/path'
-import DepsStore from '../Changes'
-import Changes from '../model/changes'
+import Path from "../model/path";
 
-export default function ChangesModel(target = {}, store) {
+export default function Changes(target = {}, store) {
+    const { listeners } = store;
 
-	target.changes = new Changes(target.changes)
+    return {
+        on(paths, listener) {
+            paths = Array.isArray(paths) ? paths : [paths];
+            listener.paths = (listener.paths || []).concat(paths);
 
-	const conn = new DepsStore()
+            listener.add = paths => this.update(listener.paths.concat(paths), listener);
+            listener.remove = paths => this.off(paths, listener);
+            listener.update = paths => this.update(paths, listener);
 
-	return {
+            listeners.add(listener, paths);
 
-		get size() {
-			return target.changes.length
-		},
+            if (store.devtools) store.devtools.updateComponentsMap(listener, paths);
 
-		push(change) {
-			return target.changes.push(change)
-		},
+            return listener;
+        },
 
-		get(path, operator) {
-			const keys = Path.keys(path)
-			const length = keys.length
+        off(paths, listener) {
+            paths = Array.isArray(paths) ? paths : [paths];
+            listener.paths = listener.paths.filter(path => paths.indexOf(path) === -1);
 
-			return keys.reduce((changes, key, index) => {
-				let step = changes.filter(change => {
-					if (index === length - 1) {
-						if (key === "*")
-							return change.path.length === length
-						if (key === "**")
-							return change.path.length >= length
-						if (change.path[index] === key)
-							return change.path.length === length
+            listeners.remove(listener, paths);
 
-						return false
-					}
+            if (store.devtools) store.devtools.updateComponentsMap(listener, null, paths);
+        },
 
-					return key === "*" || key === "**" || change.path[index] === key
-				})
+        update(newPaths, listener) {
+            const oldPaths = listener.paths;
+            listener.paths = newPaths;
 
-				if (operator)
-					step = step.filter(change => change.operator === operator)
+            listeners.update(listener, oldPaths, newPaths);
 
-				console.log("\t".repeat(index), index, `${keys.slice(0, index).join(".")}.( ${key} ).${keys.slice(index+1).join(".")}`, step.length)
-				step.forEach(s => console.log("\t".repeat(index), '-', s.path.map((p,i) => i === index ? `( ${p} )` : p).join("."), s.operator))
+            if (store.devtools) store.devtools.updateComponentsMap(listener, newPaths, oldPaths);
+        },
 
-				return step
+        commit(force) {
+            if (!force && !target.changes.length) return [];
 
-			}, target.changes)
-		},
+            const start = Date.now();
+            const _changes = target.changes.flush();
+            const _listeners = listeners.get(_changes, force);
 
-		on(paths, listener) {
-			paths = Array.isArray(paths) ? paths : [paths]
-			listener.paths = (listener.paths||[]).concat(paths)
+            _listeners.forEach(listener => {
+                if (store.devtools) store.devtools.updateComponentsMap(listener);
 
-			listener.add = (paths) => this.update(listener.paths.concat(paths), listener)
-			listener.remove = (paths) => this.off(paths, listener)
-			listener.update = (paths) => this.update(paths, listener)
+                listener(_changes);
+            });
 
-			conn.add(listener, paths)
+            if (store.devtools && _listeners.length) {
+                store.devtools.sendComponentsMap(_listeners, _changes, start, Date.now());
+            }
 
-			if (store.devtools)
-				store.devtools.updateComponentsMap(listener, paths)
+            console.info(
+                `[%c*%c]`,
+                `color:red`,
+                ``,
+                `${_changes.length} (changes) * ${_listeners.length} (listeners)`
+            );
+            //console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')
+            if (_listeners.length)
+                console.log(
+                    _listeners
+                        .map(
+                            listener =>
+                                `${listener.displayName || listener.name}/${listener.renderCount} [ ${listener.paths
+                                    .filter(
+                                        path =>
+                                            _changes.filter(
+                                                cpath => cpath.path.join(".") === path
+                                            ).length
+                                    )
+                                    .join(", ")} ]`
+                        )
+                        .join("\n")
+                );
 
-			return listener
-		},
+            return _changes;
+        },
 
-		off(paths, listener) {
-			paths = Array.isArray(paths) ? paths : [paths]
-			listener.paths = listener.paths.filter(path => paths.indexOf(path) === -1)
+        query(path, operator) {
+            const keys = Path.keys(path);
+            const length = keys.length;
 
-			conn.remove(listener, paths)
+            return keys.reduce(
+                (changes, key, index) => {
+                    let step = changes.filter(change => {
+                        if (index === length - 1) {
+                            if (key === "*") return change.path.length === length;
+                            if (key === "**") return change.path.length >= length;
+                            if (change.path[index] === key) return change.path.length === length;
 
-			if (store.devtools)
-				store.devtools.updateComponentsMap(listener, null, paths)
-		},
+                            return false;
+                        }
 
-		update(newPaths, listener) {
-			const oldPaths = listener.paths
-			listener.paths = newPaths
+                        return key === "*" || key === "**" || change.path[index] === key;
+                    });
 
-			conn.update(listener, oldPaths, newPaths)
+                    if (operator) step = step.filter(change => change.operator === operator);
 
-			if (store.devtools)
-				store.devtools.updateComponentsMap(listener, newPaths, oldPaths)
-		},
+                    console.log(
+                        "\t".repeat(index),
+                        index,
+                        `${keys
+                            .slice(0, index)
+                            .join(".")}.( ${key} ).${keys.slice(index + 1).join(".")}`,
+                        step.length
+                    );
+                    step.forEach(s =>
+                        console.log(
+                            "\t".repeat(index),
+                            "-",
+                            s.path.map((p, i) => i === index ? `( ${p} )` : p).join("."),
+                            s.operator
+                        ));
 
-		commit(force) {
-			if (!force && !target.changes.length)
-				return []
-
-			const start = Date.now()
-			const changes = target.changes.flush()
-			const listeners = force
-				? conn.getAllListeners()
-				: conn.getListeners(changes)
-
-			listeners.forEach((listener) => {
-				if (store.devtools)
-					store.devtools.updateComponentsMap(listener)
-
-				listener(changes)
-			})
-
-			if (store.devtools && listeners.length) {
-				store.devtools.sendComponentsMap(listeners, changes, start, Date.now())
-			}
-
-			console.info(`[%c*%c]`, `color:red`, ``, `${changes.length} (changes) * ${listeners.length} (listeners)`)
-			//console.info('[', changes.map(c => c.path.join(".")).join(", "), ']')
-			if (listeners.length)
-				console.log(listeners.map(listener => `${listener.displayName||listener.name}/${listener.renderCount} [ ${listener.paths.filter(path => changes.filter(cpath => cpath.path.join(".") === path).length).join(", ")} ]`).join("\n"))
-
-
-			return changes
-		}
-	}
+                    return step;
+                },
+                target.changes
+            );
+        }
+    };
 }

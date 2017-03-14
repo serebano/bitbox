@@ -1,76 +1,74 @@
-import View from 'react'
-import {compute} from './tags'
-import {getChangedProps} from './utils'
+import View from "react";
+import { compute } from "./tags";
+import { getChangedProps } from "./utils";
 
 export default function connectComponent(dependencies, component) {
+    //const target = compute(dependencies);
 
-	const target = compute(dependencies)
+    class Component extends View.Component {
+        componentWillMount() {
+            const componentListener = changes => this.update(this.props, changes);
+            componentListener.displayName = component.name;
 
-	class Component extends View.Component {
+            this.conn = this.context.store.connect(dependencies, componentListener, this.props);
+        }
 
-		componentWillMount () {
-            const componentListener = (changes) => this.update(this.props, changes)
-            componentListener.displayName = component.name
+        componentWillReceiveProps(nextProps) {
+            const changes = getChangedProps(this.props, nextProps);
 
-			this.conn = this.context.store.connect(target, componentListener, this.props)
-		}
+            if (changes.length) this.update(nextProps, changes);
+        }
 
-		componentWillReceiveProps (nextProps) {
-			const changes = getChangedProps(this.props, nextProps)
+        componentWillUnmount() {
+            this._isUnmounting = true;
+            this.conn.remove();
+        }
 
-			if (changes.length)
-				this.update(nextProps, changes)
-		}
+        shouldComponentUpdate() {
+            return false;
+        }
 
-		componentWillUnmount () {
-	    	this._isUnmounting = true
-			this.conn.remove()
-	    }
+        // paths(props) {
+        //     return this.context.store.resolve.paths(target, ["state"], props);
+        // }
 
-		shouldComponentUpdate () {
-			return false
-		}
+        update(props, changes) {
+            this.conn.update(props);
+            //this.conn.update(this.paths(props))
+            this.forceUpdate();
+        }
 
-		paths(props) {
-			return this.context.store.resolve.paths(target, ['state'], props)
-		}
+        render() {
+            return View.createElement(component, this.conn.get(this.props));
+            //return View.createElement(component, this.context.store.get(target, this.props));
+        }
+    }
 
-		update(props, changes) {
-			this.conn.update(this.paths(props))
-			this.forceUpdate()
-		}
+    Component.displayName = `${component.displayName || component.name}_Component`;
 
-		render() {
-			return View.createElement(component, this.context.store.get(target, this.props))
-		}
+    Component.contextTypes = {
+        store: View.PropTypes.object
+    };
 
-	}
-
-	Component.displayName = `${component.displayName || component.name}_Component`
-
-	Component.contextTypes = {
-		store: View.PropTypes.object,
-	}
-
-	return Component
+    return Component;
 }
 
 export class Container extends View.Component {
     getChildContext() {
         return {
-			store: this.props.store
-		}
+            store: this.props.store
+        };
     }
     render() {
-        return this.props.children
+        return this.props.children;
     }
 }
 
 Container.propTypes = {
-	store: View.PropTypes.object.isRequired,
-	children: View.PropTypes.node.isRequired
-}
+    store: View.PropTypes.object.isRequired,
+    children: View.PropTypes.node.isRequired
+};
 
 Container.childContextTypes = {
-	store: View.PropTypes.object.isRequired,
-}
+    store: View.PropTypes.object.isRequired
+};
