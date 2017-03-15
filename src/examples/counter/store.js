@@ -1,8 +1,9 @@
 import Store from "../../Store";
 import Devtools from "../../Devtools";
 import { state, props } from "../../tags";
-import { wait, sequence, parallel, set } from "../../operators";
-import Counts from "./counts";
+import { wait, set } from "../../operators";
+import { sequence, parallel } from "../../Run";
+import Counts from "../modules/counts";
 
 function increase({ state, props }) {
     state.set("count", state.get("count") + (props.by || 1));
@@ -13,10 +14,6 @@ function decrease({ state, props }) {
 }
 
 function Demo(module, store) {
-    store.fnTree.on("flush", (changes, force) => {
-        console.log(`on flush`, { force, changes });
-    });
-
     return {
         state: {
             module,
@@ -44,16 +41,13 @@ function Demo(module, store) {
         },
         provider(context) {
             return context;
-        }
+        },
+        devtools: Devtools({
+            //remoteDebugger: "192.168.0.46:8585"
+            //remoteDebugger: '192.168.43.152:8686',
+            remoteDebugger: "localhost:8585"
+        })
     };
 }
 
-const store = Store(Demo, {
-    devtools: Devtools({
-        remoteDebugger: "192.168.0.46:8585"
-        //remoteDebugger: '192.168.43.152:8686',
-        //remoteDebugger: 'localhost:8585'
-    })
-});
-
-export default store;
+export default Store(Demo);

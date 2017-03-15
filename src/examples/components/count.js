@@ -1,6 +1,6 @@
 import React from "react";
-import { state, props, signal } from "../../../tags";
-import { inc, dec } from "../../../operators";
+import { state, props, signal } from "../../tags";
+import { inc, dec } from "../../operators";
 
 function Count({ count, inc, dec }) {
     return (
@@ -12,6 +12,12 @@ function Count({ count, inc, dec }) {
     );
 }
 
+Count.connect = {
+    count: state`count`,
+    inc: signal`increaseClicked`,
+    dec: signal`decreaseClicked`
+};
+
 Count.module = {
     state: {
         count: 0
@@ -20,12 +26,6 @@ Count.module = {
         increment: [inc(state`count`, props`by`)],
         decrement: [dec(state`count`, props`by`)]
     }
-};
-
-Count.connect = {
-    count: state`count`,
-    inc: signal`increment`,
-    dec: signal`decrement`
 };
 
 export default Count;

@@ -6,16 +6,18 @@ function extract(target, path, view, ...args) {
     if (last === "*" || last === "**") keys.pop();
 
     return keys.reduce(
-        (step, key, index) => {
-            if (index === keys.length - 1) return view(step, key, ...args);
-            else if (!step[key])
+        (target, key, index) => {
+            if (index === keys.length - 1) {
+                return view ? view(target, key, ...args) : { target, key, index };
+            } else if (!target[key]) {
                 throw new Error(
-                    `The path "${path}" is invalid, can not update state. Does the path "${keys
+                    `The path "${path}" is invalid. Does the path "${keys
                         .splice(0, keys.length - 1)
                         .join(".")}" exist?`
                 );
+            }
 
-            return step[key];
+            return target[key];
         },
         target
     );

@@ -1,4 +1,4 @@
-function Listeners(target = {}, path, store = {}) {
+function Listeners(target = {}, path, store) {
     target.listeners = target.listeners || {};
 
     return {

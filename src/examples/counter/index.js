@@ -1,12 +1,5 @@
-import React from 'react'
-import {render} from 'react-dom'
-import {Container} from '../../Component'
+import mount from "../mount";
+import store from "./store";
+import app from "../components/app";
 
-import store from './store'
-import App from './App'
-
-render((
-    <Container store={store}>
-        <App />
-    </Container>
-), document.querySelector('#root'))
+mount(app, store, "#root");

@@ -1,45 +1,36 @@
-import Tag from "./Tag";
-import Model from "./model";
+//import Tag from "./Tag";
+import Model from "./Model";
 // models
+import Providers from "./models/providers";
+import Listeners from "./models/listeners";
 import Modules from "./models/modules";
 import Signals from "./models/signals";
 import State from "./models/state";
-import Changes from "./models/changes";
-import Providers from "./models/providers";
-import Listeners from "./models/listeners";
-
 // providers
 import DebuggerProvider from "./providers/debugger";
 import StoreProvider from "./providers/store";
 import StateProvider from "./providers/state";
-//
-//import Resolve from "./Resolve";
+// FunctionTree
 import Run from "./Run";
-import { compute } from "./tags/compute";
 
-function Store(module, store = {}) {
-    const target = (store.target = {});
-    const assign = props => Object.assign({}, store, { props: props || {} });
-
-    store.listeners = Listeners(target);
-    store.changes = Changes(target, store);
-
-    Object.assign(store, {
-        providers: Providers(target, store),
-        state: State(target, store),
-        signals: Signals(target, store),
-        modules: Modules(target, store),
-        //resolve: Resolve(store),
-        connect(target, listener, props) {
-            const tag = compute(target);
-            return store.listeners.connect(listener, tag.paths(assign(props), ["state"]));
+function Store(module) {
+    const store = Model.create(
+        {
+            listeners: Listeners,
+            providers: Providers,
+            state: State,
+            signals: Signals,
+            modules: Modules
         },
-        get(target, props) {
-            if (!(target instanceof Tag)) throw new Error(`Invalid target: ${target}`);
-
-            return target.get(assign(props));
+        {
+            props: {},
+            runTree(path, tree, props) {
+                return store.fnTree.runTree(path, tree, props);
+            }
         }
-    });
+    );
+
+    //store.modules.add(module);
 
     if (store.devtools) store.providers.add(DebuggerProvider(store));
 

@@ -1,8 +1,8 @@
-import Tag from "../Tag";
-import Model from "../model";
-import { Listeners } from "../models";
-import { compute, props } from "../tags";
-import { connect, inc, set, dec } from "../operators";
+import Tag from "../../Tag";
+import Model from "../../Model";
+import { Listeners } from "../../models";
+import { compute, props } from "../../tags";
+import { connect, inc, set, dec } from "../../operators";
 
 function cars(keys, ...values) {
     return new Tag("demo.cars", keys, values);
@@ -37,7 +37,7 @@ app.on(
     props => console.log(`on-cars`, props)
 );
 
-app(
+app.run(
     set(cars`sport`, props`value`, {
         value: {
             id: "SPOER"
@@ -56,12 +56,12 @@ const comp = connect(
     }
 );
 
-app(inc(demo`foo`));
-app(inc(demo`bar`));
-app(set(demo`fooCopy`, demo`foo`));
-app(set(demo`my.car`, `Toyota`));
+app.run(inc(demo`foo`));
+app.run(inc(demo`bar`));
+app.run(set(demo`fooCopy`, demo`foo`));
+app.run(set(demo`my.car`, `Toyota`));
 
-app(set(cars`super.ferrari`, "Ferrari"));
+app.run(set(cars`super.ferrari`, "Ferrari"));
 
 app.select(demo`count`).apply(
     compute(demo`count`, function INCDEMO(count = 0) {

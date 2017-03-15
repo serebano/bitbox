@@ -1,29 +1,24 @@
-import Model from "../model";
+import { push, unshift } from "../model/methods";
 
-function State(target, store) {
-    return Model(target, "state", {
-        reset(state) {
-            return this.update(
-                function reset(target, key, data) {
-                    target[key] = data;
+function State(target, path, api) {
+    return {
+        reset(value) {
+            return this.apply(
+                function reset(_, value) {
+                    return value;
                 },
-                null,
-                state
+                value
             );
         },
         keys(path) {
-            return this.get(path, function keys(target, key) {
-                return Object.keys(target[key]);
-            });
+            return this.get(path, Object.keys);
         },
         values(path) {
-            return this.get(path, function values(target, key) {
-                return Object.values(target[key]);
-            });
+            return this.get(path, Object.values);
         },
-        push: Model.push,
-        unshift: Model.unshift
-    });
+        push,
+        unshift
+    };
 }
 
 export default State;

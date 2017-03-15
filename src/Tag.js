@@ -39,7 +39,10 @@ export default class Tag {
 
     get(context, view) {
         const model = get(context, this.type);
-
+        if (!model) {
+            console.log(`context`, context, this.type);
+            throw new Error(`Invalid model for ${this.type}`);
+        }
         if (model.get) return model.get(this.path(context), view);
 
         return get(model, this.path(context), view);

@@ -1,15 +1,15 @@
 function waitFactory(value, next) {
     function wait({ path, resolve }) {
-        const ms = resolve.value(value)
+        const ms = value; //resolve.value(value)
 
-        return new Promise((resolve) => {
-            setTimeout(() => resolve(path ? path.then() : next), ms)
-        })
+        return new Promise(resolve => {
+            setTimeout(() => resolve(path ? path.then() : next), ms);
+        });
     }
 
-    wait.displayName = `wait(${value})`
+    wait.displayName = `wait(${value})`;
 
-    return wait
+    return wait;
 }
 
-export default waitFactory
+export default waitFactory;

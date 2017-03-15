@@ -1,11 +1,13 @@
-import { FunctionTree } from "function-tree";
+import { FunctionTree, sequence, parallel } from "function-tree";
+
+export { sequence, parallel };
 
 function FunTree(store) {
     const funtree = new FunctionTree(store.providers.get());
 
     funtree.model = store.state;
 
-    store.providers.on("update", function FunTreeProviders() {
+    store.on("providers", function FunTreeProviders() {
         funtree.contextProviders = store.providers.get();
     });
 

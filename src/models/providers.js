@@ -1,32 +1,32 @@
-import Model from "../model";
-
-function Providers(target, store) {
+function Providers(target = {}, path, api) {
     target.providers = target.providers || [];
 
-    return Model(target, "providers", {
-        create(...args) {
-            return target.providers.reduce(
-                (context, Provider) => Object.assign(context, Provider(context, ...args)),
-                {}
-            );
-        },
-        get(provider) {
-            return Model.get(target, this.path, function get(target, key) {
-                if (typeof provider === "function")
-                    return target[key][target[key].indexOf(provider)];
+    return {
+        context(...args) {
+            this.get(providers => {
+                return providers.reduce(
+                    (context, Provider) => {
+                        const newcontext = Provider(context, ...args);
+                        if (newcontext !== context) throw new Error("Provider must return context");
 
-                return provider >= 0 ? target[key][provider] : target[key];
+                        return newcontext;
+                    },
+                    {}
+                );
             });
         },
-        keys() {
-            return this.get((target, key) =>
-                target[key].map(provider => provider.displayName || provider.name));
+        getProvider(provider) {
+            return this.get(providers => providers[this.indexOf(provider)]);
         },
-        index(provider) {
-            return this.get((target, key) => target[key].indexOf(provider));
+        keys() {
+            return this.get(providers =>
+                providers.map(provider => provider.displayName || provider.name));
+        },
+        indexOf(provider) {
+            return this.get(providers => providers.indexOf(provider));
         },
         has(provider) {
-            return this.get((target, key) => target[key].indexOf(provider) > -1);
+            return this.get(providers => providers.indexOf(provider) > -1);
         },
         add(provider) {
             if (this.has(provider)) return;
@@ -39,18 +39,19 @@ function Providers(target, store) {
             );
         },
         remove(provider) {
-            function remove(array, provider) {
-                return array.filter(i => i !== provider);
-            }
-
-            return this.apply(remove, provider);
+            return this.apply(
+                function remove(array, provider) {
+                    return array.filter(i => i !== provider);
+                },
+                provider
+            );
         },
         clear() {
-            return this.update(function clear(target, key) {
-                target[key] = [];
+            return this.apply(function clear() {
+                return [];
             });
         }
-    });
+    };
 }
 
 export default Providers;

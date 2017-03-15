@@ -1,7 +1,10 @@
 export default (target, ...args) => {
-    function merge(state, ...args) {
-        return Object.assign(state, ...args);
-    }
-
-    return context => context.select(target).apply(merge, ...args);
+    return function merge(context) {
+        context.select(target).apply(
+            function merge(state, ...args) {
+                return Object.assign(state, ...args);
+            },
+            ...args
+        );
+    };
 };

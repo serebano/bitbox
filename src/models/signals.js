@@ -1,15 +1,16 @@
-import Model from "../model";
-
-function Signals(target, store) {
-    return Model(target, "signals", {
-        add(path, tree) {
-            function add(state, chain) {
-                return props => store.runTree(path.join("."), chain, props || {});
-            }
-
-            return this.apply(path, add, tree);
+function Signals(target, path, api) {
+    return {
+        add(path, value) {
+            return this.apply(
+                path,
+                function add(state, chain, signalPath) {
+                    return props => api.runTree(signalPath, chain, props || {});
+                },
+                value,
+                path.join(".")
+            );
         }
-    });
+    };
 }
 
 export default Signals;

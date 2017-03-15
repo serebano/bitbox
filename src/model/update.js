@@ -1,35 +1,36 @@
-import Path from './path'
+import Path from "./path";
+import { isComplexObject } from "../utils";
 
-function update(target, path, operator, ...args) {
+function update(target, path, method, args = []) {
+    let change = null;
 
-	if (typeof operator !== "function")
-		throw new Error(`Cannot update ${path}, missing operator`)
+    Path.keys(path).reduce(
+        (target, key, index, keys) => {
+            if (index === keys.length - 1) {
+                const state = target[key];
+                method(target, key, ...args);
 
-	path = Path.keys(path)
+                if (
+                    state !== target[key] ||
+                    (isComplexObject(target[key]) && isComplexObject(state))
+                ) {
+                    change = {
+                        key,
+                        path: keys,
+                        method: method.displayName || method.name,
+                        args
+                    };
+                }
+            } else if (!(key in target)) {
+                target[key] = {};
+            }
 
-	const change = {
-		path: path,
-		args: args,
-		operator: operator.displayName || operator.name
-	}
+            return target[key];
+        },
+        target
+    );
 
-	path.reduce((step, key, index) => {
-		if (index === path.length - 1) {
-			const value = step[key]
-
-			operator(step, key, ...args)
-
-			if (step[key] !== value || (isComplexObject(step[key]) && isComplexObject(value)))
-				change.changed = true
-
-		} else if (!step[key]) {
-			throw new Error(`The path "${path}" is invalid, can not update state. Does the path "${path.splice(0, path.length - 1).join('.')}" exist?`)
-		}
-
-		return step[key]
-	}, target)
-
-	return change
+    return change;
 }
 
-export default update
+export default update;

@@ -1,150 +1,142 @@
-import Model from "../model";
+import Model from "../Model";
 import Path from "../model/path";
 
-export default (target, store) => {
-    function ensure(target, key, value) {
-        if (!target) return undefined;
+function ensure(target, key, value) {
+    if (!target) return undefined;
 
-        if (!target.modules) target.modules = {};
+    if (!target.modules) target.modules = {};
 
-        if (!target.modules[key]) target.modules[key] = value || {};
+    if (!target.modules[key]) target.modules[key] = value || {};
 
-        return target.modules[key];
-    }
+    return target.modules[key];
+}
 
-    return Model(
-        target,
-        [],
-        {
-            get(path) {
-                return this.extract(
-                    function get(target, key) {
-                        if (!target || !target.modules) return undefined;
+function Modules(target, path, store) {
+    return {
+        get(path) {
+            return Model.get(target, Path.join(this.path, path), function get(target, key) {
+                if (!target || !target.modules) return undefined;
 
-                        return target.modules[key];
-                    },
-                    path
-                );
-            },
-            has(path) {
-                return this.extract(
-                    function has(target, key) {
-                        return target.modules && key in target.modules;
-                    },
-                    path
-                );
-            },
-            add(path, desc) {
-                if (
-                    arguments.length === 1 &&
-                    (typeof path === "object" || typeof path === "function")
-                ) {
-                    desc = path;
-                    path = [];
-                }
+                return target.modules[key];
+            });
+        },
+        has(path) {
+            return this.get(path) !== undefined;
+        },
+        add(path, desc) {
+            if (
+                arguments.length === 1 && (typeof path === "object" || typeof path === "function")
+            ) {
+                desc = path;
+                path = [];
+            }
 
-                const keys = Path.keys(path);
-                const length = keys.length;
-                const module = typeof desc === "function"
-                    ? desc(
-                          {
-                              path: keys.join("."),
-                              name: keys[length - 1]
-                          },
-                          store
-                      ) || {}
-                    : desc || {};
+            const keys = Path.keys(path);
+            const length = keys.length;
+            const module = typeof desc === "function"
+                ? desc(
+                      {
+                          path: keys.join("."),
+                          name: keys[length - 1]
+                      },
+                      store
+                  ) || {}
+                : desc || {};
 
-                if (module.provider)
-                    module.providers = (module.providers || []).concat(module.provider);
+            if (module.devtools) store.devtools = module.devtools;
 
-                keys.reduce(
-                    (target, key, index) => {
-                        if (index === length - 1) {
-                            if (!target.modules) target.modules = {};
+            if (module.provider)
+                module.providers = (module.providers || []).concat(module.provider);
 
-                            return (target.modules[key] = module);
-                        } else {
-                            return ensure(target, key, {});
-                        }
-                    },
-                    target
-                );
+            keys.reduce(
+                (target, key, index) => {
+                    if (index === length - 1) {
+                        if (!target.modules) target.modules = {};
 
-                // set state
-                store.state.set(keys, module.state || {});
+                        return (target.modules[key] = module);
+                    } else {
+                        return ensure(target, key, {});
+                    }
+                },
+                target
+            );
 
-                // add providers
-                if (module.providers)
-                    module.providers.forEach(provider => {
-                        provider.displayName = `${keys.join(".")}.${provider.name}`;
-                        store.providers.add(provider);
-                    });
-
-                // set signals
-                Object.keys(module.signals || {}).forEach(signalKey => {
-                    store.signals.add(keys.concat(signalKey), module.signals[signalKey]);
+            // add providers
+            if (module.providers)
+                module.providers.forEach(provider => {
+                    provider.displayName = `${keys.join(".")}.${provider.name}`;
+                    store.providers.add(provider);
                 });
 
-                // add submodules
-                Object.keys(module.modules || {}).forEach(moduleKey => {
-                    this.add(keys.concat(moduleKey), module.modules[moduleKey]);
-                });
+            // set signals
+            Object.keys(module.signals || {}).forEach(signalKey => {
+                store.signals.add(keys.concat(signalKey), module.signals[signalKey]);
+            });
 
-                target.changes.push({
-                    path: ["modules"].concat(keys),
-                    method: "add",
-                    args: [desc]
-                });
+            // add submodules
+            Object.keys(module.modules || {}).forEach(moduleKey => {
+                this.add(keys.concat(moduleKey), module.modules[moduleKey]);
+            });
 
-                //store.changes.commit()
-            },
-            remove(path) {
-                Path.reduce(
-                    path,
-                    (step, key, index, keys) => {
-                        if (index === keys.length - 1) {
-                            const module = step.modules[key];
+            // set state
+            store.state.set(keys, module.state || {});
 
-                            // remove submodules
-                            if (module.modules)
-                                Object.keys(module.modules).forEach(moduleKey => {
-                                    this.remove(keys.concat(moduleKey));
-                                });
+            target.changes.push({
+                path: [this.type].concat(keys),
+                type: this.type,
+                method: "add",
+                args: [desc]
+            });
 
-                            // remove providers
-                            if (module.providers)
-                                module.providers.forEach(provider => {
-                                    store.providers.remove(provider);
-                                });
+            //store.changes.commit()
+        },
+        remove(path) {
+            Path.reduce(
+                path,
+                (step, key, index, keys) => {
+                    if (index === keys.length - 1) {
+                        const module = step.modules[key];
 
-                            // remove signals
-                            if (module.signals)
-                                Object.keys(module.signals).forEach(signalKey => {
-                                    store.signals.remove(keys.concat(signalKey));
-                                });
-
-                            // remove state
-                            store.state.remove(keys);
-
-                            // remove this module
-                            delete step.modules[key];
-
-                            target.changes.push({
-                                path: ["modules"].concat(keys),
-                                method: "remove",
-                                args: []
+                        // remove submodules
+                        if (module.modules)
+                            Object.keys(module.modules).forEach(moduleKey => {
+                                this.remove(keys.concat(moduleKey));
                             });
 
-                            //store.changes.commit()
-                        }
+                        // remove providers
+                        if (module.providers)
+                            module.providers.forEach(provider => {
+                                store.providers.remove(provider);
+                            });
 
-                        return step.modules[key];
-                    },
-                    target
-                );
-            }
-        },
-        store
-    );
-};
+                        // remove signals
+                        if (module.signals)
+                            Object.keys(module.signals).forEach(signalKey => {
+                                store.signals.remove(keys.concat(signalKey));
+                            });
+
+                        // remove state
+                        store.state.remove(keys);
+
+                        // remove this module
+                        delete step.modules[key];
+
+                        target.changes.push({
+                            path: [this.type].concat(keys),
+                            type: this.type,
+                            method: "remove",
+                            args: []
+                        });
+
+                        //store.changes.commit()
+                    }
+
+                    return step.modules[key];
+                },
+                target
+            );
+        }
+    };
+}
+
+export default Modules;

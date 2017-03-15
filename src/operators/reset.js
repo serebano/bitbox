@@ -1,9 +1,12 @@
-import { update } from './'
+export default (target, value) => {
+    function set(context) {
+        context.select(target).apply(
+            function reset(_, value) {
+                return value;
+            },
+            value
+        );
+    }
 
-export default (...args) => {
-    return update(...args,
-        function reset(target, key, value) {
-            target[key] = value
-        }
-    )
-}
+    return set;
+};

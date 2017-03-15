@@ -1,3 +1,5 @@
 export default target => {
-    return context => context.select(target).unset();
+    return function unset(context) {
+        return context.select(target).unset();
+    };
 };
