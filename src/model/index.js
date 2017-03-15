@@ -3,126 +3,218 @@ import Path from "../model/path";
 import apply from "../model/apply";
 import extract from "../model/extract";
 import Changes from "../model/changes";
+import { compute } from "../tags";
 
 Model.get = extract;
 Model.update = apply;
 
-Model.changes = array => new Changes(array);
+Model.create = function(models, ext) {
+    const data = {};
 
-Model.compose = (...models) => {
-    const api = {
-        get(target, view) {
-            if (!(target instanceof Tag)) return view ? view(target) : target;
-            return target.get(api, view);
-        },
-        select(target) {
-            return target.resolve(api).select(target.path(api));
-        }
-    };
+    return Object.keys(models).reduce(
+        (api, key) => {
+            const model = models[key];
+            api[key] = typeof model === "function"
+                ? model(data, key, api)
+                : Model(data, key, model, api);
 
-    const target = {};
-
-    return models.reduce(
-        (api, Model) => {
-            const model = Model(target, api);
-
-            if (typeof model === "function")
-                api[Model.name.toLowerCase()] = model;
-            else
-                apply(api, Path.resolve(model.path), (target, key) => {
-                    target[key] = model;
-                });
             return api;
         },
-        api
+        Object.assign(
+            function run(action, props) {
+                return action(
+                    Object.assign({}, run, {
+                        props: props || {}
+                    })
+                );
+            },
+            {
+                get(target) {
+                    return target.get(this);
+                },
+                select(target) {
+                    return target.select(this);
+                },
+                create(target, model) {
+                    const path = target.path(this, true);
+                    Model.update(
+                        this,
+                        path,
+                        function createModel(target, key, model) {
+                            target[key] = model;
+                        },
+                        [
+                            typeof model === "function"
+                                ? model(data, path, this)
+                                : Model(data, path, model, this)
+                        ]
+                    );
+                    return this;
+                },
+                on(target, listener) {
+                    const tag = compute(target);
+                    const api = this;
+                    const connection = this.listeners.connect(
+                        tag.paths(this),
+                        function Listener(c) {
+                            connection.update(tag.paths(api));
+                            listener(tag.get(api));
+                        }
+                    );
+
+                    return connection;
+                },
+                connect(target, listener) {
+                    this.listeners.connect(compute(target).paths(this), listener);
+                },
+                flush(force) {
+                    return this.listeners.flush(force);
+                }
+            },
+            ext
+        )
     );
 };
 
-function Model(target = {}, extend, api) {
+Model.push = function push(path, ...args) {
+    return this.apply(
+        path,
+        function push(array = [], ...args) {
+            array.push(...args);
+
+            return array;
+        },
+        ...args
+    );
+};
+
+Model.unshift = function unshift(path, ...args) {
+    return this.apply(
+        path,
+        function unshift(array = [], ...args) {
+            array.unshift(...args);
+
+            return array;
+        },
+        ...args
+    );
+};
+
+function Resolver(context) {
+    return {
+        path: arg => context && arg instanceof Tag ? arg.path(context) : arg,
+        value: arg => context && arg instanceof Tag ? arg.get(context) : arg
+    };
+}
+
+function Model(target, path, extend) {
+    if (typeof target === "string") return Model({}, ...arguments);
+
     target.changes = new Changes(target.changes);
 
-    const resolve = {
-        value: (arg, view) => arg instanceof Tag ? arg.get(api, view) : arg,
-        path: (arg, abs) => arg instanceof Tag ? arg.path(api, abs) : arg,
-        args: args => args.map(resolve.value)
+    function update(model, func, path, ...args) {
+        const resolve = Resolver(model.context);
+
+        if (typeof func !== "function")
+            throw new Error(`model#update first argument must be a function`);
+
+        const absulutePath = Path.join(model.path, path);
+        const changed = Model.update(target, absulutePath, func, args.map(resolve.value));
+
+        if (changed) {
+            if (func.force) changed.forceChildPathUpdates = true;
+            changed.type = model.type;
+            //changed.path = [model.path, path, absulutePath];
+
+            target.changes.push(changed);
+            model.onChange && model.onChange(changed);
+        }
+
+        return changed;
+    }
+
+    const model = {
+        select(path, context) {
+            return Object.create(this, {
+                path: {
+                    value: Path.join(this.path, path).join("."),
+                    writable: false
+                },
+                context: {
+                    value: context,
+                    enumerable: false,
+                    writable: false
+                }
+            });
+        },
+        get(path, view, ...args) {
+            if (typeof path === "function") return this.get(null, ...arguments);
+
+            return Model.get(
+                target,
+                Path.resolve(this.path, path),
+                (target, key, ...args) => view ? view(target[key], ...args) : target[key],
+                args
+            );
+        },
+        has(path) {
+            return Model.get(target, Path.resolve(this.path, path), (target, key) => key in target);
+        },
+        set(path, value) {
+            if (arguments.length === 1) return this.set(null, ...arguments);
+
+            function set(target, key, value) {
+                target[key] = value;
+            }
+
+            return update(this, set, path, value);
+        },
+        unset(path) {
+            function unset(target, key) {
+                delete target[key];
+            }
+
+            return update(this, unset, path);
+        },
+        apply(path, func, ...args) {
+            if (typeof path === "function" || path instanceof Tag)
+                return this.apply(null, ...arguments);
+
+            if (func instanceof Tag) {
+                const tag = (target, key, value) => {
+                    target[key] = value;
+                };
+                if (func.name) tag.displayName = "compute#" + func.name;
+
+                return update(this, tag, path, func);
+            }
+
+            const fn = (target, key, ...args) => {
+                target[key] = func(target[key], ...args);
+            };
+
+            fn.displayName = func.name;
+
+            return update(this, fn, path, ...args);
+        },
+        ...extend
     };
 
-    const model = Object.assign(
-        {
-            path: "",
-            get(path, view) {
-                return this.extract((target, key) => view ? view(target[key]) : target[key], path);
-            },
-            has(path) {
-                return this.extract((target, key) => key in target, path);
-            },
-            set(path, value) {
-                if (arguments.length === 1) return this.set(null, ...arguments);
-
-                function set(target, key, value) {
-                    target[key] = value;
-                }
-
-                return this.update(set, path, value);
-            },
-            unset(path) {
-                function unset(target, key) {
-                    delete target[key];
-                }
-
-                return this.update(unset, path);
-            },
-            select(path, extend) {
-                return Object.assign(
-                    {},
-                    this,
-                    {
-                        path: Path.resolve(this.path, path)
-                    },
-                    extend
-                );
-            },
-            extract(func, path, ...args) {
-                if (typeof func !== "function")
-                    throw new Error(`model#extract first argument must be a function`);
-
-                return Model.get(target, Path.resolve(this.path, path), func, resolve.args(args));
-            },
-            update(func, path, ...args) {
-                if (typeof func !== "function")
-                    throw new Error(`model#update first argument must be a function`);
-
-                const changed = Model.update(
-                    target,
-                    Path.resolve(this.path, path),
-                    func,
-                    resolve.args(args)
-                );
-
-                if (changed) {
-                    if (func.force) changed.forceChildPathUpdates = true;
-
-                    target.changes.push(changed);
-                    this.onChange && this.onChange(changed);
-                }
-
-                return changed;
-            },
-            apply(path, func, ...args) {
-                if (typeof path === "function") return this.apply(null, ...arguments);
-
-                const applyFn = (target, key, ...args) => {
-                    target[key] = func(target[key], ...args);
-                };
-                applyFn.displayName = func.name;
-
-                return this.update(applyFn, path, ...args);
-            }
+    return Object.create(model, {
+        type: {
+            value: path,
+            writable: false
         },
-        extend
-    );
-
-    return model;
+        path: {
+            value: path,
+            writable: false
+        },
+        context: {
+            value: null,
+            enumerable: false,
+            writable: false
+        }
+    });
 }
 
 export default Model;

@@ -21,9 +21,9 @@ function apply(target, path, method, args = []) {
                         args
                     };
                 }
+            } else if (!(key in target)) {
+                target[key] = {};
             }
-
-            if (!(key in target)) target[key] = {};
 
             return target[key];
         },

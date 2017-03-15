@@ -1,11 +1,8 @@
-import Resolve from '../Resolve'
-
-export default function(store) {
+export default store => {
     return function StoreProvider(context) {
-        context.get = (target) => target.get(context)
-        context.model = (target) => target.model(context)
-        context.resolve = Resolve(context)
+        context.get = target => target.get(context);
+        context.select = target => target.select(context);
 
-        return context
-    }
-}
+        return context;
+    };
+};

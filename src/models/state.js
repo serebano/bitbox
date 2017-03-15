@@ -1,8 +1,7 @@
 import Model from "../model";
 
 function State(target, store) {
-    return Model(target, {
-        path: "state",
+    return Model(target, "state", {
         reset(state) {
             return this.update(
                 function reset(target, key, data) {
@@ -13,31 +12,17 @@ function State(target, store) {
             );
         },
         keys(path) {
-            return this.extract(
-                function keys(target, key) {
-                    return Object.keys(target[key]);
-                },
-                path
-            );
+            return this.get(path, function keys(target, key) {
+                return Object.keys(target[key]);
+            });
         },
         values(path) {
-            return this.extract(
-                function values(target, key) {
-                    return Object.values(target[key]);
-                },
-                path
-            );
+            return this.get(path, function values(target, key) {
+                return Object.values(target[key]);
+            });
         },
-        push() {
-            return this.update(
-                function push(target, key, ...values) {
-                    if (!(key in target)) target[key] = [];
-
-                    target[key].push(...values);
-                },
-                ...arguments
-            );
-        }
+        push: Model.push,
+        unshift: Model.unshift
     });
 }
 

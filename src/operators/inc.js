@@ -1,12 +1,13 @@
+import { compute } from "../tags";
+
 export default (target, value) => {
-
-    function increment(context) {
-        const model = context.model(target)
-
-        model.set(null, model.get(null, (state = 0) => {
-            return state + context.resolve.value(value || 1)
-        }))
+    function inc(context) {
+        context.select(target).apply(
+            compute(target, value, function inc(a = 0, b = 1) {
+                return a + b;
+            })
+        );
     }
 
-    return increment
-}
+    return inc;
+};

@@ -1,5 +1,8 @@
-export default (target) => {
-    return ({ model }) => {
-        model(target).pop()
-    }
-}
+export default target => {
+    return context => {
+        context.select(target).apply(function pop(array) {
+            array.pop();
+            return array;
+        });
+    };
+};

@@ -1,12 +1,13 @@
-export default (target, value) => {
+import { compute } from "../tags";
 
-    function decrement(context) {
-        const model = context.model(target)
+export default (target, by) => {
+    const value = compute(target, by, function dec(a = 0, b = 1) {
+        return a - b;
+    });
 
-        model.set(null, model.get(null, (state = 0) => {
-            return state - context.resolve.value(value || 1)
-        }))
+    function dec(context) {
+        context.select(target).set(value);
     }
 
-    return decrement
-}
+    return dec;
+};

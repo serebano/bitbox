@@ -1,10 +1,10 @@
-function Listeners(target = {}, store = {}) {
+function Listeners(target = {}, path, store = {}) {
     target.listeners = target.listeners || {};
 
     return {
-        path: "listeners",
+        path,
         map: new WeakMap(),
-        connect(listener, paths) {
+        connect(paths, listener) {
             const model = this;
 
             if (model.map.has(listener)) return model.map.get(listener);
@@ -29,7 +29,7 @@ function Listeners(target = {}, store = {}) {
                     model.remove(listener, paths);
                     if (store.devtools) store.devtools.updateComponentsMap(listener, null, paths);
                     conn.paths = conn.paths.filter(path => paths.indexOf(path) === -1);
-                    if (!conn.paths.length) this.map.delete(listener);
+                    if (!conn.paths.length) model.map.delete(listener);
                 }
             };
 

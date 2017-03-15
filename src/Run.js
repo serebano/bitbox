@@ -1,47 +1,43 @@
 import { FunctionTree } from "function-tree";
 
-function Run(store) {
-    const functionTree = new FunctionTree(store.providers.get());
+function FunTree(store) {
+    const funtree = new FunctionTree(store.providers.get());
 
-    functionTree.model = store.state;
+    funtree.model = store.state;
 
-    store.changes.on("providers", function UpdateProviders(changes) {
-        const newProviders = store.providers.get();
-        functionTree.contextProviders = newProviders;
+    store.providers.on("update", function FunTreeProviders() {
+        funtree.contextProviders = store.providers.get();
     });
 
-    functionTree.flush = force => {
-        const changes = store.changes.commit(force);
-        if (changes.length) functionTree.emit("flush", changes, Boolean(force));
+    funtree.flush = force => {
+        const changes = store.flush(force);
+        if (changes.length) funtree.emit("flush", changes, Boolean(force));
     };
 
-    functionTree.on("asyncFunction", (e, action) => !action.isParallel && functionTree.flush());
-    functionTree.on("parallelStart", () => functionTree.flush());
-    functionTree.on(
-        "parallelProgress",
-        (e, payload, resolving) => resolving === 1 && functionTree.flush()
-    );
-    functionTree.on("end", () => functionTree.flush());
+    funtree.on("asyncFunction", (e, action) => !action.isParallel && funtree.flush());
+    funtree.on("parallelStart", () => funtree.flush());
+    funtree.on("parallelProgress", (e, payload, resolving) => resolving === 1 && funtree.flush());
+    funtree.on("end", () => funtree.flush());
 
     if (store.devtools) {
-        functionTree.on("error", function throwErrorCallback(error) {
-            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 2)
-                functionTree.removeListener("error", throwErrorCallback);
+        funtree.on("error", function throwErrorCallback(error) {
+            if (Array.isArray(funtree._events.error) && funtree._events.error.length > 2)
+                funtree.removeListener("error", throwErrorCallback);
             else
                 throw error;
         });
     } else {
-        functionTree.on("error", function throwErrorCallback(error) {
-            if (Array.isArray(functionTree._events.error) && functionTree._events.error.length > 1)
-                functionTree.removeListener("error", throwErrorCallback);
+        funtree.on("error", function throwErrorCallback(error) {
+            if (Array.isArray(funtree._events.error) && funtree._events.error.length > 1)
+                funtree.removeListener("error", throwErrorCallback);
             else
                 throw error;
         });
     }
 
-    functionTree.emit("initialized");
+    funtree.emit("initialized");
 
-    return functionTree;
+    return funtree;
 }
 
-export default Run;
+export default FunTree;

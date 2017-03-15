@@ -3,22 +3,15 @@ import Model from "../model";
 function Providers(target, store) {
     target.providers = target.providers || [];
 
-    function Context(providers, ...args) {
-        if (!(this instanceof Context)) return new Context(...arguments);
-
-        return providers.reduce(
-            (context, Provider) => Object.assign(context, Provider(context, ...args)),
-            this
-        );
-    }
-
-    return Model(target, {
-        path: "providers",
+    return Model(target, "providers", {
         create(...args) {
-            return new Context(target.providers, ...args);
+            return target.providers.reduce(
+                (context, Provider) => Object.assign(context, Provider(context, ...args)),
+                {}
+            );
         },
         get(provider) {
-            return this.extract(function get(target, key) {
+            return Model.get(target, this.path, function get(target, key) {
                 if (typeof provider === "function")
                     return target[key][target[key].indexOf(provider)];
 
@@ -26,31 +19,31 @@ function Providers(target, store) {
             });
         },
         keys() {
-            return this.extract(function keys(target, key) {
-                return target[key].map(provider => provider.displayName || provider.name);
-            });
+            return this.get((target, key) =>
+                target[key].map(provider => provider.displayName || provider.name));
         },
         index(provider) {
-            return this.extract((target, key) => target[key].indexOf(provider));
+            return this.get((target, key) => target[key].indexOf(provider));
         },
         has(provider) {
-            return this.extract((target, key) => target[key].indexOf(provider) > -1);
+            return this.get((target, key) => target[key].indexOf(provider) > -1);
         },
         add(provider) {
             if (this.has(provider)) return;
 
-            function add(target, key, provider) {
-                target[key] = target[key].concat(provider);
-            }
-
-            return this.update(add, null, provider);
+            return this.apply(
+                function add(array, provider) {
+                    return array.concat(provider);
+                },
+                provider
+            );
         },
         remove(provider) {
-            function remove(target, key, provider) {
-                target[key] = target[key].filter(i => i !== provider);
+            function remove(array, provider) {
+                return array.filter(i => i !== provider);
             }
 
-            return this.update(remove, null, provider);
+            return this.apply(remove, provider);
         },
         clear() {
             return this.update(function clear(target, key) {

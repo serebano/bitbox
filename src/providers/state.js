@@ -1,29 +1,21 @@
-export default function(store) {
+export default store => {
     return function StateProvider(context) {
-		let asyncTimeout
+        let asyncTimeout;
 
-        if (context.debugger) {
-            context.state = Object.assign({}, store.state, {
-				onChange(e) {
-	                context.debug({
-	                    type: 'mutation',
-	                    method: e.method,
-	                    args: [ e.path.slice(1), ...e.args ]
-	                })
+        context.state = store.state.select(null, context);
+        context.state.onChange = e => {
+            if (context.debugger) {
+                context.debugger.send({
+                    type: "mutation",
+                    method: e.method,
+                    args: [e.path.slice(1), ...e.args]
+                });
+            }
 
-	                clearTimeout(asyncTimeout)
-	                asyncTimeout = setTimeout(() => store.changes.commit())
-				}
-            })
-        } else {
-			context.state = Object.assign({}, store.state, {
-				onChange(e) {
-					clearTimeout(asyncTimeout)
-					asyncTimeout = setTimeout(() => store.changes.commit())
-				}
-			})
-		}
+            clearTimeout(asyncTimeout);
+            asyncTimeout = setTimeout(() => store.flush());
+        };
 
-        return context
-    }
-}
+        return context;
+    };
+};

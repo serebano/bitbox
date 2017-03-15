@@ -1,14 +1,6 @@
-import Store from "../../Redux";
+import Store from "../../stores/redux";
 import { state, props, compute } from "../../tags";
-import { set } from "../../operators";
-
-function increment({ state, props }) {
-    state.set("count", state.get("count") + (props.by || 1));
-}
-
-function decrement({ state, props }) {
-    state.set("count", state.get("count") - (props.by || 1));
-}
+import { set, inc, dec } from "../../operators";
 
 const store = Store(
     {
@@ -17,26 +9,19 @@ const store = Store(
             count: 0
         },
         signals: {
-            increment,
-            decrement
+            increment: inc(state`count`, props`by`),
+            decrement: dec(state`count`, props`by`)
         }
     },
     {
         devtools: {
-            remoteDebugger: "192.168.0.46:8585"
+            remoteDebugger: "localhost:8585" //192.168.0.46
         }
     }
 );
 
-store.connect(
-    {
-        count: state`count`
-    },
-    function onCountChanged(props) {
-        console.log(`onCountChanged`, props);
-    }
-);
-
-//store.dispatch(increment);
+// store.dispatch(inc(state`count`, props`count`), {
+//     count: 1000
+// });
 
 export default store;

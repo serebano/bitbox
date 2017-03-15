@@ -1,45 +1,39 @@
 import React from "react";
-import Component from "../../Component";
+import component from "../../views/react";
+import { compose, state, signal } from "../../tags";
+import ComposeDemo from "../compose";
 
-const Name = Component(
-    ({ state }) => {
-        return {
-            name: state`name`
-        };
-    },
-    function Name({ name }) {
-        return (
-            <div>
-                <h2>{name}</h2>
-            </div>
-        );
-    }
-);
-
-const Count = Component(
-    ({ state, signal }) => {
-        return {
-            count: state`count`,
-            increment: signal`increment`,
-            decrement: signal`decrement`
-        };
-    },
-    function Count({ count, increment, decrement }) {
-        return (
-            <div>
-                <button onClick={() => increment()}>+</button>
-                {count}
-                <button onClick={() => decrement()}>-</button>
-            </div>
-        );
-    }
-);
-
-export default Component({}, function App() {
+const Composed = compose(ComposeDemo);
+const App = component({}, function App() {
     return (
         <div>
             <Name />
             <Count />
+            <Composed />
         </div>
     );
 });
+
+const Name = component({ name: state`name` }, function Name({ name }) {
+    return <h1>#{name}</h1>;
+});
+
+const Count = component(
+    {
+        count: state`count`,
+        inc: signal`increment`,
+        dec: signal`decrement`
+    },
+    function Count({ count, inc, dec }) {
+        return (
+            <div>
+                <hr />
+                <button onClick={() => inc()}>+</button>
+                <span>{count}</span>
+                <button onClick={() => dec()}>-</button>
+            </div>
+        );
+    }
+);
+
+export default App;

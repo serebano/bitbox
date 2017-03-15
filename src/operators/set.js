@@ -1,7 +1,7 @@
 export default (target, value) => {
     function set(context) {
-        context.model(target).set(null, value)
+        context.select(target).set(value);
     }
 
-    return set
-}
+    return set;
+};

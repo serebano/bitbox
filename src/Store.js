@@ -13,10 +13,9 @@ import DebuggerProvider from "./providers/debugger";
 import StoreProvider from "./providers/store";
 import StateProvider from "./providers/state";
 //
-import Resolve from "./Resolve";
+//import Resolve from "./Resolve";
 import Run from "./Run";
-Store.init = (target, models = [Listeners, Changes, State]) =>
-    models.reduce((obj, model) => Object.assign(obj, { [model.name]: model(target, obj) }), {});
+import { compute } from "./tags/compute";
 
 function Store(module, store = {}) {
     const target = (store.target = {});
@@ -30,13 +29,10 @@ function Store(module, store = {}) {
         state: State(target, store),
         signals: Signals(target, store),
         modules: Modules(target, store),
-        resolve: Resolve(store),
+        //resolve: Resolve(store),
         connect(target, listener, props) {
-            store.changes.on(store.resolve.paths(target, ["state"], props), listener);
-            listener.renew = props =>
-                listener.update(store.resolve.paths(target, ["state"], props));
-
-            return listener;
+            const tag = compute(target);
+            return store.listeners.connect(listener, tag.paths(assign(props), ["state"]));
         },
         get(target, props) {
             if (!(target instanceof Tag)) throw new Error(`Invalid target: ${target}`);

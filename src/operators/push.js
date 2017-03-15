@@ -1,5 +1,9 @@
 export default (target, ...args) => {
-    return function push(context) {
-        context.model(target).push(null, ...args)
+    function push(array = [], ...values) {
+        array.push(...values);
+
+        return array;
     }
-}
+
+    return context => context.select(target).apply(push, ...args);
+};

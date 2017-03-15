@@ -8,14 +8,11 @@ export default class Tag {
         this.keys = keys;
         this.values = values;
     }
-    resolve(target) {
-        const model = this.type.split(".").reduce((obj, key) => obj[key], target);
-        if (!model) throw new Error(`Invalid model ${this.type} in context`);
-        return model;
+
+    select(context) {
+        return get(context, this.type, model => model.select(this.path(context), context));
     }
-    /*
-      Gets the path of the tag, where nested tags are evaluated
-    */
+
     path(context, full) {
         if (!context) throw new Error("You can not grab the path from a Tag without context");
 
@@ -41,26 +38,11 @@ export default class Tag {
     }
 
     get(context, view) {
-        const model = this.resolve(context);
+        const model = get(context, this.type);
 
         if (model.get) return model.get(this.path(context), view);
 
         return get(model, this.path(context), view);
-    }
-
-    model(context, extend) {
-        const target = this.resolve(context);
-        if (!target) throw new Error(`Invalid ${this.type} in context`);
-
-        return Object.assign(
-            {},
-            target,
-            {
-                path: this.path(context, true)
-                //context
-            },
-            extend
-        );
     }
 
     paths(context, types) {
@@ -81,9 +63,6 @@ export default class Tag {
         );
     }
 
-    /*
-      Produces a string representation of the path
-    */
     pathToString() {
         if (typeof this.keys === "string") return this.keys;
 
@@ -100,9 +79,6 @@ export default class Tag {
         );
     }
 
-    /*
-      Produces a string representation of the tag
-    */
     toString() {
         return this.type + "`" + this.pathToString() + "`";
     }
