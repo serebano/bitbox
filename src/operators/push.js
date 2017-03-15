@@ -1,11 +1,9 @@
-import compute from '../handlers/compute'
+export default (target, ...args) => {
+    function push(array = [], ...values) {
+        array.push(...values);
 
-export default function push(target, ...values) {
+        return array;
+    }
 
-    const value = compute(
-        ...arguments,
-        (target = [], ...values) => target.concat(values)
-    )
-
-    return (context) => target.set(context, value)
-}
+    return context => context.select(target).apply(push, ...args);
+};

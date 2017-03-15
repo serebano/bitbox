@@ -1,153 +1,85 @@
+import get from "./model/get";
+
 export default class Tag {
+    hasPath = true;
 
-    static templates = {}
-
-    static template(type, handlers) {
-        if (typeof type === "function") {
-            Tag.templates[type.name] = type
-            Tag.templates[type.name].handlers = handlers
-
-            return Tag.templates[type.name]
-        }
-
-        Tag.templates[type] = function(keys, ...values) {
-            return new Tag(type, handlers, keys, values)
-        }
-
-        Tag.templates[type].handlers = handlers
-
-        return Tag.templates[type]
+    constructor(type, keys, values) {
+        this.type = type;
+        this.keys = keys;
+        this.values = values;
     }
 
-    static compose(factory) {
-        return factory.args || (factory.args = factory(Tag.templates))
+    select(context) {
+        return get(context, this.type, model => model.select(this.path(context), context));
     }
 
-    /*
-      Extracts value from object using a path
-    */
-    static extract(target, path) {
-        const keys = !Array.isArray(path)
-            ? path.split('.')
-            : path
+    path(context, full) {
+        if (!context) throw new Error("You can not grab the path from a Tag without context");
 
-        return keys.reduce((result, key, index) => {
-            if (index > 0 && result === undefined)
-                throw new Error(`A tag is extracting with path "${path}", but it is not valid`)
+        if (!this.hasPath) throw new Error(`Tag "${this.type}" does not have path`);
 
-            return key === "" ? result : result[key]
-        }, target)
+        let path = Array.isArray(this.keys)
+            ? this.keys.reduce(
+                  (path, key, idx) => {
+                      const value = this.values[idx];
+                      if (value instanceof Tag) return path + key + value.get(context);
+                      return path + key + (value || "");
+                  },
+                  ""
+              )
+            : this.keys;
+
+        if (path && path.indexOf(".") === 0 && context.props && context.props.root)
+            path = context.props.root + path;
+
+        return full
+            ? path && path !== "." ? this.type + "." + path : this.type
+            : path && path !== "." ? path : "";
     }
 
-    constructor(tag, handlers, keys, values) {
-        this.type = tag
-        this.handlers = handlers
-        this.keys = keys
-        this.values = values
+    get(context, view) {
+        const model = get(context, this.type);
+
+        if (model.get) return model.get(this.path(context), view);
+
+        return get(model, this.path(context), view);
     }
 
-    /*
-      Returns all tags, also nested to identify nested state dependencies
-      in components
-    */
-    tags(self) {
-        return this.keys.reduce((paths, string, index) => {
-            return this.values[index] instanceof Tag
-                ? paths.concat(this.values[index])
-                : paths
-        }, self ? [ this ] : [])
+    paths(context, types) {
+        return this.tags(types).filter(tag => tag.hasPath).map(tag => tag.path(context, true));
     }
 
-    /*
-      Gets the path of the tag, where nested tags are evaluated
-    */
-    path(context) {
-        if (!context)
-            throw new Error('You can not grab the path from a Tag without context')
+    tags(types) {
+        const match = !types || !types.length || types.indexOf(this.type) > -1;
 
-        return this.keys.reduce((currentPath, string, idx) => {
-            const valueTemplate = this.values[idx]
-
-            if (valueTemplate instanceof Tag)
-                return currentPath + string + valueTemplate.get(context)
-
-            if (valueTemplate && valueTemplate.getValue)
-                return currentPath + string + valueTemplate.getValue(context)
-
-            return currentPath + string + (valueTemplate || '')
-        }, '')
+        return (match ? [this] : []).concat(
+            this.keys.reduce(
+                (paths, k, index) => {
+                    const value = this.values[index];
+                    return value instanceof Tag ? paths.concat(value.tags(types)) : paths;
+                },
+                []
+            )
+        );
     }
 
-    get(context) {
-        if (!context)
-            throw new Error('You can not grab a value from a Tag without getters')
-
-        if (this.handlers.resolve)
-            return this.handlers.resolve.apply(this, arguments)
-
-        const target = context[this.type]
-        const handler = this.handlers.get
-
-        if (!target)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
-
-        if (!handler)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide get handler`)
-
-        return handler.call(this, context, this.path(context))
-    }
-
-    set(context, value) {
-        if (!context)
-            throw new Error('You can not grab a value from a Tag without getters')
-
-        const target = context[this.type]
-        const handler = this.handlers.set
-
-        if (!handler)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} does not provide set handler`)
-
-        if (!target)
-            throw new Error(`Tag of type ${this.type.toUpperCase()} can not be used in this context`)
-
-        if (value instanceof Tag)
-            return handler.call(this, context, this.path(context), value.get(context))
-
-        if (typeof value === "function")
-            return handler.call(this, context, this.path(context), value(this.get(context)))
-
-        return handler.call(this, context, this.path(context), value)
-    }
-
-    extract(context, path) {
-        return Tag.extract(context[this.type], path)
-    }
-
-    target(context) {
-        return context[this.type]
-    }
-
-    /*
-      Produces a string representation of the path
-    */
     pathToString() {
-        return this.keys.reduce((currentPath, string, idx) => {
-            const valueTemplate = this.values[idx]
+        if (typeof this.keys === "string") return this.keys;
 
-            if (valueTemplate instanceof Tag)
-                return currentPath + string + '${ ' + valueTemplate.toString() + ' }'
+        return this.keys.reduce(
+            (currentPath, string, idx) => {
+                const valueTemplate = this.values[idx];
 
-            return currentPath + string + (valueTemplate || '')
-        }, '')
+                if (valueTemplate instanceof Tag)
+                    return currentPath + string + "${ " + valueTemplate.toString() + " }";
+
+                return currentPath + string + (valueTemplate || "");
+            },
+            ""
+        );
     }
 
-    /*
-      Produces a string representation of the tag
-    */
     toString() {
-        if (this.handlers.string)
-            return this.handlers.string.call(this)
-
-        return this.type + ' `' + this.pathToString() + '`'
+        return this.type + "`" + this.pathToString() + "`";
     }
 }

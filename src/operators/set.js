@@ -1,3 +1,7 @@
-export default function set(target, value) {
-    return (context) => target.set(context, value)
-}
+export default (target, value) => {
+    function set(context) {
+        context.select(target).set(value);
+    }
+
+    return set;
+};

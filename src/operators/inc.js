@@ -1,7 +1,13 @@
-import compute from '../handlers/compute'
+import { compute } from "../tags";
 
 export default (target, value) => {
-    return (context) => {
-        return target.set(context, compute(target, value, (a = 0, b = 1) => a + b))
+    function inc(context) {
+        context.select(target).apply(
+            compute(target, value, function inc(a = 0, b = 1) {
+                return a + b;
+            })
+        );
     }
-}
+
+    return inc;
+};

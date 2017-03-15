@@ -1,8 +1,7 @@
-import compute from '../handlers/compute'
+export default (target, ...args) => {
+    function merge(state, ...args) {
+        return Object.assign(state, ...args);
+    }
 
-export default function merge(target, ...values) {
-
-    const value = compute(...arguments, (...values) => Object.assign({}, ...values))
-
-    return (context) => target.set(context, value)
-}
+    return context => context.select(target).apply(merge, ...args);
+};
