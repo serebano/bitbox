@@ -12,7 +12,7 @@ function Store(module) {
         },
         {
             props: {},
-            runTree(path, tree, props) {
+            run(path, tree, props) {
                 return this.dispatch(tree, props);
             },
             dispatch(action, props) {

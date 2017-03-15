@@ -7,7 +7,7 @@ function FunTree(store) {
 
     funtree.model = store.state;
 
-    store.on("providers", function FunTreeProviders() {
+    store.listeners.connect(["providers"], function FunTreeProviders() {
         funtree.contextProviders = store.providers.get();
     });
 

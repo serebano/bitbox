@@ -157,7 +157,9 @@ class Devtools {
       - Debugger sends "ping"
       - Devtools sends "init"
   */
-    init(controller) {
+    init(store) {
+        const controller = store.funtree;
+
         this.controller = controller;
         this.originalRunTreeFunction = controller.runTree;
 

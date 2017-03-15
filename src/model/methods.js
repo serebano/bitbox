@@ -1,3 +1,11 @@
+export function keys(path) {
+    return this.get(path, Object.keys);
+}
+
+export function values(path) {
+    return this.get(path, Object.values);
+}
+
 export function push(path, ...args) {
     return this.apply(
         path,

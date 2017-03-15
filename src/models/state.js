@@ -1,4 +1,5 @@
-import { push, unshift } from "../model/methods";
+import { keys, values, push, unshift } from "../model/methods";
+import Provider from "../providers/state";
 
 function State(target, path, api) {
     return {
@@ -10,15 +11,13 @@ function State(target, path, api) {
                 value
             );
         },
-        keys(path) {
-            return this.get(path, Object.keys);
-        },
-        values(path) {
-            return this.get(path, Object.values);
-        },
+        keys,
+        values,
         push,
         unshift
     };
 }
+
+State.Provider = Provider;
 
 export default State;

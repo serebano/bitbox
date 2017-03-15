@@ -28,14 +28,16 @@ function Providers(target = {}, path, api) {
         has(provider) {
             return this.get(providers => providers.indexOf(provider) > -1);
         },
-        add(provider) {
+        add(provider, top) {
             if (this.has(provider)) return;
 
             return this.apply(
-                function add(array, provider) {
-                    return array.concat(provider);
+                function add(providers, provider, top) {
+                    if (top) return [provider].concat(providers);
+                    return providers.concat(provider);
                 },
-                provider
+                provider,
+                top
             );
         },
         remove(provider) {

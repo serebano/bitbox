@@ -1,5 +1,6 @@
 import Model from "../Model";
 import Path from "../model/path";
+import DebuggerProvider from "../providers/debugger";
 
 function ensure(target, key, value) {
     if (!target) return undefined;
@@ -43,7 +44,10 @@ function Modules(target, path, store) {
                   ) || {}
                 : desc || {};
 
-            if (module.devtools) store.devtools = module.devtools;
+            if (module.devtools) {
+                store.devtools = module.devtools;
+                store.providers.add(DebuggerProvider(store), true);
+            }
 
             if (module.provider)
                 module.providers = (module.providers || []).concat(module.provider);
@@ -88,6 +92,11 @@ function Modules(target, path, store) {
                 args: [desc]
             });
 
+            if (module.devtools) {
+                //store.devtools = module.devtools;
+                store.devtools.init(store);
+            }
+            return module;
             //store.changes.commit()
         },
         remove(path) {

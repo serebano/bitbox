@@ -4,7 +4,7 @@ function Signals(target, path, api) {
             return this.apply(
                 path,
                 function add(state, chain, signalPath) {
-                    return props => api.runTree(signalPath, chain, props || {});
+                    return props => api.run(signalPath, chain, props || {});
                 },
                 value,
                 path.join(".")
