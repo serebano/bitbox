@@ -1,7 +1,7 @@
-import Path from "../../Path";
+import Tag from "../../Tag";
 import { ensure } from "./utils";
 
-export class ComputeArray extends Path {
+export class ComputeArray extends Tag {
     hasPath = false;
 
     constructor(array) {
@@ -16,7 +16,7 @@ export class ComputeArray extends Path {
                 if (typeof value === "function")
                     return index === this.values.length - 1 ? value(...result) : [value(...result)];
 
-                if (value instanceof Path) result.push(value.get(context));
+                if (value instanceof Tag) result.push(value.get(context));
                 else result.push(value);
 
                 return result;

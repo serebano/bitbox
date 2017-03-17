@@ -20,6 +20,20 @@ export default {
             []
         );
     },
+    toString(path) {
+        return path.join(".");
+    },
+    toArray(path = []) {
+        if (Array.isArray(path)) {
+            return path;
+        } else if (typeof path === "string") {
+            return path === "." || path === "" ? [] : path.split(".");
+        } else if (typeof path === "number") {
+            return [String(path)];
+        }
+
+        return [];
+    },
     keys(path = []) {
         if (Array.isArray(path)) {
             return path;

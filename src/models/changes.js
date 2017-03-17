@@ -1,3 +1,5 @@
+import Path from "../Path";
+
 function Changes(changes = []) {
     if (changes instanceof Changes) return changes;
 
@@ -13,23 +15,29 @@ Changes.prototype.last = function last() {
 Changes.prototype.flush = function flush() {
     return this.splice(0, this.length);
 };
-Changes.prototype.push = function push(change) {
-    const index = Array.prototype.push.call(this, {
-        type: change.type,
-        path: change.path,
-        method: change.method,
-        forceChildPathUpdates: change.forceChildPathUpdates
-    });
+Changes.prototype.push = function push(path, method, args, options = {}) {
+    path = Path.toArray(path);
+    const [type, ...keys] = path;
+    const desc = {
+        type: type,
+        keys: keys,
+        path: path,
+        args: args,
+        method: method,
+        forceChildPathUpdates: options.force
+    };
 
-    debug(change, index);
+    desc.index = Array.prototype.push.call(this, desc);
+    debug(desc);
 
-    return change;
+    return desc;
 };
 
-function debug(e, index) {
+function debug(e) {
+    const index = e.index;
     const type = e.type;
     const typeKeys = type ? type.split(".") : [];
-    const args = ["%c'" + (e.path.slice(typeKeys.length).join(".") || ".") + "'%c"]
+    const args = ["%c'" + (e.keys.join(".") || "") + "'%c"]
         .concat(e.args)
         .map(arg => {
             if (typeof arg === "function")
@@ -38,8 +46,7 @@ function debug(e, index) {
             return String(arg);
         })
         .join(", ");
-    if (e.action) console.log(`[${index}] ${e.action.name}`, e.action);
-    ///${Boolean(e.forceChildPathUpdates)}
+
     if (index === 1) console.log(`***`);
     console.log(
         `[${index}] %c${type}%c.%c${e.method}%c(${args}%c)`,

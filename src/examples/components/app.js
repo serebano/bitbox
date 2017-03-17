@@ -1,8 +1,8 @@
-import React from "react";
+/** @jsx h */
 import Name from "./name";
 import Count from "./count";
 
-function App() {
+function App(props, h) {
     return (
         <div>
             <Name />
@@ -10,5 +10,6 @@ function App() {
         </div>
     );
 }
+App.connect = {};
 
 export default App;

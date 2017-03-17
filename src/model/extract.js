@@ -8,7 +8,7 @@ function extract(target, path, view, ...args) {
     return keys.reduce(
         (target, key, index) => {
             if (index === keys.length - 1) {
-                return view ? view(target, key, ...args) : { target, key, index };
+                return view ? view(target, key, ...args) : { value: target[key], key, index };
             } else if (!target[key]) {
                 throw new Error(
                     `The path "${path}" is invalid. Does the path "${keys

@@ -1,6 +1,6 @@
-import React from "react";
+/** @jsx h */
 
-function Name({ name }) {
+function Name({ name }, h) {
     return <h1 style={{ color: "red" }}>#{name}</h1>;
 }
 

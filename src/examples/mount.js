@@ -1,25 +1,16 @@
-import React from "react";
-import { render } from "react-dom";
-import component, { Container } from "../views/react";
+function mount(store, component, props, children) {
+    return View => {
+        window.component = component;
+        window.store = store;
 
-const createElement = React.createElement;
+        console.info("mount", component.name, { View, component, store, props, children });
 
-React.createElement = (tag, ...args) => {
-    if (typeof tag === "function" && tag.connect) return createElement(component(tag), ...args);
-
-    return createElement(tag, ...args);
-};
-
-function mount(App, store, selector) {
-    window.App = App;
-    window.store = store;
-    console.info("mount", App.name, { App, store });
-    render(
-        <Container store={store}>
-            <App />
-        </Container>,
-        document.querySelector(selector)
-    );
+        return View.createElement(
+            View.Container,
+            { store },
+            View.createElement(component, props, children)
+        );
+    };
 }
 
 export default mount;

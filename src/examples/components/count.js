@@ -1,8 +1,8 @@
-import React from "react";
+/** @jsx h */
 import { state, props, signal } from "../../tags";
 import { inc, dec } from "../../operators";
 
-function Count({ count, inc, dec }) {
+function Count({ count, inc, dec }, h) {
     return (
         <div>
             <button onClick={() => inc()}>+ Increment</button>
@@ -23,8 +23,8 @@ Count.module = {
         count: 0
     },
     signals: {
-        increment: [inc(state`count`, props`by`)],
-        decrement: [dec(state`count`, props`by`)]
+        increaseClicked: inc(state`count`, props`by`),
+        decreaseClicked: dec(state`count`, props`by`)
     }
 };
 

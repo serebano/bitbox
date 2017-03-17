@@ -1,10 +1,18 @@
 import View from "react";
 import { getChangedProps } from "../utils";
 
-function Component(component) {
+export function Provider(store, component, props, children) {
+    window.store = store;
+    return createElement(Container, { store }, createElement(component, props, children));
+}
+
+export function Component(component, store, ...args) {
+    if (store) {
+        return Provider(store, component, ...args);
+    }
+
     const target = component.connect;
-    const comp = props => component(props, View.createElement);
-    //console.log(`Component`, component);
+    const comp = props => component(props, createElement);
 
     class CW extends View.Component {
         componentWillMount() {
@@ -42,8 +50,6 @@ function Component(component) {
     return CW;
 }
 
-export default Component;
-
 /**
  * Container
  */
@@ -67,3 +73,18 @@ Container.propTypes = {
 Container.childContextTypes = {
     store: View.PropTypes.object.isRequired
 };
+
+const _createElement = View.createElement;
+
+View.createElement = (arg, ...args) => {
+    if (typeof arg === "function" && arg.connect) return _createElement(Component(arg), ...args);
+
+    return _createElement(arg, ...args);
+};
+
+export function createElement(arg, ...rest) {
+    if (typeof arg === "function" && arg.connect)
+        return View.createElement(Component(arg), ...rest);
+
+    return View.createElement(arg, ...rest);
+}

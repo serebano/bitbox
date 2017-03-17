@@ -22,11 +22,16 @@ function Model(target, path, extend, api) {
     target.changes = new Changes(target.changes);
     let asyncTimeout;
 
-    function update(model, func, path, ...args) {
+    function update(model, func, path, args = []) {
         const resolve = Resolver(model.context);
 
         if (typeof func !== "function")
             throw new Error(`model#update first argument must be a function`);
+
+        if (!Array.isArray(args))
+            throw new Error(
+                `${model.type}.${func.displayName || func.name}(${path}) "args" must be array`
+            );
 
         const absulutePath = Path.join(model.path, path);
         const changed = Model.update(target, absulutePath, func, args.map(resolve.value));
@@ -93,7 +98,7 @@ function Model(target, path, extend, api) {
                 target[key] = value;
             }
 
-            return update(this, set, path, value);
+            return update(this, set, path, [value]);
         },
         unset(path) {
             function unset(target, key) {
@@ -102,17 +107,17 @@ function Model(target, path, extend, api) {
 
             return update(this, unset, path);
         },
-        apply(path, func, ...args) {
+        apply(path, func, args) {
             if (typeof path === "function" || path instanceof Tag)
                 return this.apply(null, ...arguments);
 
+            args = [].concat(args);
+
             if (func instanceof Tag) {
-                const tag = (target, key, value) => {
-                    target[key] = value;
-                };
+                const tag = (target, key, value) => target[key] = value;
                 if (func.name) tag.displayName = "compute#" + func.name;
 
-                return update(this, tag, path, func);
+                return update(this, tag, path, [func]);
             }
 
             const fn = (target, key, ...args) => {
@@ -121,7 +126,7 @@ function Model(target, path, extend, api) {
 
             fn.displayName = func.name;
 
-            return update(this, fn, path, ...args);
+            return update(this, fn, path, args);
         },
         ...extend
     };

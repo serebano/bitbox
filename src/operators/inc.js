@@ -5,7 +5,11 @@ export default (target, arg) => {
         return a + b;
     });
 
-    return function inc(context) {
+    function inc(context) {
         context.select(target).apply(value);
-    };
+    }
+
+    inc.displayName = `inc(${target}, ${arg})`;
+
+    return inc;
 };

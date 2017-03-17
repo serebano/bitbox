@@ -3,5 +3,7 @@ export default (target, value) => {
         context.select(target).set(value);
     }
 
+    set.displayName = `set(${target}, ${value})`;
+
     return set;
 };

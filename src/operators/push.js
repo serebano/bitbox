@@ -1,12 +1,16 @@
-export default (target, ...args) => {
-    return function push(context) {
+export default function(target, ...args) {
+    function push(context) {
         context.select(target).apply(
             function push(array = [], ...values) {
                 array.push(...values);
 
                 return array;
             },
-            ...args
+            args
         );
-    };
-};
+    }
+
+    push.displayName = `push(${Array.prototype.join.call(arguments, ", ")})`;
+
+    return push;
+}

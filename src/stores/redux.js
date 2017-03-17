@@ -11,13 +11,11 @@ function Store(module) {
             modules: Modules
         },
         {
-            props: {},
-            run(path, tree, props) {
-                return this.dispatch(tree, props);
+            run(path, action, props) {
+                return this.dispatch(action, props);
             },
             dispatch(action, props) {
-                action(Object.assign({}, this, { props }));
-                this.flush();
+                return action(Object.assign({}, this, { props }));
             }
         }
     );

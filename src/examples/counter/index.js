@@ -1,5 +1,7 @@
-import mount from "../mount";
+import { render } from "react-dom";
+import { Component } from "../../views/react";
+
 import store from "./store";
 import app from "../components/app";
 
-mount(app, store, "#root");
+render(Component(app, store), document.querySelector("#root"));

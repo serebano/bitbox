@@ -43,9 +43,9 @@ function Demo(module, store) {
             return context;
         },
         devtools: Devtools({
-            //remoteDebugger: "192.168.0.46:8585"
+            remoteDebugger: "192.168.0.46:8585"
             //remoteDebugger: '192.168.43.152:8686',
-            remoteDebugger: "localhost:8585"
+            //remoteDebugger: "localhost:8585"
         })
     };
 }

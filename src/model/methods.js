@@ -1,3 +1,13 @@
+export function set(path, value) {
+    return this.apply(
+        path,
+        function set(_, value) {
+            return value;
+        },
+        value
+    );
+}
+
 export function keys(path) {
     return this.get(path, Object.keys);
 }
