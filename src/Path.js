@@ -18,6 +18,59 @@ class Path {
     static flush = Listener.flush;
     static listeners = Listener.get;
 
+    /**
+     * Path.resolve
+     * Resolve path from target
+     * path = ['state', 'users', ['props', 'id']]
+     * target = { state: { users: { foo: 'Foo' } }, props: { id: 'foo' } }
+     */
+
+    static resolve(path, getters) {
+        if (Array.isArray(path)) {
+            return path.reduce(
+                (result, key, index) => {
+                    if (Array.isArray(key)) return result.concat(Path.get(getters, key));
+                    if (Path.isPath(key)) return result.concat(key.get(getters));
+
+                    return result.concat(key);
+                },
+                []
+            );
+        }
+
+        if (Path.isPath(path)) return [path.type].concat(path.resolve(getters));
+
+        return Path.toArray(path);
+    }
+
+    static join(...path) {
+        return path.reduce(
+            (keys, key, index, path) => {
+                if (!key || key === "") return keys;
+                return keys.concat(Path.resolve(key));
+            },
+            []
+        );
+    }
+
+    static reduce(path, func, target) {
+        return Path.resolve(path, target).reduce(func, target);
+    }
+
+    /**
+     * Path.get
+     * Get value by path
+     */
+
+    static get(target, path, view) {
+        return Path.reduce(path, (target, key) => target[key], target);
+    }
+
+    /**
+     * Path.update
+     * Update target by path
+     */
+
     static update(target, path, method, args = [], options = {}) {
         return Path.resolve(path, target).reduce(
             (object, key, index, path) => {
@@ -46,10 +99,6 @@ class Path {
         );
     }
 
-    static get(target, path, view) {
-        return Path.resolve(path, target).reduce((target, key) => target[key], target);
-    }
-
     static set(target, path, value) {
         return Path.update(
             target,
@@ -61,51 +110,25 @@ class Path {
         );
     }
 
-    static reduce(target, path, func) {
-        return Path.resolve(path, target).reduce(func, target);
-    }
+    // static select(path, target, props) {
+    //     const getters = props ? Object.assign({ props }, target) : target;
+    //     if (path instanceof Path) {
+    //         //if (path.get) return path.get(getters);
+    //         return Path.populate(path, getters).reduce((target, key) => target[key], getters);
+    //     }
+    //     return Path.toArray(path).reduce((target, key) => target[key], getters);
+    // }
 
-    static join(...path) {
-        return path.reduce(
-            (keys, key, index, path) => {
-                if (!key || key === "") return keys;
-                return keys.concat(Path.resolve(key));
-            },
-            []
-        );
-    }
-
-    static populate(path, target) {
-        return Path.join(
-            path.type,
-            path.keys.reduce(
-                (result, key, index) => {
-                    const arg = path.values[index];
-                    if (arg instanceof Path) return result + key + Path.select(arg, target);
-
-                    return result + key + (arg || "");
-                },
-                ""
-            )
-        );
-    }
-
-    static select(path, target, props) {
-        const getters = props ? Object.assign({ props }, target) : target;
-
+    static detailed(path, target, props) {
         if (path instanceof Path) {
-            //if (path.get) return path.get(getters);
-
-            return Path.populate(path, getters).reduce((target, key) => target[key], getters);
-        }
-
-        return Path.toArray(path).reduce((target, key) => target[key], getters);
-    }
-
-    static resolve(path, target, props) {
-        if (path instanceof Path) {
-            const getters = props ? Object.assign({ props }, target) : target;
-            return Path.populate(path, getters);
+            const resolved = Path.populate(path, props ? Object.assign({ props }, target) : target);
+            const fullPath = Path.join(path.type, resolved);
+            return {
+                type: path.type,
+                path,
+                resolved,
+                fullPath
+            };
         }
 
         return Path.toArray(path);
@@ -139,14 +162,26 @@ class Path {
         this.type = type;
         this.keys = keys;
         this.values = values;
+        this.hasPath = true;
     }
 
-    get(tree) {
-        return Path.select(this, tree);
+    resolve(target) {
+        return Path.toArray(
+            this.keys.reduce(
+                (result, key, index) => {
+                    const arg = this.values[index];
+                    if (Path.isPath(arg)) return result + key + arg.get(target);
+                    if (Array.isArray(arg)) return result + key + Path.get(target, arg);
+
+                    return result + key + (arg || "");
+                },
+                ""
+            )
+        );
     }
 
-    resolve(tree) {
-        return Path.resolve(this, tree);
+    get(target) {
+        return Path.get(target[this.type], this.resolve(target));
     }
 
     paths(tree, types) {

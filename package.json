@@ -13,6 +13,7 @@
   "dependencies": {
     "cerebral": "next",
     "cerebral-router": "next",
+    "eventemitter3": "^2.0.2",
     "function-tree": "next",
     "react": "^15.4.2",
     "react-dom": "^15.4.2"

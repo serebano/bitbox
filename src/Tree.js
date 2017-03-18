@@ -1,5 +1,5 @@
 import Path from "./Path";
-import Listeners from "./models/listeners";
+import Listener from "./models/listeners";
 import Model from "./Model-2";
 import EventEmitter from "eventemitter3";
 
@@ -108,6 +108,10 @@ function Tree(target = {}, desc) {
             return model;
         }
     };
+
+    if (desc) {
+        return tree.create(desc);
+    }
 
     //Object.assign(tree, EventEmitter.prototype);
     //EventEmitter.call(tree);
