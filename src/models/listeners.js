@@ -71,8 +71,8 @@ const Listener = {
                         return currentMapLevel[key].children;
                     }
 
-                    currentMapLevel[key].entities = currentMapLevel[key].entities
-                        ? currentMapLevel[key].entities.concat(listener)
+                    currentMapLevel[key].listeners = currentMapLevel[key].listeners
+                        ? currentMapLevel[key].listeners.concat(listener)
                         : [listener];
 
                     return currentMapLevel;
@@ -84,13 +84,13 @@ const Listener = {
 
     get(target, changes) {
         if (!changes) {
-            const entities = [];
+            const listeners = [];
             function traverseChildren(children) {
                 for (const childKey in children) {
-                    if (children[childKey].entities) {
-                        for (let y = 0; y < children[childKey].entities.length; y++) {
-                            if (entities.indexOf(children[childKey].entities[y]) === -1)
-                                entities.push(children[childKey].entities[y]);
+                    if (children[childKey].listeners) {
+                        for (let y = 0; y < children[childKey].listeners.length; y++) {
+                            if (listeners.indexOf(children[childKey].listeners[y]) === -1)
+                                listeners.push(children[childKey].listeners[y]);
                         }
                     }
 
@@ -99,12 +99,12 @@ const Listener = {
             }
             traverseChildren(target.listeners);
 
-            return entities;
+            return listeners;
         }
 
         return this.match(target, changes).reduce(
             (unique, match) => {
-                return (match.entities || []).reduce(
+                return (match.listeners || []).reduce(
                     (currentUnique, listener) => {
                         if (currentUnique.indexOf(listener) === -1)
                             return currentUnique.concat(listener);
@@ -123,13 +123,13 @@ const Listener = {
             Path.keys(path).reduce(
                 (currentMapLevel, key, index, path) => {
                     if (index === path.length - 1) {
-                        currentMapLevel[key].entities.splice(
-                            currentMapLevel[key].entities.indexOf(listener),
+                        currentMapLevel[key].listeners.splice(
+                            currentMapLevel[key].listeners.indexOf(listener),
                             1
                         );
 
-                        if (!currentMapLevel[key].entities.length) {
-                            delete currentMapLevel[key].entities;
+                        if (!currentMapLevel[key].listeners.length) {
+                            delete currentMapLevel[key].listeners;
                         }
                     }
 

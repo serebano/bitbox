@@ -1,122 +1,71 @@
 import Path from "./Path";
-import Listener from "./models/listeners";
-import Model from "./Model-2";
-import EventEmitter from "eventemitter3";
+import Changes from "./models/changes";
+import { isComplexObject } from "./utils";
 
-function Create(tree, type, methods) {
-    function resolve(path) {
-        if (path instanceof Path && path.type === type) return Path.resolve(path, tree);
-        return Path.join(type, path);
+class Tree {
+    static reduce(path, func, tree) {
+        return Path.resolve(path, tree).reduce(func, tree);
     }
 
-    return {
-        type,
-        apply(path, func, ...args) {
-            return tree.apply(resolve(path), func, ...args);
-        },
-        get(path) {
-            return tree.get(resolve(path), (target, key) => target[key]);
-        },
-        ...methods
-    };
-}
+    /**
+     * Path.get
+     * Get value by path
+     */
 
-Tree.create = function create(tree, desc) {
-    return Object.keys(desc).reduce(
-        (tree, type) => {
-            tree[type] = Create(tree, type, desc[type]);
-            return tree;
-        },
-        tree
-    );
-};
-
-function Tree(target = {}, desc) {
-    const EE = new EventEmitter();
-
-    const tree = {
-        //EE,
-        target,
-
-        on() {
-            return EE.on(...arguments);
-        },
-
-        off() {
-            return EE.off(...arguments);
-        },
-
-        once() {
-            return EE.once(...arguments);
-        },
-
-        emit() {
-            return EE.emit(...arguments);
-        },
-
-        resolve(path, props) {
-            return Path.resolve(path, this, props);
-        },
-
-        connect(paths, listener) {
-            const connection = Path.connect(target, paths, listener);
-            EE.emit("tree:connect", paths, listener);
-
-            return connection;
-        },
-
-        changes() {
-            return Path.changes(target);
-        },
-
-        flush(force) {
-            if (!target.changes.length) return;
-            const changes = Path.flush(target, force);
-
-            EE.emit("tree:flush", changes, force);
-            return changes;
-        },
-
-        get(path, view) {
-            return Path.get(target, path, view);
-        },
-
-        set(path, value) {
-            return Path.set(target, path, value);
-        },
-
-        update(path, method, args, options) {
-            Path.update(target, path, method, args, options);
-
-            EE.emit("tree:update", path, method, args, options);
-        },
-
-        apply(path, func, ...args) {
-            const method = (target, key, ...args) => {
-                target[key] = func(target[key], ...args);
-            };
-            method.displayName = func.displayName || func.name;
-            Path.update(target, path, method, args);
-
-            EE.emit("tree:apply", path, method, args);
-        },
-
-        create(desc) {
-            const model = Tree.create(this, desc);
-            EE.emit("tree:create", desc);
-
-            return model;
-        }
-    };
-
-    if (desc) {
-        return tree.create(desc);
+    static get(path, tree) {
+        if (!tree) return tree => Path.get(path, tree);
+        return Path.reduce(path, (target, key) => target[key], tree);
     }
 
-    //Object.assign(tree, EventEmitter.prototype);
-    //EventEmitter.call(tree);
+    /**
+     * Path.update
+     * Update target by path
+     */
 
-    return tree;
+    static update(path, method, target, args = [], options = {}) {
+        if (!target && method) return target => Path.update(path, target, method, args, options);
+
+        return Path.resolve(path, target).reduce(
+            (object, key, index, path) => {
+                if (index === path.length - 1) {
+                    const oldValue = object[key];
+                    method(object, key, ...args);
+                    const newValue = object[key];
+
+                    if (
+                        oldValue !== newValue ||
+                        (isComplexObject(newValue) && isComplexObject(oldValue))
+                    ) {
+                        if (!target.changes) target.changes = new Changes();
+
+                        return target.changes.push(
+                            path,
+                            method.displayName || method.name,
+                            args,
+                            options
+                        );
+                    }
+                } else if (!(key in object)) {
+                    object[key] = {};
+                }
+
+                return object[key];
+            },
+            target
+        );
+    }
+
+    static set(path, value, target) {
+        return Tree.update(
+            path,
+            function set(target, key, value) {
+                target[key] = value;
+            },
+            target,
+            [value],
+            { force: true }
+        );
+    }
 }
 
 export default Tree;

@@ -1,6 +1,6 @@
-export default function(target, ...args) {
+export default function(path, ...args) {
     function push(context) {
-        context.select(target).apply(
+        context.select(path).apply(
             function push(array = [], ...values) {
                 array.push(...values);
 

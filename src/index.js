@@ -1,25 +1,28 @@
-import Tag from "./Tag-2";
-//import Model from "./Model";
-import Model from "./Model-2";
+// import Tag from "./Tag-2";
+// //import Model from "./Model";
+// import Model from "./Model-2";
 import Path from "./Path";
-import Listener from "./models/listeners";
+import connect, { Connection } from "./Connect";
+
+//import Listener from "./models/listeners";
 import Tree from "./Tree";
+import compute, { Compute } from "./paths/compute";
 
-import Store from "./Store";
+//import Store from "./Store";
 
-import * as tags from "./tags";
-import * as operators from "./operators";
-import * as models from "./models";
+// import * as tags from "./tags";
+// import * as operators from "./operators";
+// import * as models from "./models";
 
 //import "./examples/counter";
 
-Path.connect(window, ["foo", "foo.bar"], function Foo(changes) {
-    console.log(`Foo`, changes);
-});
+// window.fooconn = Path.connect(["foo", "state.*"], function Foo(changes) {
+//     console.log(`Foo`, changes);
+// });
 
 Object.assign(
     window,
-    { Listener, Tree, Path, Tag, Model, Store, tags, operators, models },
-    tags,
-    operators
+    { compute, connect, Compute, Tree, Connection, Path }
+    //tags,
+    //operators
 );

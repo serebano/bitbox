@@ -1,22 +1,11 @@
-import Listener from "./models/listeners";
-function isComplexObject(obj) {
-    return typeof obj === "object" && obj !== null;
-}
-
 class Path {
     static isPath(arg) {
         return arg instanceof Path;
     }
 
-    static tag(type) {
+    static create(type) {
         return (keys, ...values) => new Path(type, keys, values);
     }
-
-    static Listener = Listener;
-    static connect = Listener.connect;
-    static changes = Listener.changes;
-    static flush = Listener.flush;
-    static listeners = Listener.get;
 
     /**
      * Path.resolve
@@ -25,12 +14,12 @@ class Path {
      * target = { state: { users: { foo: 'Foo' } }, props: { id: 'foo' } }
      */
 
-    static resolve(path, getters) {
+    static resolve(path, tree) {
         if (Array.isArray(path)) {
             return path.reduce(
                 (result, key, index) => {
-                    if (Array.isArray(key)) return result.concat(Path.get(getters, key));
-                    if (Path.isPath(key)) return result.concat(key.get(getters));
+                    if (Array.isArray(key)) return result.concat(Path.get(key, tree));
+                    if (Path.isPath(key)) return result.concat(key.get(tree));
 
                     return result.concat(key);
                 },
@@ -38,23 +27,13 @@ class Path {
             );
         }
 
-        if (Path.isPath(path)) return [path.type].concat(path.resolve(getters));
+        if (Path.isPath(path)) return path.resolve(tree);
 
         return Path.toArray(path);
     }
 
-    static join(...path) {
-        return path.reduce(
-            (keys, key, index, path) => {
-                if (!key || key === "") return keys;
-                return keys.concat(Path.resolve(key));
-            },
-            []
-        );
-    }
-
-    static reduce(path, func, target) {
-        return Path.resolve(path, target).reduce(func, target);
+    static reduce(path, func, tree) {
+        return Path.resolve(path, tree).reduce(func, tree);
     }
 
     /**
@@ -62,76 +41,9 @@ class Path {
      * Get value by path
      */
 
-    static get(target, path, view) {
-        return Path.reduce(path, (target, key) => target[key], target);
-    }
-
-    /**
-     * Path.update
-     * Update target by path
-     */
-
-    static update(target, path, method, args = [], options = {}) {
-        return Path.resolve(path, target).reduce(
-            (object, key, index, path) => {
-                if (index === path.length - 1) {
-                    const oldValue = object[key];
-                    method(object, key, ...args);
-                    const newValue = object[key];
-
-                    if (
-                        oldValue !== newValue ||
-                        (isComplexObject(newValue) && isComplexObject(oldValue))
-                    )
-                        return target.changes.push(
-                            path,
-                            method.displayName || method.name,
-                            args,
-                            options
-                        );
-                } else if (!(key in object)) {
-                    object[key] = {};
-                }
-
-                return object[key];
-            },
-            target
-        );
-    }
-
-    static set(target, path, value) {
-        return Path.update(
-            target,
-            path,
-            function set(target, key, value) {
-                target[key] = value;
-            },
-            [value]
-        );
-    }
-
-    // static select(path, target, props) {
-    //     const getters = props ? Object.assign({ props }, target) : target;
-    //     if (path instanceof Path) {
-    //         //if (path.get) return path.get(getters);
-    //         return Path.populate(path, getters).reduce((target, key) => target[key], getters);
-    //     }
-    //     return Path.toArray(path).reduce((target, key) => target[key], getters);
-    // }
-
-    static detailed(path, target, props) {
-        if (path instanceof Path) {
-            const resolved = Path.populate(path, props ? Object.assign({ props }, target) : target);
-            const fullPath = Path.join(path.type, resolved);
-            return {
-                type: path.type,
-                path,
-                resolved,
-                fullPath
-            };
-        }
-
-        return Path.toArray(path);
+    static get(path, tree) {
+        if (!tree) return tree => Path.get(path, tree);
+        return Path.reduce(path, (target, key) => target[key], tree);
     }
 
     static toArray(path = []) {
@@ -146,56 +58,44 @@ class Path {
         return [];
     }
 
-    static keys(path = []) {
-        if (Array.isArray(path)) {
-            return path;
-        } else if (typeof path === "string") {
-            return path === "." || path === "" ? [] : path.split(".");
-        } else if (typeof path === "number") {
-            return [String(path)];
-        }
-
-        return [];
+    static ensure(path) {
+        if (Path.isPath(path)) return path;
+        if (typeof path === "function") return path;
+        const keys = Path.toArray(path);
+        return new Path(keys.shift(), [keys.join(".")]);
     }
 
     constructor(type, keys, values) {
         this.type = type;
         this.keys = keys;
-        this.values = values;
-        this.hasPath = true;
+        this.values = values || [];
     }
 
-    resolve(target) {
-        return Path.toArray(
+    resolve(target, relative) {
+        const path = Path.toArray(
             this.keys.reduce(
                 (result, key, index) => {
                     const arg = this.values[index];
                     if (Path.isPath(arg)) return result + key + arg.get(target);
-                    if (Array.isArray(arg)) return result + key + Path.get(target, arg);
+                    if (Array.isArray(arg)) return result + key + Path.get(arg, target);
 
                     return result + key + (arg || "");
                 },
                 ""
             )
         );
+        return relative ? path : [this.type].concat(path);
     }
 
     get(target) {
-        return Path.get(target[this.type], this.resolve(target));
+        return Path.get(this.resolve(target), target);
     }
 
-    paths(tree, types) {
-        return this.extract(types).filter(tag => tag.hasPath).map(path => path.resolve(tree));
-    }
-
-    extract(types) {
-        const match = !types || !types.length || types.indexOf(this.type) > -1;
-
-        return (match ? [this] : []).concat(
+    paths(func) {
+        const path = func ? func(this) : this;
+        return (path ? [path] : []).concat(
             this.values.reduce(
-                (paths, value, index) => {
-                    return value instanceof Path ? paths.concat(value.extract(types)) : paths;
-                },
+                (paths, value) => value instanceof Path ? paths.concat(value.paths(func)) : paths,
                 []
             )
         );

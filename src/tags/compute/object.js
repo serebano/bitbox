@@ -28,7 +28,7 @@ export class ComputeObject extends Path {
                 const value = this.values[idx];
 
                 obj[key] = value instanceof Path
-                    ? Path.select(value, context)
+                    ? value.get(context)
                     : typeof value === "function" ? value(obj) : value;
 
                 return obj;
