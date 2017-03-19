@@ -7,7 +7,7 @@ function Changes(changes = []) {
 
     return changes;
 }
-
+Changes.KEY = Symbol("Changes");
 Changes.prototype = [];
 Changes.prototype.last = function last() {
     return this[this.length - 1];

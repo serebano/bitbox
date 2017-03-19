@@ -1,17 +1,24 @@
-import Path from "../Path";
+import Path from "./Path";
 
 export class Compute extends Path {
     constructor(object) {
+        super("compute");
+        this.create(object);
+    }
+
+    create(object) {
         if (object instanceof Path || typeof object === "string") object = [object];
 
-        super("compute");
-
         this.computeType = Array.isArray(object) ? "array" : typeof object;
+
         this.keys = Object.keys(object);
         this.values = Object.values(object).map(value => {
-            if (Array.isArray(value)) return new Compute(value);
+            if (Path.isPath(value)) return value;
+            if (typeof value === "object") return new Compute(value);
             return Path.ensure(value);
         });
+
+        return this;
     }
 
     resolve(tree) {

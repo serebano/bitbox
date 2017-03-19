@@ -1,25 +1,56 @@
-import { Compute } from "./paths/compute";
 import Path from "./Path";
+import { Compute } from "./Compute";
 import { isComplexObject } from "./utils";
+import Changes from "./models/changes";
 
 export class Connection extends Compute {
     static OPEN = 1;
-    static CLOSE = 0;
+    static CLOSED = 0;
+    static KEY = Symbol("Connections");
+
+    static store(tree) {
+        if (!tree[Connection.KEY]) tree[Connection.KEY] = [];
+        if (!tree[Changes.KEY]) tree[Changes.KEY] = [];
+
+        return tree[Connection.KEY];
+    }
 
     static get(tree, listener) {
-        return tree.connections.filter(connection => connection.listener === listener)[0];
+        const connections = Connection.store(tree);
+
+        if (typeof listener === "function")
+            return connections.filter(connection => connection.listener === listener)[0];
+
+        if (listener === true) return connections;
+
+        return tree[Changes.KEY].reduce(
+            (result, change) => {
+                const listeners = connections.filter(connection =>
+                    connection.has(change.path, change.force));
+                if (listeners) {
+                    return result.concat(
+                        listeners.filter(connection => {
+                            connection.changes.push(change);
+                            return result.indexOf(connection) === -1;
+                        })
+                    );
+                }
+                return result;
+            },
+            []
+        );
     }
 
     static listeners(tree, all) {
-        if (all) return tree.connections;
-
-        return tree.changes.reduce(
+        const connections = Connection.store(tree);
+        if (all) return connections;
+        return tree[Changes.KEY].reduce(
             (result, change) => {
-                const connections = tree.connections.filter(connection =>
-                    connection.has(change.path, change.forceChildPathUpdates));
-                if (connections) {
+                const listeners = connections.filter(connection =>
+                    connection.has(change.path, change.force));
+                if (listeners) {
                     return result.concat(
-                        connections.filter(connection => {
+                        listeners.filter(connection => {
                             connection.changes.push(change);
                             return result.indexOf(connection) === -1;
                         })
@@ -32,51 +63,60 @@ export class Connection extends Compute {
     }
 
     static flush(tree, force = false) {
-        const connections = Connection.listeners(tree, force);
-        const changes = tree.changes.flush();
-
-        connections.forEach(connection => {
+        for (const connection of Connection.listeners(tree, force)) {
             connection.listener(connection, tree);
             connection.changes = [];
             connection.changed++;
-        });
-
+        }
+        const changes = tree[Changes.KEY];
+        tree[Changes.KEY] = [];
         return changes;
     }
 
     static clear(tree) {
-        return delete tree.connections;
+        return delete tree[Connection.KEY];
     }
 
-    constructor(paths, listener) {
+    constructor(paths, listener, tree) {
         super(paths);
 
         this.name = listener.name;
         this.listener = listener;
         this.changes = [];
         this.changed = 0;
+
+        tree && this.open(tree);
     }
 
     open(tree) {
-        if (!tree.connections) tree.connections = [];
-        this._paths = this.resolve(tree);
-        tree.connections.push(this);
+        Connection.store(tree).push(this);
         this.status = Connection.OPEN;
+        this._paths = this.resolve(tree);
+
         return this;
     }
 
     close(tree) {
-        tree.connections.splice(tree.connections.indexOf(this), 1);
-        this.status = Connection.CLOSE;
+        const connections = Connection.store(tree);
+        connections.splice(connections.indexOf(this), 1);
+        this.status = Connection.CLOSED;
+
+        return this;
+    }
+
+    update(path, tree) {
+        this.create(path, tree);
+        this._paths = this.resolve(tree);
         return this;
     }
 
     resolve(tree) {
         return this.paths(path => {
             if (path instanceof Compute) return;
-            return isComplexObject(path.get(tree))
-                ? path.resolve(tree).concat("**")
-                : path.resolve(tree);
+            const resolved = path.resolve(tree);
+            return resolved.indexOf("*") === -1 && isComplexObject(path.get(tree))
+                ? resolved.concat("**")
+                : resolved;
         });
     }
 
@@ -91,12 +131,13 @@ export class Connection extends Compute {
     }
 }
 
-export default function connect(path, listener, tree) {
+function connect(path, listener, tree) {
     if (!tree) return tree => connect(path, listener, tree);
-    if (!tree.connections) tree.connections = [];
 
-    const connected = Connection.get(tree, listener);
-    if (connected) return connected;
+    const connection = Connection.get(tree, listener);
+    if (connection) return connection.update(path, tree);
 
-    return new Connection(path, listener).open(tree);
+    return new Connection(path, listener, tree);
 }
+
+export default connect;

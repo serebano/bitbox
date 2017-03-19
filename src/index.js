@@ -1,28 +1,59 @@
-// import Tag from "./Tag-2";
-// //import Model from "./Model";
-// import Model from "./Model-2";
 import Path from "./Path";
-import connect, { Connection } from "./Connect";
-
-//import Listener from "./models/listeners";
 import Tree from "./Tree";
-import compute, { Compute } from "./paths/compute";
+import compute, { Compute } from "./Compute";
+import connect, { Connection } from "./Connect";
+import * as operators from "./operators";
 
-//import Store from "./Store";
+const tree = new Tree(
+    {
+        state: {
+            users: {
+                one: {
+                    name: "tree1",
+                    age: 33
+                }
+            },
+            id: "one"
+        }
+    },
+    {
+        autoFlush: true
+    }
+);
 
-// import * as tags from "./tags";
-// import * as operators from "./operators";
-// import * as models from "./models";
+const state = Path.create("state");
 
-//import "./examples/counter";
+tree.on("flush", function(changes) {
+    console.log("on flush", changes);
+});
 
-// window.fooconn = Path.connect(["foo", "state.*"], function Foo(changes) {
-//     console.log(`Foo`, changes);
-// });
+tree.on("connect", function(connection) {
+    console.log("on connect", connection.name);
+});
+
+tree.connect(
+    {
+        name: [state`users.${state`id`}.name`, name => name.toUpperCase()],
+        count: state`count`,
+        age: state`users.${state`id`}.age`
+    },
+    function Username(conn, tree) {
+        console.log(conn.name, conn.get(tree));
+    }
+);
+
+tree.set(state`users.${state`id`}.name`, "Serebov");
+
+tree.apply(
+    state`count`,
+    function inc(c = 0, n) {
+        return c + n;
+    },
+    10
+);
 
 Object.assign(
     window,
-    { compute, connect, Compute, Tree, Connection, Path }
-    //tags,
-    //operators
+    { state, tree, compute, connect, Compute, Tree, Connection, Path },
+    operators
 );

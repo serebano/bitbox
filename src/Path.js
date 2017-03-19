@@ -1,4 +1,5 @@
 class Path {
+    static KEY = Symbol("Path");
     static isPath(arg) {
         return arg instanceof Path;
     }
@@ -9,9 +10,9 @@ class Path {
 
     /**
      * Path.resolve
-     * Resolve path from target
+     * Resolve path to array
      * path = ['state', 'users', ['props', 'id']]
-     * target = { state: { users: { foo: 'Foo' } }, props: { id: 'foo' } }
+     * tree = { state: { users: { foo: 'Foo' } }, props: { id: 'foo' } }
      */
 
     static resolve(path, tree) {
@@ -33,16 +34,16 @@ class Path {
     }
 
     static reduce(path, func, tree) {
+        if (!tree) return tree => Path.reduce(path, func, tree);
         return Path.resolve(path, tree).reduce(func, tree);
     }
 
     /**
      * Path.get
-     * Get value by path
+     * Get value from tree
      */
 
     static get(path, tree) {
-        if (!tree) return tree => Path.get(path, tree);
         return Path.reduce(path, (target, key) => target[key], tree);
     }
 
@@ -61,8 +62,9 @@ class Path {
     static ensure(path) {
         if (Path.isPath(path)) return path;
         if (typeof path === "function") return path;
-        const keys = Path.toArray(path);
-        return new Path(keys.shift(), [keys.join(".")]);
+        const [type, ...keys] = Path.toArray(path);
+
+        return new Path(type, [keys.join(".")]);
     }
 
     constructor(type, keys, values) {
@@ -71,13 +73,13 @@ class Path {
         this.values = values || [];
     }
 
-    resolve(target, relative) {
+    resolve(tree, relative) {
         const path = Path.toArray(
             this.keys.reduce(
                 (result, key, index) => {
                     const arg = this.values[index];
-                    if (Path.isPath(arg)) return result + key + arg.get(target);
-                    if (Array.isArray(arg)) return result + key + Path.get(arg, target);
+                    if (Path.isPath(arg)) return result + key + arg.get(tree);
+                    if (Array.isArray(arg)) return result + key + Path.get(arg, tree);
 
                     return result + key + (arg || "");
                 },
@@ -87,8 +89,9 @@ class Path {
         return relative ? path : [this.type].concat(path);
     }
 
-    get(target) {
-        return Path.get(this.resolve(target), target);
+    get(tree) {
+        if (tree.get) return tree.get(this);
+        return Path.get(this.resolve(tree), tree);
     }
 
     paths(func) {
