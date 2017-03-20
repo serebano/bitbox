@@ -1,9 +1,9 @@
-export default (target, value) => {
+export default (path, value) => {
     function set(context) {
-        context.select(target).set(value);
+        context.set(path, value);
     }
 
-    set.displayName = `set(${target}, ${value})`;
+    set.displayName = `set(${path}, ${value})`;
 
     return set;
 };

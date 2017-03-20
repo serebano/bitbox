@@ -1,143 +1,103 @@
 import Path from "./Path";
 import { Compute } from "./Compute";
-import { isComplexObject } from "./utils";
-import Changes from "./models/changes";
 
-export class Connection extends Compute {
-    static OPEN = 1;
-    static CLOSED = 0;
-    static KEY = Symbol("Connections");
-
-    static store(tree) {
-        if (!tree[Connection.KEY]) tree[Connection.KEY] = [];
-        if (!tree[Changes.KEY]) tree[Changes.KEY] = [];
-
-        return tree[Connection.KEY];
-    }
-
-    static get(tree, listener) {
-        const connections = Connection.store(tree);
-
-        if (typeof listener === "function")
-            return connections.filter(connection => connection.listener === listener)[0];
-
-        if (listener === true) return connections;
-
-        return tree[Changes.KEY].reduce(
-            (result, change) => {
-                const listeners = connections.filter(connection =>
-                    connection.has(change.path, change.force));
-                if (listeners) {
-                    return result.concat(
-                        listeners.filter(connection => {
-                            connection.changes.push(change);
-                            return result.indexOf(connection) === -1;
-                        })
-                    );
-                }
-                return result;
-            },
-            []
-        );
-    }
-
-    static listeners(tree, all) {
-        const connections = Connection.store(tree);
-        if (all) return connections;
-        return tree[Changes.KEY].reduce(
-            (result, change) => {
-                const listeners = connections.filter(connection =>
-                    connection.has(change.path, change.force));
-                if (listeners) {
-                    return result.concat(
-                        listeners.filter(connection => {
-                            connection.changes.push(change);
-                            return result.indexOf(connection) === -1;
-                        })
-                    );
-                }
-                return result;
-            },
-            []
-        );
-    }
-
-    static flush(tree, force = false) {
-        for (const connection of Connection.listeners(tree, force)) {
-            connection.listener(connection, tree);
-            connection.changes = [];
-            connection.changed++;
-        }
-        const changes = tree[Changes.KEY];
-        tree[Changes.KEY] = [];
-        return changes;
-    }
-
-    static clear(tree) {
-        return delete tree[Connection.KEY];
-    }
-
-    constructor(paths, listener, tree) {
-        super(paths);
-
+export class Connection {
+    constructor(args, listener, context) {
+        this.args = args;
         this.name = listener.name;
         this.listener = listener;
+        this.context = context;
         this.changes = [];
         this.changed = 0;
+        this.computed = new Compute(args);
+        this.paths = this.computed.resolve(context);
 
-        tree && this.open(tree);
+        Store.add(this, context);
     }
 
-    open(tree) {
-        Connection.store(tree).push(this);
-        this.status = Connection.OPEN;
-        this._paths = this.resolve(tree);
+    get(context) {
+        context = context || this.context;
+        this.paths = this.computed.resolve(context);
 
-        return this;
-    }
-
-    close(tree) {
-        const connections = Connection.store(tree);
-        connections.splice(connections.indexOf(this), 1);
-        this.status = Connection.CLOSED;
-
-        return this;
-    }
-
-    update(path, tree) {
-        this.create(path, tree);
-        this._paths = this.resolve(tree);
-        return this;
-    }
-
-    resolve(tree) {
-        return this.paths(path => {
-            if (path instanceof Compute) return;
-            const resolved = path.resolve(tree);
-            return resolved.indexOf("*") === -1 && isComplexObject(path.get(tree))
-                ? resolved.concat("**")
-                : resolved;
-        });
+        return this.computed.get(context);
     }
 
     has(path, child) {
-        path = Path.toArray(path);
-        return this._paths.some(arr => {
+        return this.paths.some(arr => {
             return arr.every((key, index) => {
                 if (index <= arr.length - 1 && path[index] === key) return true;
                 if (index >= path.length) return key === "**" || child;
             });
         });
     }
+
+    remove(context) {
+        return Store.remove(this, context);
+    }
 }
+
+export const Store = {
+    CHANGES: Symbol("Changes"),
+    CONNECTIONS: Symbol("Connections"),
+
+    add(conn, tree) {
+        if (!tree[Store.CONNECTIONS]) tree[Store.CONNECTIONS] = [];
+        return tree[Store.CONNECTIONS].push(conn) - 1;
+    },
+
+    get(path, tree, force) {
+        const resolved = Path.resolve(path, tree);
+        return tree[Store.CONNECTIONS].filter(conn => conn.has(resolved, force));
+    },
+
+    flush(tree, force = false) {
+        const connections = force
+            ? tree[Store.CONNECTIONS]
+            : tree[Store.CHANGES].reduce(
+                  (result, change) => {
+                      const filtered = tree[Store.CONNECTIONS].filter(conn =>
+                          conn.has(change.path, change.force));
+                      if (filtered.length)
+                          return result.concat(
+                              filtered.filter(conn => {
+                                  conn.changes.push(change);
+                                  return result.indexOf(conn) === -1;
+                              })
+                          );
+                      return result;
+                  },
+                  []
+              );
+
+        const changes = tree[Store.CHANGES];
+        for (const connection of connections) {
+            connection.listener.call(connection.context, connection);
+            connection.changes = [];
+            connection.changed++;
+        }
+
+        return changes.splice(0, changes.length);
+    },
+
+    remove(conn, tree) {
+        return tree[Store.CONNECTIONS].splice(tree[Store.CONNECTIONS].indexOf(conn), 1);
+    },
+
+    clear(tree) {
+        delete tree[Store.CONNECTIONS];
+        delete tree[Store.CHANGES];
+        return tree;
+    }
+};
 
 function connect(path, listener, tree) {
     if (!tree) return tree => connect(path, listener, tree);
+    if (!tree[Store.CONNECTIONS]) tree[Store.CONNECTIONS] = [];
+    const connection = tree[Store.CONNECTIONS].find($ => $.listener === listener);
 
-    const connection = Connection.get(tree, listener);
-    if (connection) return connection.update(path, tree);
-
-    return new Connection(path, listener, tree);
+    return !connection ? new Connection(path, listener, tree) : connection;
 }
+
+Object.assign(connect, Store);
 
 export default connect;

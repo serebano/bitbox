@@ -1,59 +1,77 @@
 import Path from "./Path";
-import Tree from "./Tree";
 import compute, { Compute } from "./Compute";
 import connect, { Connection } from "./Connect";
 import * as operators from "./operators";
+import * as tags from "./cerebral-proxy-tags";
+import PathProxy from "./PathProxy";
 
-const tree = new Tree(
-    {
-        state: {
-            users: {
-                one: {
-                    name: "tree1",
-                    age: 33
-                }
-            },
-            id: "one"
-        }
+const data = {
+    state: {
+        users: {
+            one: {
+                name: "tree1",
+                age: 33
+            }
+        },
+        id: "one"
     },
-    {
-        autoFlush: true
+    foo: {},
+    bar: {}
+};
+
+const state = tags.state; //Path.create("state");
+const foo = Path.create("foo");
+const bar = Path.create("bar");
+
+const dev = new PathProxy(data, {
+    get(target, key) {
+        console.log(`[get] ${key}`);
+        return target[key];
+    },
+    set(target, key, value) {
+        console.log(`[set] ${key} = ${value}`);
+        target[key] = value;
+        return true;
+    },
+    deleteProperty(target, key) {
+        console.log(`[delete] ${key}`);
+        delete target[key];
+        return true;
     }
-);
-
-const state = Path.create("state");
-
-tree.on("flush", function(changes) {
-    console.log("on flush", changes);
 });
 
-tree.on("connect", function(connection) {
-    console.log("on connect", connection.name);
+const users = state.users[state.id];
+const count = state.count;
+const compo = state.users[state.id].name;
+
+dev.connect({ compo, count, users }, function Foo(conn) {
+    console.log(`on-foo`, conn.get(this));
 });
 
-tree.connect(
-    {
-        name: [state`users.${state`id`}.name`, name => name.toUpperCase()],
-        count: state`count`,
-        age: state`users.${state`id`}.age`
-    },
-    function Username(conn, tree) {
-        console.log(conn.name, conn.get(tree));
-    }
-);
+dev.connect(count, function Count(conn) {
+    console.log(conn.name, conn.get(this));
+});
 
-tree.set(state`users.${state`id`}.name`, "Serebov");
+dev.set("foo", { bar: 2, baz: 3 });
+dev.set("foo.xxx", 5);
+dev.set("foo.bar", 3);
+dev.set("id", "sereb");
+dev.set(count, 100);
+dev.set(compo, `Serebano`);
 
-tree.apply(
-    state`count`,
-    function inc(c = 0, n) {
-        return c + n;
-    },
-    10
-);
-
-Object.assign(
-    window,
-    { state, tree, compute, connect, Compute, Tree, Connection, Path },
-    operators
-);
+Object.assign(window, operators, tags, {
+    dev,
+    users,
+    count,
+    tags,
+    state,
+    foo,
+    bar,
+    count,
+    PathProxy,
+    data,
+    state,
+    compute,
+    connect,
+    Path
+});

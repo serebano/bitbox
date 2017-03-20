@@ -1,11 +1,13 @@
 class Path {
-    static KEY = Symbol("Path");
     static isPath(arg) {
         return arg instanceof Path;
     }
 
     static create(type) {
-        return (keys, ...values) => new Path(type, keys, values);
+        return (keys, ...values) => {
+            const path = new Path(type, keys, values);
+            return path;
+        };
     }
 
     /**
@@ -16,26 +18,20 @@ class Path {
      */
 
     static resolve(path, tree) {
+        if (Path.isPath(path)) return path.resolve(tree, true);
+
         if (Array.isArray(path)) {
             return path.reduce(
                 (result, key, index) => {
                     if (Array.isArray(key)) return result.concat(Path.get(key, tree));
                     if (Path.isPath(key)) return result.concat(key.get(tree));
-
                     return result.concat(key);
                 },
                 []
             );
         }
 
-        if (Path.isPath(path)) return path.resolve(tree);
-
         return Path.toArray(path);
-    }
-
-    static reduce(path, func, tree) {
-        if (!tree) return tree => Path.reduce(path, func, tree);
-        return Path.resolve(path, tree).reduce(func, tree);
     }
 
     /**
@@ -44,7 +40,7 @@ class Path {
      */
 
     static get(path, tree) {
-        return Path.reduce(path, (target, key) => target[key], tree);
+        return Path.resolve(path, tree).reduce((target, key) => target[key], tree);
     }
 
     static toArray(path = []) {
@@ -59,46 +55,81 @@ class Path {
         return [];
     }
 
-    static ensure(path) {
-        if (Path.isPath(path)) return path;
-        if (typeof path === "function") return path;
-        const [type, ...keys] = Path.toArray(path);
-
-        return new Path(type, [keys.join(".")]);
+    static extract(target, path, trap, ...args) {
+        return Path.toArray(path).reduce(
+            (target, prop, index, keys) => {
+                if (index === keys.length - 1) return trap.call(target, target, prop, ...args);
+                return target[prop];
+            },
+            target
+        );
     }
 
     constructor(type, keys, values) {
         this.type = type;
         this.keys = keys;
-        this.values = values || [];
+        if (values) this.values = values;
     }
 
-    resolve(tree, relative) {
-        const path = Path.toArray(
+    resolve(tree, type) {
+        //this.context = tree;
+        if (!this.values && this.keys) return type ? [this.type].concat(this.keys) : this.keys;
+        this.path = Path.toArray(
             this.keys.reduce(
                 (result, key, index) => {
                     const arg = this.values[index];
                     if (Path.isPath(arg)) return result + key + arg.get(tree);
-                    if (Array.isArray(arg)) return result + key + Path.get(arg, tree);
-
                     return result + key + (arg || "");
                 },
                 ""
             )
         );
-        return relative ? path : [this.type].concat(path);
+        return type ? [this.type].concat(this.path) : this.path;
     }
 
-    get(tree) {
-        if (tree.get) return tree.get(this);
-        return Path.get(this.resolve(tree), tree);
+    getPath(context) {
+        //if (!this.context) this.context = context;
+        return this.resolve(context);
     }
 
-    paths(func) {
+    get(context) {
+        context = context || this.context;
+        const getter = context[this.type];
+        if (!getter) {
+            console.log(`Path/${this.type}`, context, this);
+            throw new Error(`Path#${this.type} invalid getter`);
+        }
+        if (typeof getter === "function") return getter(this.resolve(context));
+
+        return this.getPath(context).reduce((target, key) => target[key], getter);
+    }
+
+    set(value, context) {
+        context = context || this.context;
+        const target = context[this.type];
+        if (!target) throw new Error(`Path#${this.type} invalid target`);
+        //this.value = value;
+        return Path.Proxy.extract(
+            this.context,
+            this.resolve(this.context, true),
+            function set(target, key, value) {
+                target[key] = value;
+                return true;
+            },
+            value,
+            this
+        );
+    }
+
+    getPaths(func) {
         const path = func ? func(this) : this;
-        return (path ? [path] : []).concat(
+        const paths = path ? [path] : [];
+        if (!this.values) return paths;
+
+        return paths.concat(
             this.values.reduce(
-                (paths, value) => value instanceof Path ? paths.concat(value.paths(func)) : paths,
+                (paths, value) =>
+                    value instanceof Path ? paths.concat(value.getPaths(func)) : paths,
                 []
             )
         );

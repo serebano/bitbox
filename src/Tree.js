@@ -1,11 +1,9 @@
 import Path from "./Path";
-import Changes from "./models/changes";
 import { isComplexObject } from "./utils";
 import EventEmitter from "eventemitter3";
-import { Connection } from "./Connect";
+import { Connection, Store } from "./Connect";
 
 class Tree extends EventEmitter {
-    static KEY = Symbol("Tree");
     static reduce(path, func, tree) {
         return Path.resolve(path, tree).reduce(func, tree);
     }
@@ -27,7 +25,7 @@ class Tree extends EventEmitter {
 
     static update(path, method, target, args = [], options = {}) {
         if (!target && method) return target => Tree.update(path, method, target, args, options);
-        if (!target[Changes.KEY]) target[Changes.KEY] = [];
+        if (!target[Connection.CHANGES]) target[Connection.CHANGES] = [];
 
         return Path.resolve(path, target).reduce(
             (object, key, index, path) => {
@@ -40,7 +38,7 @@ class Tree extends EventEmitter {
                         oldValue !== newValue ||
                         (isComplexObject(newValue) && isComplexObject(oldValue))
                     ) {
-                        return target[Changes.KEY].push(
+                        return target[Store.CHANGES].push(
                             path,
                             method.displayName || method.name,
                             args,
@@ -57,15 +55,15 @@ class Tree extends EventEmitter {
         );
     }
 
-    static set(path, value, target) {
-        return Tree.update(
+    static set(path, value, tree) {
+        return Tree.prototype.update.call(
+            tree,
             path,
             function set(target, key, value) {
                 target[key] = value;
             },
-            target,
             [value],
-            { force: true }
+            true
         );
     }
 
@@ -73,19 +71,21 @@ class Tree extends EventEmitter {
         super();
         Object.assign(
             this,
+            tree,
             {
-                tree: tree || Object.create(null),
                 autoFlush: true,
                 asyncUpdate: true
             },
             options
         );
-        this[Changes.KEY] = [];
+        this[Store.CHANGES] = [];
     }
 
-    update(path, method, args = [], force) {
-        const operation = method.displayName || method.name;
-        Path.resolve(path, this.tree).reduce(
+    update(path, method, args = [], force = false) {
+        const operator = method.displayName || method.name;
+        args = args.map(arg => arg instanceof Path ? arg.get(this) : arg);
+
+        Path.resolve(path, this).reduce(
             (object, key, index, path) => {
                 if (index === path.length - 1) {
                     const oldValue = object[key];
@@ -95,7 +95,7 @@ class Tree extends EventEmitter {
                         oldValue !== newValue ||
                         (isComplexObject(newValue) && isComplexObject(oldValue))
                     ) {
-                        this[Changes.KEY].push({ path, operation, args, force });
+                        this[Store.CHANGES].push({ path, operator, args, force });
                     }
                 } else if (!(key in object)) {
                     object[key] = {};
@@ -103,7 +103,7 @@ class Tree extends EventEmitter {
 
                 return object[key];
             },
-            this.tree
+            this
         );
 
         if (this.autoFlush) {
@@ -117,18 +117,19 @@ class Tree extends EventEmitter {
     }
 
     flush(force) {
-        const changes = Connection.flush(this, force);
+        const changes = Store.flush(this, force);
         this.emit("flush", changes);
     }
 
     connect(path, listener) {
         const connection = new Connection(path, listener, this);
         this.emit("connect", connection);
+
         return connection;
     }
 
     get(path) {
-        return Tree.get(path, this.tree);
+        return Tree.get(path, this);
     }
 
     set(path, value) {

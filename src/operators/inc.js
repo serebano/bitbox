@@ -1,15 +1,15 @@
-import { compute } from "../tags";
-
-export default (target, arg) => {
-    const value = compute(target, arg, function add(a = 0, b = 1) {
-        return a + b;
-    });
-
+export default (path, arg) => {
     function inc(context) {
-        context.select(target).apply(value);
+        context.apply(
+            path,
+            function inc(_, value) {
+                return value;
+            },
+            arg
+        );
     }
 
-    inc.displayName = `inc(${target}, ${arg})`;
+    inc.displayName = `inc(${path}, ${arg})`;
 
     return inc;
 };
