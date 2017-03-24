@@ -1,17 +1,9 @@
-export default function(path, ...args) {
-    function push(tree) {
-        tree.apply(
-            path,
-            function push(array = [], ...values) {
-                array.push(...values);
+export default (path, ...args) => {
+    return function push(context) {
+        path.set(context, ...args, (target = [], ...args) => {
+            target.push(...args);
 
-                return array;
-            },
-            ...args
-        );
-    }
-
-    push.displayName = `push(${Array.prototype.join.call(arguments, ", ")})`;
-
-    return push;
-}
+            return target;
+        });
+    };
+};

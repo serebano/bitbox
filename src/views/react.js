@@ -1,44 +1,34 @@
 import View from "react";
 import { getChangedProps } from "../utils";
+import bit from "../bit";
+import box from "../box";
 
-export function Provider(store, component, props, children) {
-    window.store = store;
-    return createElement(Container, { store }, createElement(component, props, children));
-}
+export default function Component(component, store, ...args) {
+    if (store) return Provider(bit(store), component, ...args);
 
-export function Component(component, store, ...args) {
-    if (store) {
-        return Provider(store, component, ...args);
-    }
-
-    const target = component.connect;
     const comp = props => component(props, createElement);
 
     class CW extends View.Component {
         componentWillMount() {
-            const listener = changes => this.update(this.props, changes);
-            listener.displayName = component.displayName || component.name;
-            this.conn = this.context.store.connect(target, listener, this.props);
+            this.conn = box(map => this.update(map), component.map || {}, this.context.store);
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
-
             if (changes.length) this.update(nextProps, changes);
         }
         componentWillUnmount() {
             this._isUnmounting = true;
-            this.conn.remove();
+            this.conn.unobserve();
         }
-
         shouldComponentUpdate() {
             return false;
         }
         update(props, changes) {
-            this.conn.update(props);
+            this.map = Object.assign({}, this.props, props);
             this.forceUpdate();
         }
         render() {
-            return View.createElement(comp, this.conn.get(this.props));
+            return View.createElement(comp, this.map);
         }
     }
 
@@ -48,6 +38,15 @@ export function Component(component, store, ...args) {
     };
 
     return CW;
+}
+
+export function Provider(store, component, props, children) {
+    window.$store = store;
+    return createElement(
+        Container,
+        { store },
+        createElement(Component(component), props, children)
+    );
 }
 
 /**
@@ -77,14 +76,13 @@ Container.childContextTypes = {
 const _createElement = View.createElement;
 
 View.createElement = (arg, ...args) => {
-    if (typeof arg === "function" && arg.connect) return _createElement(Component(arg), ...args);
+    if (typeof arg === "function" && arg.map) return _createElement(Component(arg), ...args);
 
     return _createElement(arg, ...args);
 };
 
 export function createElement(arg, ...rest) {
-    if (typeof arg === "function" && arg.connect)
-        return View.createElement(Component(arg), ...rest);
+    if (typeof arg === "function" && arg.map) return View.createElement(Component(arg), ...rest);
 
     return View.createElement(arg, ...rest);
 }

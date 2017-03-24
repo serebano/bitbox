@@ -1,5 +1,5 @@
-export default target => {
+export default path => {
     return function unset(context) {
-        return context.select(target).unset();
+        return path.set(context, undefined);
     };
 };

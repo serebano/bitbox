@@ -1,9 +1,9 @@
 export default (path, value) => {
     function set(context) {
-        context.set(path, value);
+        path.set(context, value);
     }
 
-    set.displayName = `set(${path}, ${value})`;
+    //set.displayName = `set(${path.toString()}, ${value})`;
 
     return set;
 };

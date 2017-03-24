@@ -1,16 +1,17 @@
-export default function(target, ...args) {
-    function unshift(context) {
-        context.select(target).apply(
-            function unshift(array = [], ...values) {
-                array.unshift(...values);
+export default (path, ...args) => {
+    return function unshift(context) {
+        path.set(context, ...args, (array = [], ...args) => {
+            array.unshift(...args);
 
-                return array;
-            },
-            args
-        );
-    }
+            return array;
+        });
+    };
+};
 
-    unshift.displayName = `unshift(${Array.prototype.join.call(arguments, ", ")})`;
+function unshift(target, path, ...args) {
+    return path.set(target, ...args, (array = [], ...args) => {
+        array.unshift(...args);
 
-    return unshift;
+        return array;
+    });
 }

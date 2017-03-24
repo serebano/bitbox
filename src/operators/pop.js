@@ -1,11 +1,9 @@
-export default target => {
-    function pop(context) {
-        context.select(target).apply(function pop(array) {
+export default path => {
+    return function pop(context) {
+        path.set(context, function pop(array) {
             array.pop();
 
             return array;
         });
-    }
-    pop.displayName = `pop(${target})`;
-    return pop;
+    };
 };
