@@ -13,8 +13,8 @@ class Compute {
         return rest.reduce(
             (result, arg, idx, args) => {
                 if (idx === args.length - 1) {
-                    if (is.function(arg)) return arg(...result);
                     if (is.path(arg) || is.compute(arg)) return arg.get(target);
+                    if (is.function(arg)) return arg(...result);
                     return arg;
                 }
                 if (is.path(arg) || is.compute(arg)) return result.concat(arg.get(target));

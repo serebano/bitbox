@@ -27,6 +27,6 @@ export default new Proxy(bit, {
     get(target, key) {
         if (Reflect.has(target, key)) return Reflect.get(target, key);
 
-        return new Path([key]);
+        return Path({}, [key]);
     }
 });

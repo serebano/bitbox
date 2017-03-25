@@ -7,10 +7,20 @@ export default function Component(component, store, ...args) {
     if (store) return Provider(bit(store), component, ...args);
 
     const comp = props => component(props, createElement);
+    comp.displayName = `${component.displayName || component.name}_Component`;
 
     class CW extends View.Component {
         componentWillMount() {
-            this.conn = box(map => this.update(map), component.map || {}, this.context.store);
+            this.name = component.name;
+            this.renderCount = 0;
+
+            this.conn = box(map => this.update(map), component.map || {}, {
+                state: this.context.store.state,
+                signals: this.context.store.signals,
+                props: this.props
+            });
+
+            this.context.store.components.add(this);
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
@@ -19,15 +29,23 @@ export default function Component(component, store, ...args) {
         componentWillUnmount() {
             this._isUnmounting = true;
             this.conn.unobserve();
+            this.context.store.components.delete(this);
+            delete bit.state.renders.get(this.context.store)[this.props.cid];
         }
         shouldComponentUpdate() {
             return false;
         }
         update(props, changes) {
+            if (this._isUnmounting) {
+                return;
+            }
             this.map = Object.assign({}, this.props, props);
             this.forceUpdate();
         }
         render() {
+            bit.state.renders[this.props.cid].set(this.context.store, c => (c || 0) + 1);
+
+            this.renderCount++;
             return View.createElement(comp, this.map);
         }
     }
@@ -41,7 +59,7 @@ export default function Component(component, store, ...args) {
 }
 
 export function Provider(store, component, props, children) {
-    window.$store = store;
+    window.store = store;
     return createElement(
         Container,
         { store },

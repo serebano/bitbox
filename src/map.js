@@ -12,7 +12,7 @@ import is from "./is";
 
 class Map {
     constructor(target, object) {
-        if (is.function(object)) object = object(bit);
+        //if (is.function(object)) object = object(bit);
         if (!is.object(object)) throw new Error(`bit.map argument#1 must be an object`);
 
         Object.keys(object).reduce(
