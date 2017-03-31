@@ -1,6 +1,6 @@
-import Compute from "./compute";
-import bit from "./bit";
-import is from "./is";
+import Compute from "../compute";
+import bit from "../bit";
+import is from "../is";
 
 /**
  *  foo = { count: bit.state.count, name: bit.state.name }

@@ -1,3 +1,5 @@
+export { default as wellKnownSymbols } from "./wellKnownSymbols";
+
 export function delay(func, wait) {
     return function(...args) {
         const context = this;

@@ -1,6 +1,6 @@
 import compute from "../compute";
 import is from "../is";
-import wellKnowSymbols from "../observer/wellKnownSymbols";
+import { wellKnownSymbols } from "../utils";
 
 export const isPath = Symbol("isPath");
 export const toPrimitive = () => "";
@@ -27,7 +27,7 @@ function Path(resolve, root = [], isRoot = true) {
                 objTransfer = proxy;
                 return toPrimitive;
             }
-            if (typeof key === "symbol" && wellKnowSymbols.has(key))
+            if (typeof key === "symbol" && wellKnownSymbols.has(key))
                 return Reflect.get(target, key, receiver);
 
             if (key === "path" || key === "root" || key === isPath)

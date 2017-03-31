@@ -1,6 +1,6 @@
 import native from "./native";
 import nextTick from "./nextTick";
-import wellKnowSymbols from "./wellKnownSymbols";
+import { wellKnownSymbols } from "../utils";
 
 export const proxies = new WeakMap();
 export const observers = new WeakMap();
@@ -93,7 +93,7 @@ function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
             if (key === "$raw") return target;
-            if (typeof key === "symbol" && wellKnowSymbols.has(key)) return result;
+            if (typeof key === "symbol" && wellKnownSymbols.has(key)) return result;
 
             const result = Reflect.get(target, key, receiver);
             const isObject = typeof result === "object" && result;
