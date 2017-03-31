@@ -119,15 +119,12 @@ App.map = {
 };
 
 const app = bit({
-    dev: {
-        changes: []
-    },
     components: new Set(),
     state: {
         count: 0,
         components: [],
         renders: {},
-        changes: [] //observe.changes
+        changes: []
     },
     signals: {
         add: push(state.components, props.value),
@@ -140,6 +137,7 @@ const app = bit({
         }
     }
 });
+
 export default app;
 
 // window.rc = box(function renders() {

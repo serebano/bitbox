@@ -56,32 +56,27 @@ export function toString(path) {
     return `${path.map((p, i) => is.path(p) ? `[${p.toString()}]` : i > 0 ? `.${p}` : p).join("")}`;
 }
 
-export function create(handler, path, isRoot, args) {
-    return Path(handler, path, isRoot, args);
+export function create(handler, path, isRoot) {
+    return Path(handler, path, isRoot);
 }
 
-function Path(handler, root = [], isRoot = true, args = []) {
+function Path(resolve, root = [], isRoot = true) {
     function $(...args) {
-        const path = [...$.path];
-        console.log(`$apply`, { _this: this, path, args });
-
-        return is.function(handler)
-            ? handler.call(this, path, ...args)
-            : is.object(handler) && is.function(handler.apply)
-                  ? handler.apply.call(this, path, ...args)
-                  : apply.call(this, path, ...args);
+        objTransfer = undefined;
+        if (is.function(resolve)) return resolve($.path, ...args);
+        return $.path.reduce(
+            (obj, key, idx, keys) => {
+                if (is.path(key)) key = key(args[0]);
+                return obj[key];
+            },
+            args[0]
+        );
     }
 
     $.root = root;
     $.isRoot = isRoot;
-    $.args = args || [];
-    $.rootArgs = isRoot ? $.args : [];
     $.path = objTransfer ? $.root.concat(objTransfer) : $.root.slice();
     $[Symbol.isConcatSpreadable] = false;
-    $.has = (target, ...args) => has(target, $.path.slice(), ...args);
-    $.get = (target, ...args) => get(target, $.path.slice(), args.length ? args : $.args);
-    $.set = (target, ...args) => set(target, $.path.slice(), args);
-    $.use = (...args) => ($.args = args) && proxy;
     $.toString = () => toString($.path.slice());
 
     const proxy = new Proxy($, {
@@ -89,11 +84,7 @@ function Path(handler, root = [], isRoot = true, args = []) {
             return true;
         },
         get(target, key, receiver) {
-            //console.log(`key`, { target, key, receiver });
             if (Reflect.has(target, key, receiver)) return Reflect.get(target, key, receiver);
-            if (Reflect.has(handler, key))
-                return (target, ...args) =>
-                    apply.call(this, $.path.slice(), target, Reflect.get(handler, key), ...args);
             if (key === toTarget) return target;
             if (key === isPath) return true;
             if (key === Symbol.toPrimitive) {
@@ -104,7 +95,7 @@ function Path(handler, root = [], isRoot = true, args = []) {
             const step = objTransfer || key;
             objTransfer = undefined;
 
-            if ($.isRoot) return Path(handler, $.path.concat(step), false, $.rootArgs);
+            if ($.isRoot) return Path(resolve, $.path.concat(step), false);
 
             $.path.push(step);
 

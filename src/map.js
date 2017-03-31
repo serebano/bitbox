@@ -12,7 +12,6 @@ import is from "./is";
 
 class Map {
     constructor(target, object) {
-        //if (is.function(object)) object = object(bit);
         if (!is.object(object)) throw new Error(`bit.map argument#1 must be an object`);
 
         Object.keys(object).reduce(
@@ -30,7 +29,8 @@ class Map {
         return new Proxy(this, {
             get(map, key) {
                 if (key === "$") return map;
-                if (is.path(map[key]) || is.compute(map[key])) return map[key].get(target);
+                if (is.path(map[key])) return map[key](target);
+                if (is.compute(map[key])) return map[key].get(target);
                 if (is.map(map[key])) return map[key];
 
                 return target[key];
@@ -40,7 +40,7 @@ class Map {
                     return Reflect.set(map, key, value);
 
                 if (Reflect.has(map, key)) {
-                    if (is.path(map[key])) map[key].set(target, value);
+                    if (is.path(map[key])) map[key](target, value);
                     else target[key] = value;
 
                     return true;

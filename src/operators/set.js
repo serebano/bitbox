@@ -1,6 +1,6 @@
 export default (path, value) => {
     function set(context) {
-        path.set(context, value);
+        path(context, value);
     }
 
     //set.displayName = `set(${path.toString()}, ${value})`;

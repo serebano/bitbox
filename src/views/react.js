@@ -13,14 +13,10 @@ export default function Component(component, store, ...args) {
         componentWillMount() {
             this.name = component.name;
             this.renderCount = 0;
+            this.map = bit(this.context.store, component.map);
+            this.conn = box(() => this.update(Object.assign({}, this.map)));
 
-            this.conn = box(map => this.update(map), component.map || {}, {
-                state: this.context.store.state,
-                signals: this.context.store.signals,
-                props: this.props
-            });
-
-            this.context.store.components.add(this);
+            //this.context.store.components.add(this);
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
@@ -29,8 +25,8 @@ export default function Component(component, store, ...args) {
         componentWillUnmount() {
             this._isUnmounting = true;
             this.conn.unobserve();
-            this.context.store.components.delete(this);
-            delete bit.state.renders.get(this.context.store)[this.props.cid];
+            //this.context.store.components.delete(this);
+            //delete bit.state.renders.get(this.context.store)[this.props.cid];
         }
         shouldComponentUpdate() {
             return false;
@@ -39,14 +35,14 @@ export default function Component(component, store, ...args) {
             if (this._isUnmounting) {
                 return;
             }
-            this.map = Object.assign({}, this.props, props);
+            this._props = Object.assign({}, this.props, props);
             this.forceUpdate();
         }
         render() {
-            bit.state.renders[this.props.cid].set(this.context.store, c => (c || 0) + 1);
+            //bit.state.renders[this.props.cid].set(this.context.store, c => (c || 0) + 1);
 
             this.renderCount++;
-            return View.createElement(comp, this.map);
+            return View.createElement(comp, this._props);
         }
     }
 

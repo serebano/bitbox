@@ -1,134 +1,163 @@
+import native from "./native";
 import nextTick from "./nextTick";
-import builtIns from "./builtIns";
 import wellKnowSymbols from "./wellKnownSymbols";
 
 export const proxies = new WeakMap();
 export const observers = new WeakMap();
-export const queuedObservers = new Set();
+export const queue = new Set();
+
 const enumerate = Symbol("enumerate");
-const handlers = { get, ownKeys, set, deleteProperty };
 
 let queued = false;
 let currentObserver;
 
-export default {
-    observe,
-    observable,
-    isObservable
-};
+/**
+ * Observe
+ * @param  {Function}   fn      Observer function
+ * @param  {Array}      args    Arguments to be passed
+ * @return {Object}             Observer object
+ */
 
-export function observe(fn, context, ...args) {
-    if (typeof fn !== "function") {
-        throw new TypeError("First argument must be a function");
-    }
+export function observe(fn, ...args) {
+    if (typeof fn !== "function") throw new TypeError("First argument must be a function");
     args = args.length ? args : undefined;
-    const observer = { fn, context, args, observedKeys: [], exec, unobserve, unqueue };
+
+    const observer = createObserver(fn, args);
     runObserver(observer);
 
     return observer;
 }
 
-function exec() {
-    runObserver(this);
+function createObserver(fn, args) {
+    return {
+        fn,
+        args,
+        keys: [],
+        paths: [],
+        run() {
+            runObserver(this);
+        },
+        unobserve() {
+            if (this.fn) {
+                const paths = this.paths;
+                this.keys.forEach(observers => {
+                    observers.delete(this);
+                });
+                this.fn = (this.paths = (this.args = (this.keys = undefined)));
+                queue.delete(this);
+
+                return paths;
+            }
+        },
+        unqueue() {
+            queue.delete(this);
+        }
+    };
 }
 
-function unobserve() {
-    if (this.fn) {
-        this.observedKeys.forEach(unobserveKey, this);
-        this.fn = (this.context = (this.args = (this.observedKeys = undefined)));
-        queuedObservers.delete(this);
+function runObserver(observer) {
+    try {
+        currentObserver = observer;
+        observer.fn.apply(observer, observer.args);
+    } finally {
+        currentObserver = undefined;
     }
 }
 
-function unqueue() {
-    queuedObservers.delete(this);
+function registerObserver(target, key, path) {
+    if (currentObserver) {
+        const targetObservers = observers.get(target);
+        if (!targetObservers.has(key)) targetObservers.set(key, new Set());
+
+        const keyObservers = targetObservers.get(key);
+
+        if (!keyObservers.has(currentObserver)) {
+            keyObservers.add(currentObserver);
+
+            currentObserver.keys.push(keyObservers);
+            currentObserver.paths.push(path.concat(key));
+        }
+    }
 }
 
 export function observable(obj) {
     obj = obj || {};
-    if (typeof obj !== "object") {
+
+    if (typeof obj !== "object")
         throw new TypeError("first argument must be an object or undefined");
-    }
-    return proxies.get(obj) || toObservable(obj);
+
+    return proxies.get(obj) || createObservable(obj);
 }
 
-function toObservable(obj) {
+function createProxy(obj, path = []) {
+    return new Proxy(obj, {
+        get(target, key, receiver) {
+            if (key === "$raw") return target;
+            if (typeof key === "symbol" && wellKnowSymbols.has(key)) return result;
+
+            const result = Reflect.get(target, key, receiver);
+            const isObject = typeof result === "object" && result;
+            const observable = isObject && proxies.get(result);
+
+            if (currentObserver) {
+                registerObserver(target, key, path);
+
+                if (isObject) return observable || createObservable(result, path.concat(key));
+            }
+
+            return observable || result;
+        },
+
+        set(target, key, value, receiver) {
+            if (key === "length" || value !== Reflect.get(target, key, receiver)) {
+                queueObservers(target, key);
+                queueObservers(target, enumerate);
+            }
+            if (typeof value === "object" && value) {
+                value = value.$raw || value;
+            }
+
+            return Reflect.set(target, key, value, receiver);
+        },
+
+        deleteProperty(target, key) {
+            if (Reflect.has(target, key)) {
+                queueObservers(target, key);
+                queueObservers(target, enumerate);
+            }
+            return Reflect.deleteProperty(target, key);
+        },
+
+        ownKeys(target) {
+            registerObserver(target, enumerate, path);
+            return Reflect.ownKeys(target);
+        }
+    });
+}
+
+function createObservable(obj, path = []) {
     let observable;
-    const builtIn = builtIns.get(obj.constructor);
+    const builtIn = native.get(obj.constructor);
+
     if (typeof builtIn === "function") {
-        observable = builtIn(obj, registerObserver, queueObservers);
+        observable = builtIn(obj, path, registerObserver, queueObservers);
     } else if (!builtIn) {
-        observable = new Proxy(obj, handlers);
+        observable = createProxy(obj, path);
     } else {
         observable = obj;
     }
+
     proxies.set(obj, observable);
     proxies.set(observable, observable);
     observers.set(obj, new Map());
+
     return observable;
 }
 
 export function isObservable(obj) {
-    if (typeof obj !== "object") {
-        throw new TypeError("first argument must be an object");
-    }
+    if (typeof obj !== "object") throw new TypeError("first argument must be an object");
+
     return proxies.get(obj) === obj;
-}
-
-function get(target, key, receiver) {
-    if (key === "$raw") return target;
-    const result = Reflect.get(target, key, receiver);
-    if (typeof key === "symbol" && wellKnowSymbols.has(key)) {
-        return result;
-    }
-    const isObject = typeof result === "object" && result;
-    const observable = isObject && proxies.get(result);
-    if (currentObserver) {
-        registerObserver(target, key);
-        if (isObject) {
-            return observable || toObservable(result);
-        }
-    }
-    return observable || result;
-}
-
-function registerObserver(target, key) {
-    if (currentObserver) {
-        const observersForTarget = observers.get(target);
-        let observersForKey = observersForTarget.get(key);
-        if (!observersForKey) {
-            observersForKey = new Set();
-            observersForTarget.set(key, observersForKey);
-        }
-        if (!observersForKey.has(currentObserver)) {
-            observersForKey.add(currentObserver);
-            currentObserver.observedKeys.push(observersForKey);
-        }
-    }
-}
-
-function ownKeys(target) {
-    registerObserver(target, enumerate);
-    return Reflect.ownKeys(target);
-}
-
-function set(target, key, value, receiver) {
-    if (key === "length" || value !== Reflect.get(target, key, receiver)) {
-        queueObservers(target, key);
-        queueObservers(target, enumerate);
-    }
-    if (typeof value === "object" && value) {
-        value = value.$raw || value;
-    }
-    return Reflect.set(target, key, value, receiver);
-}
-
-function deleteProperty(target, key) {
-    if (Reflect.has(target, key)) {
-        queueObservers(target, key);
-        queueObservers(target, enumerate);
-    }
-    return Reflect.deleteProperty(target, key);
 }
 
 function queueObservers(target, key) {
@@ -145,24 +174,11 @@ function queueObserver(observer) {
         nextTick(runObservers);
         queued = true;
     }
-    queuedObservers.add(observer);
+    queue.add(observer);
 }
 
 function runObservers() {
-    queuedObservers.forEach(runObserver);
-    queuedObservers.clear();
+    queue.forEach(runObserver);
+    queue.clear();
     queued = false;
-}
-
-function runObserver(observer) {
-    try {
-        currentObserver = observer;
-        observer.fn.apply(observer.context, observer.args);
-    } finally {
-        currentObserver = undefined;
-    }
-}
-
-function unobserveKey(observersForKey) {
-    observersForKey.delete(this);
 }

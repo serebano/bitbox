@@ -1,13 +1,16 @@
 import * as bb from "./bitbox";
-import observe from "./observe";
-import store from "./examples/proxy";
 import path from "./path";
+import is from "./is";
+import box from "./box";
+import bit from "./bit";
+import { render } from "react-dom";
+import { run, component } from "./bitbox";
+import { inc, dec, set, toggle } from "./operators";
 
-observe.changes = store.state.changes;
+let object = (window.obj = bit({ id: 1 }));
+run.context = object;
 
-const obs = changes => console.log(`change#${changes.length}`, changes);
-let object = (window.obj = observe({ id: 1 }, obs));
-
+object.title = "XXXX";
 object.a = "b";
 object.id++;
 Object.defineProperty(object, "a", { enumerable: false });
@@ -17,28 +20,60 @@ object.items.push(Date());
 object.foo = {};
 object.foo.bar = {};
 object.foo.bar.baz = {};
+object.foo.count = 0;
+object.foo.bar.count = 0;
+object.key = "bar";
+object.signals = {};
 
-const app = path({
-    apply(p, ...args) {
-        const root = p.concat(args);
-        console.log(`app.root`, root);
-        return path(path => `my path: ${path.join("/")}`, root);
-    },
-    get(target, key) {
-        return target[key];
-    },
-    set(target, key, value) {
-        target[key] = value;
-    },
-    pop(target, key) {
-        target[key].pop();
-    },
-    push(target, key, ...args) {
-        target[key].push(...args);
-    },
-    inc(target, key, value) {
-        target[key] = (target[key] || 0) + (value || 1);
-    }
+const state = bit.state;
+const signal = bit.signals.$(chain => props => run(chain, props));
+
+signal.foo(object, [inc(state.count)]);
+
+state(object, {
+    title: "Demo",
+    count: 0,
+    items: ["One", "Two"],
+    index: 0,
+    enabled: true
 });
 
-Object.assign(window, bb, { bb, app });
+state.title(object, `bitbox`);
+
+const mapping = {
+    count: state.count,
+    items: state.items(items => items.map(String)),
+    computed: [state.count, 10, (a, b) => a + b],
+    item: state.items[state.items(items => items.length - 1)],
+    color: state.enabled(enabled => enabled ? "red" : "green")
+};
+
+const mapped = bit(object, mapping);
+
+signal.toggleClicked(object, [toggle(state.enabled)]);
+
+box(({ count, item }) => console.log(`count`, count, item), mapped);
+
+function Demo(props, h) {
+    return h(
+        "h1",
+        {
+            style: {
+                color: props.color
+            },
+            onClick: () => props.clicked()
+        },
+        `Hello ${props.title} (${props.count})`
+    );
+}
+
+Demo.map = {
+    title: state.title,
+    count: state.count,
+    color: state.enabled(enabled => enabled ? "red" : "green"),
+    clicked: signal.toggleClicked
+};
+
+render(component(Demo, object), document.querySelector("#root"));
+
+Object.assign(window, bb, { bb, inc, set, toggle, state, signal, mapping, mapped, Demo });

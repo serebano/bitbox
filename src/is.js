@@ -1,10 +1,10 @@
 import Map from "./map";
 import Path from "./path";
 import Compute from "./compute";
-import Observe from "./observe";
+import { isObservable } from "./observer";
 
 const is = {
-    bit: arg => arg && Observe.isObservable(arg),
+    bit: arg => arg && isObservable(arg),
     map: arg => arg instanceof Map,
     path: arg => Path.isPath(arg),
     compute: arg => arg instanceof Compute,
