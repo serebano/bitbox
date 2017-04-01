@@ -93,9 +93,10 @@ function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
             if (key === "$raw") return target;
-            if (typeof key === "symbol" && wellKnownSymbols.has(key)) return result;
 
             const result = Reflect.get(target, key, receiver);
+            if (typeof key === "symbol" && wellKnownSymbols.has(key)) return result;
+
             const isObject = typeof result === "object" && result;
             const observable = isObject && proxies.get(result);
 

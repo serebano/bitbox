@@ -53,16 +53,6 @@ export default function Component(component, store, ...args) {
 
     return CW;
 }
-
-export function Provider(store, component, props, children) {
-    window.store = store;
-    return createElement(
-        Container,
-        { store },
-        createElement(Component(component), props, children)
-    );
-}
-
 /**
  * Container
  */
@@ -86,6 +76,15 @@ Container.propTypes = {
 Container.childContextTypes = {
     store: View.PropTypes.object.isRequired
 };
+
+export function Provider(store, component, props, children) {
+    window.store = store;
+    return createElement(
+        Container,
+        { store },
+        createElement(Component(component), props, children)
+    );
+}
 
 const _createElement = View.createElement;
 

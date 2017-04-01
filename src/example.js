@@ -1,14 +1,14 @@
 import * as bb from ".";
 import path from "./path";
-import is from "./is";
 import box from "./box";
 import bit from "./bit";
 import { render } from "react-dom";
 import { run, component } from ".";
-import { inc, dec, set, toggle } from "./operators";
+import { inc, set, toggle } from "./operators";
 
-const github = path(path =>
-    fetch(`https://api.github.com/${path.join("/")}`).then(res => res.json()));
+const github = path(function github(path) {
+    return fetch(`https://api.github.com/${path.join("/")}`).then(res => res.json());
+});
 
 let object = (window.obj = bit({ id: 1 }));
 run.context = object;
@@ -28,10 +28,20 @@ object.foo.bar.count = 0;
 object.key = "bar";
 object.signals = {};
 
-const state = bit.state;
-const signal = bit.signals.$(chain => props => run(chain, props));
+const state = new bit.state();
+
+const signal = new bit.signals((path, chain) => {
+    if (!chain) throw new Error(`Cannot find signal: ${path}`);
+    const signal = props => run(path.join("."), chain, props);
+    signal.toString = () => `function ${path.join(".")}(props)`;
+    return signal;
+});
 
 signal.foo(object, [inc(state.count)]);
+signal.toggleClicked(object, [toggle(state.enabled)]);
+
+//signal.foo(object, () => props => run([inc(state.count)], props));
+//signal.toggleClicked(object, () => props => run([toggle(state.enabled)], props));
 
 state(object, {
     title: "Demo",
@@ -52,8 +62,6 @@ const mapping = {
 };
 
 const mapped = bit(object, mapping);
-
-signal.toggleClicked(object, [toggle(state.enabled)]);
 
 box(({ count, item }) => console.log(`count`, count, item), mapped);
 

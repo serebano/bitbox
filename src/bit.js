@@ -1,54 +1,43 @@
-import { observable, observe } from "./observer";
+import { observable } from "./observer";
 import Path from "./path";
 import Map from "./map";
-import box from "./box";
 import is from "./is";
 
 /**
- *  bit(object, mapping, listener)
- *
- *  count = bit.state.count.use(count => typeof count !== "number" ? 0 : count)
- *
- *  inc = count.set(count => count + 1)
- *  dec = count.set(count => count - 1)
- *
- *  bit.state.use(state => state.count++)
- *  bit.state.count.box(count => console.log(count))
- *
+ *  bit(object, mapping)
  *
  *  o = bit({count:0,app:{}})
  *  bit(o) === bit(o)
  *  bit(o).app === bit.app(o)
  *  bit(o).count === bit.count(o)
- *
- *
- * bit({}, {count:bit.count}, map => map.count)
  */
 
-function bit(object, mapping) {
-    if (typeof object === "function") return Path(resolve)(...arguments);
-    if (arguments.length === 2) return new Map(observable(object), mapping);
+export default Path(function bit(path, target, value) {
+    if (!path.length) {
+        if (arguments.length === 3) return new Map(observable(target), value);
 
-    return observable(object);
-}
+        return observable(target);
+    }
 
-function resolve(path, target, value) {
-    if (typeof target === "function") return Path((...args) => target(resolve(...args)), path);
-    if (is.path(value)) value = value(target);
+    if (is.function(target)) {
+        path.push(target);
+
+        return this;
+    }
+
+    const isSet = arguments.length === 3;
+    const size = path.length - 1;
+    if (isSet && is.path(value)) value = value(target);
 
     return path.reduce(
-        (obj, key, idx, keys) => {
+        (obj, key, idx) => {
             if (is.path(key)) key = key(target);
-            if (keys.length - 1 === idx && arguments.length === 3)
+            if (is.function(key)) return isSet ? obj : key(obj);
+            if (idx === size && isSet)
                 return (obj[key] = typeof value === "function" ? value(obj[key]) : value);
+
             return obj[key];
         },
         target
     );
-}
-
-export default new Proxy(bit, {
-    get(target, key) {
-        return Path(resolve, [key]);
-    }
 });

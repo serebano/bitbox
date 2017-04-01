@@ -1,5 +1,4 @@
 import Compute from "../compute";
-import bit from "../bit";
 import is from "../is";
 
 /**
