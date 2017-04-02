@@ -1,13 +1,11 @@
-import is from "../is";
+import is from "../utils/is";
+import { pathToString } from "../utils";
 import { wellKnownSymbols } from "../utils";
 
-export const isPath = Symbol("Path.isPath");
-export const toKeys = Symbol("Path.toKeys");
-export const extend = Symbol("Path.extend");
+const isPath = Symbol("Path.isPath");
 
-export const toPrimitive = () => "";
-
-let keyTransfer = null;
+let toPrimitive = () => "";
+let keyPath = null;
 
 /**
  * Create path
@@ -16,47 +14,55 @@ let keyTransfer = null;
  * @param  {Boolean}    [isRoot=true]
  */
 
-function Path(resolve, root = [], isRoot = true) {
-    let path = root.slice();
+Path.extend = (path, fn) => {
+    if (!fn)
+        fn = res => (...args) => {
+            return res(...args);
+        };
+    return Path(fn ? fn(path.$resolve) : path.$resolve, path.$path);
+};
 
-    const proxy = new Proxy(resolve, {
-        construct(target, [res]) {
-            if (is.function(res))
-                return Path(
-                    function(path) {
-                        return res.apply(this, [path, resolve.apply(this, arguments)]);
-                    },
-                    path.slice(),
-                    true
-                );
-            return Path(resolve, path.slice(), true);
-        },
+function Path(resolve, root = [], isRoot = true) {
+    if (is.path(resolve)) {
+        console.log(`resolve`, resolve);
+        return Path.extend(resolve, root);
+    }
+
+    let path = keyPath ? root.concat(keyPath) : root.slice();
+    keyPath = undefined;
+
+    const $ = new Proxy(resolve, {
         apply(target, context, args) {
             if (isRoot) path = root.slice();
-            if (keyTransfer) path.push(keyTransfer);
-            keyTransfer = undefined;
-
-            return target.apply(proxy, [path].concat(args));
+            const res = target.apply(context, [path].concat(args));
+            if (res === path) return Path(target, path);
+            return res;
         },
         get(target, key, receiver) {
-            if (key === extend) return Path(resolve, path.slice(), true);
-            if (key === "toString") return () => toString(path.slice());
-
             if (key === isPath) return true;
-            if (key === toKeys) return path;
+
+            if (key === Symbol.toStringTag || key === "toString")
+                return () => pathToString(path.slice());
 
             if (key === Symbol.toPrimitive) {
-                keyTransfer = receiver;
+                keyPath = receiver;
                 return toPrimitive;
             }
 
             if (typeof key === "symbol" && wellKnownSymbols.has(key))
                 return Reflect.get(target, key, receiver);
 
-            const step = keyTransfer || key;
-            keyTransfer = undefined;
+            if (isRoot) path = root.slice();
 
-            if (isRoot) return Path(resolve, path.concat(step), false);
+            if (key === "$path") return path;
+            if (key === "$root") return root;
+            if (key === "$resolve") return target;
+
+            const step = keyPath || key;
+            keyPath = undefined;
+
+            //console.log(`(${target.name}%c#get%c)`, `color:green`, ``, path, key);
+            if (isRoot) return Path(target, path.concat(step), false);
 
             path.push(step);
 
@@ -67,17 +73,15 @@ function Path(resolve, root = [], isRoot = true) {
         }
     });
 
-    return proxy;
+    return $;
 }
+//
+// if (typeof key === "symbol" && wellKnownSymbols.has(key))
+//     return Reflect.get(target, key, receiver);
 
-Path.keys = arg => Path.isPath(arg) && arg[toKeys];
-Path.isPath = arg => arg && arg[isPath];
-Path.extend = path => path[extend];
-
-function toString(path) {
-    if (!path.length) return `$`;
-    if (path.length === 1) return is.path(path[0]) ? `${path[0].toString()}` : String(path[0]);
-    return `${path.map((p, i) => is.path(p) ? `[${p.toString()}]` : i > 0 ? `.${p}` : p).join("")}`;
-}
+Path.isPath = arg => arg && arg[isPath] === true;
+Path.create = (resolve, path) =>
+    Path(resolve, Path.isPath(path) ? path.$path : Array.isArray(path) ? path : []);
+Path.keys = arg => Path.isPath(arg) && arg.$path;
 
 export default Path;

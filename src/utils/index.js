@@ -1,4 +1,5 @@
 export { default as wellKnownSymbols } from "./wellKnownSymbols";
+export { default as pathToString } from "./pathToString";
 
 export function delay(func, wait) {
     return function(...args) {

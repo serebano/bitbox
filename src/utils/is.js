@@ -1,7 +1,7 @@
-import Map from "./map";
-import Path from "./path";
-import Compute from "./compute";
-import { isObservable } from "./observer";
+import Map from "../map";
+import Path from "../path";
+import Compute from "../compute";
+import { isObservable } from "../observer";
 
 const is = {
     bit: arg => arg && isObservable(arg),

@@ -1,4 +1,4 @@
-import is from "../is";
+import is from "../utils/is";
 
 class Compute {
     static get(target, ...args) {

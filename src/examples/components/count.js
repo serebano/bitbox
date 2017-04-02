@@ -1,31 +1,27 @@
 /** @jsx h */
-import { state, props, signal } from "../../tags";
+import { state, signal } from "../../api";
 import { inc, dec } from "../../operators";
 
-function Count({ count, inc, dec }, h) {
+function Count({ count, incClicked, decClicked }, h) {
     return (
-        <div>
-            <button onClick={() => inc()}>+ Increment</button>
+        <div style={{ padding: 16, border: "1px solid #c00" }}>
+            <button onClick={() => incClicked()}>+ Increment</button>
             <strong>{count}</strong>
-            <button onClick={() => dec()}>- Decrement</button>
+            <button onClick={() => decClicked()}>- Decrement</button>
         </div>
     );
 }
 
-Count.connect = {
-    count: state`count`,
-    inc: signal`increaseClicked`,
-    dec: signal`decreaseClicked`
-};
-
-Count.module = {
-    state: {
-        count: 0
-    },
-    signals: {
-        increaseClicked: inc(state`count`, props`by`),
-        decreaseClicked: dec(state`count`, props`by`)
-    }
+Count.map = {
+    count: state.count(c => `( ${c} )`),
+    incClicked: signal(signals => {
+        if (!signals.incClicked) return signal.incClicked(signals, inc(state.count));
+        return signal.incClicked(signals);
+    }),
+    decClicked: signal(signals => {
+        if (!signals.incClicked) return signal.incClicked(signals, dec(state.count));
+        return signal.incClicked(signals);
+    })
 };
 
 export default Count;

@@ -2,6 +2,7 @@ import View from "react";
 import { getChangedProps } from "../utils";
 import bit from "../bit";
 import box from "../box";
+import BBMap from "../map";
 
 export default function Component(component, store, ...args) {
     if (store) return Provider(bit(store), component, ...args);
@@ -13,14 +14,25 @@ export default function Component(component, store, ...args) {
         componentWillMount() {
             this.name = component.name;
             this.renderCount = 0;
-            this.map = bit(this.context.store, component.map);
-            this.conn = box(() => this.update(Object.assign({}, this.map)));
+
+            const obs = map => this.update(Object.assign({}, map));
+            obs.displayName = `${component.displayName || component.name}`;
+            obs.toString = () => `${obs.displayName}_Component`;
+
+            this.map = new BBMap(this.context.store, component.map, this.props);
+
+            //console.log(`this.map`, this.map);
+
+            this.conn = box(obs, this.map);
 
             //this.context.store.components.add(this);
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
-            if (changes.length) this.update(nextProps, changes);
+            if (changes.length) {
+                //this.context.store.props = nextProps;
+                this.update(nextProps, changes);
+            }
         }
         componentWillUnmount() {
             this._isUnmounting = true;
@@ -32,9 +44,12 @@ export default function Component(component, store, ...args) {
             return false;
         }
         update(props, changes) {
+            //console.log(`update`, this, props, changes);
             if (this._isUnmounting) {
                 return;
             }
+            //if (this.conn)
+            //console.log(`update`, this.conn.changed, this.conn.changes, this.conn.paths);
             this._props = Object.assign({}, this.props, props);
             this.forceUpdate();
         }

@@ -14,7 +14,7 @@ export default (target, path, registerObserver, queueObservers) => {
 
     for (let getter of getters) {
         target[getter] = function(key) {
-            registerObserver(this, key);
+            registerObserver(this, key, path);
             return native[getter].apply(this, arguments);
         };
     }
