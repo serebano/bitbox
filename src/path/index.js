@@ -14,19 +14,8 @@ let keyPath = null;
  * @param  {Boolean}    [isRoot=true]
  */
 
-Path.extend = (path, fn) => {
-    if (!fn)
-        fn = res => (...args) => {
-            return res(...args);
-        };
-    return Path(fn ? fn(path.$resolve) : path.$resolve, path.$path);
-};
-
 function Path(resolve, root = [], isRoot = true) {
-    if (is.path(resolve)) {
-        console.log(`resolve`, resolve);
-        return Path.extend(resolve, root);
-    }
+    if (is.path(resolve)) return Path.extend(resolve, root);
 
     let path = keyPath ? root.concat(keyPath) : root.slice();
     keyPath = undefined;
@@ -34,20 +23,19 @@ function Path(resolve, root = [], isRoot = true) {
     const $ = new Proxy(resolve, {
         apply(target, context, args) {
             if (isRoot) path = root.slice();
-            const res = target.apply(context, [path].concat(args));
-            if (res === path) return Path(target, path);
-            return res;
+            const result = target.apply(context, [path].concat(args));
+            return result === path ? Path(target, path) : result;
         },
         get(target, key, receiver) {
             if (key === isPath) return true;
-
-            if (key === Symbol.toStringTag || key === "toString")
-                return () => pathToString(path.slice());
 
             if (key === Symbol.toPrimitive) {
                 keyPath = receiver;
                 return toPrimitive;
             }
+
+            if (key === Symbol.toStringTag || key === "toString")
+                return () => pathToString(path.slice());
 
             if (typeof key === "symbol" && wellKnownSymbols.has(key))
                 return Reflect.get(target, key, receiver);
@@ -75,13 +63,12 @@ function Path(resolve, root = [], isRoot = true) {
 
     return $;
 }
-//
-// if (typeof key === "symbol" && wellKnownSymbols.has(key))
-//     return Reflect.get(target, key, receiver);
 
-Path.isPath = arg => arg && arg[isPath] === true;
-Path.create = (resolve, path) =>
-    Path(resolve, Path.isPath(path) ? path.$path : Array.isArray(path) ? path : []);
 Path.keys = arg => Path.isPath(arg) && arg.$path;
+Path.isPath = arg => arg && arg[isPath] === true;
+Path.extend = (path, fn) => {
+    if (!fn) fn = resolve => (...args) => resolve(...args);
+    return Path(fn(path.$resolve), path.$path);
+};
 
 export default Path;

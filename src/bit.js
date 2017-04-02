@@ -33,9 +33,7 @@ export default Path(function bit(path, target, value) {
         if (target.$resolve.target) {
             return isSet ? bit(path, target(), value) : bit(path, target());
         } else {
-            return target(function(object) {
-                return isSet ? bit(path, object, value) : bit(path, object);
-            });
+            return target(object => isSet ? bit(path, object, value) : bit(path, object));
         }
     }
 

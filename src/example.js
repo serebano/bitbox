@@ -1,7 +1,7 @@
 import * as bb from ".";
 import { render } from "react-dom";
 import { bit, path, run, component } from ".";
-import { inc, set, toggle } from "./operators";
+import { inc, dec, set, toggle } from "./operators";
 import { state, signal, props, github, one } from "./api";
 import * as bits from "./bits";
 
@@ -42,10 +42,12 @@ console.log(bit.count(o.state));
 
 state.title(object, `bitbox`);
 
-signal.foo(object, inc(state.count));
-signal.toggleClicked(object, toggle(state.enabled));
+signal.incClicked(object, inc(state.count));
+signal.decClicked(object, dec(state.count));
 
 signal.nameChanged(object, set(state.name, props.value));
+
+signal.toggleClicked(object, toggle(state.enabled));
 
 //state(on(({ count }) => console.log(`{{count}}: ${count}`)))(object);
 
