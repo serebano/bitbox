@@ -1,43 +1,56 @@
 import bit from "./bit";
 import run from "./run";
 import is from "./utils/is";
+import Path from "./path";
 
-export const props = bit(bit.props);
-export const state = bit(bit.state);
+export const props = new bit.props();
+export const state = new bit.state();
 
-export const signal = bit(bit.signals, function(reducer) {
-    return function signal(path, target, tree) {
+export const signal = new bit.signals(resolve => {
+    return function Signal(path, target, tree) {
         if (arguments.length === 3) {
-            return reducer(path, target, () => {
-                const signal = props => run(signal.displayName, signal.tree, props);
-                signal.displayName = path.join(".");
-                signal.tree = [].concat(tree);
-
-                return signal;
+            return resolve(path, target, () => {
+                return props => run(path.join("."), tree, props);
             });
         }
 
-        return reducer(path, target);
+        return resolve(path, target);
     };
 });
 
-export const github = bit(
-    bit,
-    reducer => function github(path, target, p) {
-        const parts = path.slice();
-        const url = `https://api.github.com/${parts.join("/")}`;
-        return new Promise(resolve => {
-            setTimeout(
-                () => resolve({
-                    endpoint: url,
-                    repo: parts.pop(),
-                    user: parts.pop()
-                }),
-                2000
-            );
-        }).then(result => {
-            if (target && p) p.$resolve(p.$path.concat(path), target, result);
-            return { result };
+export const github = new bit(resolve => {
+    return function Github(path, target, setter) {
+        if (is.function(target)) return Path(Github, path.concat([...arguments].slice(1)));
+
+        return fetch(path).then(result => {
+            if (target) {
+                const value = resolve(path.slice(3), result);
+                setter = setter || (value => value);
+
+                return resolve(path, target, s => setter(value));
+            }
+
+            return resolve(path.slice(3), result);
         });
-    }
-);
+    };
+});
+
+function fetch(path) {
+    const parts = path.slice();
+    const url = `https://api.github.com/${parts.join("/")}`;
+    parts.shift();
+    return new Promise(resolve => {
+        setTimeout(
+            () => resolve({
+                endpoint: url,
+                repo: parts.shift(),
+                user: parts.shift(),
+                owner: {
+                    id: Date.now()
+                }
+            }),
+            200
+        );
+    }).then(result => result);
+    //.then(result => result.json())
+}

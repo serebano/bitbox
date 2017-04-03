@@ -1,4 +1,4 @@
-import Compute from "../compute";
+import compute from "../compute";
 import is from "../utils/is";
 
 /**
@@ -10,15 +10,15 @@ import is from "../utils/is";
  */
 
 class Map {
-    constructor(target, object, props) {
+    constructor(target, object) {
         if (!is.object(object)) throw new Error(`bit.map argument#1 must be an object`);
 
         const mapping = Object.keys(object).reduce(
             (map, key) => {
                 if (is.map(object[key]) || is.compute(object[key]) || is.path(object[key]))
                     map[key] = object[key];
-                else if (is.array(object[key])) map[key] = new Compute(...object[key]);
-                else if (is.object(object[key])) map[key] = new Map(target, object[key], props);
+                else if (is.array(object[key])) map[key] = compute(...object[key]);
+                else if (is.object(object[key])) map[key] = new Map(target, object[key]);
 
                 return map;
             },
@@ -26,15 +26,16 @@ class Map {
         );
 
         return new Proxy(mapping, {
-            get(map, key) {
+            get(map, key, receiver) {
+                const res = Reflect.get(map, key, receiver);
                 //const o = Object.assign({}, target, { props });
 
                 if (key === "$") return map;
-                if (is.map(map[key])) return map[key];
-                if (is.compute(map[key])) return map[key].get(target);
-                if (is.path(map[key])) return map[key](target);
+                if (is.map(res)) return res;
+                if (is.path(res)) return res(target);
+                if (is.compute(res)) return res(target);
 
-                return target[key];
+                return res;
             }
             // set(map, key, value) {
             //     if (is.map(value) || is.compute(value) || is.path(value))

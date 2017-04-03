@@ -4,18 +4,26 @@ import { wellKnownSymbols } from "../utils";
 
 let keyPath = null;
 
-const isPath = Symbol("bitbox.path");
-Path.isPath = arg => arg && arg[isPath] === true;
+export const symbol = Symbol("bitbox.path");
 
-function reduce(path, target) {
-    if (is.function(target)) return Path(path.concat(Array.prototype.slice.call(arguments, 1)));
-
-    return path.reduce((obj, key) => is.function(key) ? key(obj) : obj[key], target);
+export function isPath(path) {
+    return is.function(path) && Reflect.has(path, symbol);
 }
 
-function extend(path, construct) {
-    if (!construct) construct = reducer => reducer;
-    return Path(construct(path.$reducer), path.$path);
+export function resolve(path, ...args) {
+    return is.path(path) || is.compute(path) ? path(...args) : path;
+}
+
+export function reduce(path, target) {
+    return is.function(target)
+        ? Path(path.concat(Array.prototype.slice.call(arguments, 1)))
+        : path.reduce((obj, key) => is.function(key) ? key(obj) : obj[key], target);
+}
+
+export function extend(path, construct) {
+    return is.function(construct)
+        ? Path(construct(path.$reducer), path.$path)
+        : Path(path.$reducer, path.$path);
 }
 
 /**
@@ -25,43 +33,49 @@ function extend(path, construct) {
  * @param  {Boolean}    [isRoot=true]
  */
 
-Path.reduce = reduce;
-Path.extend = extend;
-
-function Path(reducer, root = [], isRoot = true, object) {
+function Path(reducer, root = [], isRoot = true) {
     if (is.array(reducer)) return Path(reduce, reducer);
     if (is.string(reducer)) return Path(reduce, reducer.split("."));
-    if (is.path(reducer)) return Path.extend(reducer, root);
+    if (is.path(reducer)) return extend(reducer, root);
 
     let path = keyPath ? root.concat(keyPath) : root.slice();
     keyPath = undefined;
 
-    const $ = new Proxy(reducer, {
+    return new Proxy(reducer, {
+        construct(target, args) {
+            const [construct] = args;
+            if (isRoot) path = root.slice();
+            keyPath = undefined;
+
+            return is.function(construct) ? Path(construct(target), path) : Path(target, path);
+        },
         apply(target, context, args) {
             if (isRoot) path = root.slice();
-            const result = target.apply(context, [path].concat(args));
-            return result === path ? Path(target, path) : result;
+            keyPath = undefined;
+
+            return target.apply(context, [path].concat(args));
         },
         get(target, key, receiver) {
-            if (key === isPath) return true;
+            if (key === symbol) return true;
             if (isRoot) path = root.slice();
-            if (key === Symbol.toPrimitive) {
-                keyPath = receiver;
-                return () => pathToString(path.slice());
-            }
             if (key === "$path") {
                 keyPath = undefined;
                 return path;
             }
             if (key === "$root") return root;
             if (key === "$reducer") return target;
+            if (key === Symbol.toPrimitive) {
+                keyPath = receiver;
+                return () => pathToString(path.slice());
+            }
+            if (key !== "name" && Reflect.has(target, key, receiver))
+                return Reflect.get(target, key, receiver);
             if (typeof key === "symbol" && wellKnownSymbols.has(key))
                 return Reflect.get(target, key, receiver);
 
             const step = keyPath || key;
             keyPath = undefined;
 
-            //console.log(`(${target.name}%c#get%c)`, `color:green`, ``, path, key);
             if (isRoot) return Path(target, path.concat(step), false);
 
             path.push(step);
@@ -72,8 +86,6 @@ function Path(reducer, root = [], isRoot = true, object) {
             return true;
         }
     });
-
-    return $;
 }
 
 export default Path;

@@ -11,9 +11,17 @@ export const key = new Proxy(
     }
 );
 
-// export function key(name, next) {
-//     return obj => next ? next(obj[name]) : obj[name];
-// }
+export function set(key, value) {
+    return obj => obj[key] = value;
+}
+
+export function unset(key) {
+    return obj => delete obj[key];
+}
+
+export function has(key) {
+    return obj => obj && key in obj;
+}
 
 export function or(value) {
     return state => typeof state === "undefined" ? value : state;

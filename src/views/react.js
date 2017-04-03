@@ -60,7 +60,7 @@ export default function Component(component, store, ...args) {
                 {
                     $observer
                 },
-                this.target.props,
+                this.props,
                 this.mapped
             );
         }

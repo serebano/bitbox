@@ -1,13 +1,14 @@
 import Map from "../map";
-import Path from "../path";
-import Compute from "../compute";
+import { isPath } from "../path";
+import { isCompute } from "../compute";
 import { isObservable } from "../observer";
 
 const is = {
     bit: arg => arg && isObservable(arg),
     map: arg => arg instanceof Map,
-    path: arg => Path.isPath(arg),
-    compute: arg => arg instanceof Compute,
+    path: arg => arg && isPath(arg),
+    compute: arg => arg && isCompute(arg),
+    promise: arg => arg instanceof Promise,
     array: arg => Array.isArray(arg),
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",

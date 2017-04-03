@@ -1,40 +1,35 @@
 import is from "../utils/is";
 
-class Compute {
-    static get(target, ...args) {
-        if (!args.length) return;
+const symbol = Symbol("bitbox.compute");
 
-        let [value, ...rest] = args;
-        if (is.path(value)) value = value(target);
-        if (is.compute(value)) value = value.get(target);
+export function isCompute(arg) {
+    return is.function(arg) && Reflect.has(arg, symbol);
+}
 
-        if (!rest.length) return value;
-
-        return rest.reduce(
-            (result, arg, idx, args) => {
+function compute(...args) {
+    function resolve(target) {
+        return args.reduce(
+            (result, arg, idx) => {
                 if (idx === args.length - 1) {
                     if (is.path(arg)) return arg(target);
-                    if (is.compute(arg)) return arg.get(target);
+                    if (is.compute(arg)) return arg(target);
                     if (is.function(arg)) return arg(...result);
+
                     return arg;
                 }
-                if (is.path(arg)) return result.concat(arg(target));
-                if (is.compute(arg)) return result.concat(arg.get(target));
+                if (is.path(arg)) return [...result, arg(target)];
+                if (is.compute(arg)) return [...result, arg(target)];
                 if (is.function(arg)) return [arg(...result)];
 
-                return result.concat(arg);
+                return [...result, arg];
             },
-            [value]
+            []
         );
     }
 
-    constructor() {
-        this.args = Array.from(arguments);
-    }
+    resolve[symbol] = true;
 
-    get(target) {
-        return Compute.get(target, ...this.args);
-    }
+    return resolve;
 }
 
-export default Compute;
+export default compute;

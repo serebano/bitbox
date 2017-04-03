@@ -6,8 +6,6 @@ import bit from "../bit";
 export const proxies = new WeakMap();
 export const observers = new WeakMap();
 export const queue = new Set();
-export const index = new Map();
-export const changes = new Set();
 
 const enumerate = Symbol("enumerate");
 
@@ -23,10 +21,10 @@ let currentObserver;
 
 observe.index = new Map();
 
-observe.bx = observer => bit(bit.target, resolve => {
+observe.bx = observer => bit(bit, resolve => {
     return function bx(path, fn, ...args) {
         if (fn) path.push(value => fn(value, ...args));
-        return resolve(path, observer);
+        return resolve(path, observer.target);
     };
 });
 
@@ -69,15 +67,6 @@ function createObserver(fn, args) {
             queue.delete(this);
         }
     };
-
-    // return bit(bit.target, resolve => {
-    //     function o(path, fn, ...args) {
-    //         if (fn) path.push(value => fn(value, ...args));
-    //         return resolve(path, observer);
-    //     };
-    //     observe.index.set(fn, o);
-    //     return Object.assign(o, observer)
-    // })
 
     observe.index.set(fn, observer);
 

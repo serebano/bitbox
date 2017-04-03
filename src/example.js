@@ -1,7 +1,8 @@
 import * as bb from ".";
 import { render } from "react-dom";
 import { bit, path, run, component } from ".";
-import { inc, dec, set, toggle } from "./operators";
+import { inc, dec, toggle } from "./operators";
+import set from "./operators/set";
 import { state, signal, props, github, one } from "./api";
 import * as bits from "./bits";
 
@@ -31,7 +32,9 @@ state(object, {
     },
     id: "foo"
 });
-
+state.repos(object, {
+    serebano: {}
+});
 const timers = bit(
     state.timers,
     reducer => function timers(path) {
@@ -97,7 +100,7 @@ Object.assign(window, bb, bits, {
     obj: object,
     github,
     inc,
-    set,
+    //set,
     //bx,
     toggle,
     state,
