@@ -12,52 +12,60 @@ export default function Component(component, store, ...args) {
 
     class CW extends View.Component {
         componentWillMount() {
+            const c = this;
             this.name = component.name;
-            this.renderCount = 0;
+            this.target = bit({
+                get props() {
+                    return c.props;
+                },
+                state: this.context.store.state,
+                signals: this.context.store.signals
+            });
+            this.mapped = new BBMap(this.target, component.map);
 
-            const obs = map => this.update(Object.assign({}, map));
-            obs.displayName = `${component.displayName || component.name}`;
-            obs.toString = () => `${obs.displayName}_Component`;
+            const observer = () => this.update({ ...this.mapped });
+            observer.displayName = `${component.displayName || component.name}`;
 
-            this.map = new BBMap(this.context.store, component.map, this.props);
-
-            //console.log(`this.map`, this.map);
-
-            this.conn = box(obs, this.map);
-
-            //this.context.store.components.add(this);
+            this.observer = box(observer);
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
             if (changes.length) {
-                //this.context.store.props = nextProps;
+                //this.target.props = nextProps;
                 this.update(nextProps, changes);
             }
         }
         componentWillUnmount() {
             this._isUnmounting = true;
-            this.conn.unobserve();
-            //this.context.store.components.delete(this);
-            //delete bit.state.renders.get(this.context.store)[this.props.cid];
+            this.observer.unobserve();
         }
         shouldComponentUpdate() {
             return false;
         }
         update(props, changes) {
-            //console.log(`update`, this, props, changes);
-            if (this._isUnmounting) {
-                return;
-            }
-            //if (this.conn)
-            //console.log(`update`, this.conn.changed, this.conn.changes, this.conn.paths);
-            this._props = Object.assign({}, this.props, props);
+            if (this._isUnmounting) return;
             this.forceUpdate();
         }
+        getProps() {
+            const $observer = this.observer
+                ? {
+                      ...this.observer,
+                      name: this.observer.fn.displayName,
+                      keys: this.observer.keys.length,
+                      changes: this.observer.changes.slice(),
+                      paths: this.observer.paths.map(path => path.map(String).join("."))
+                  }
+                : {};
+            return Object.assign(
+                {
+                    $observer
+                },
+                this.target.props,
+                this.mapped
+            );
+        }
         render() {
-            //bit.state.renders[this.props.cid].set(this.context.store, c => (c || 0) + 1);
-
-            this.renderCount++;
-            return View.createElement(comp, this._props);
+            return View.createElement(comp, this.getProps());
         }
     }
 

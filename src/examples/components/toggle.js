@@ -3,15 +3,16 @@ import { state } from "../../api";
 
 function Toggle(props, h) {
     return (
-        <div style={{ background: props.color }}>
-            <button onClick={props.clicked}>Toggle {String(props.value)}</button>
+        <div style={{ background: props.color, padding: 16 }}>
+            <button onClick={props.clicked}>Toggle ({props.value})</button>
+            <pre>{JSON.stringify(props.$observer, null, 4)}</pre>
         </div>
     );
 }
 
 Toggle.map = {
-    value: state.enabled,
-    color: state.enabled(enabled => enabled ? "red" : "green"),
+    value: state.enabled(enabled => enabled ? "on" : "off"),
+    color: state.enabled(enabled => enabled ? "green" : "#555"),
     clicked: state(state => () => state.enabled = !state.enabled)
 };
 

@@ -1,6 +1,7 @@
 import native from "./native";
 import nextTick from "./nextTick";
 import { wellKnownSymbols } from "../utils";
+import bit from "../bit";
 
 export const proxies = new WeakMap();
 export const observers = new WeakMap();
@@ -20,7 +21,14 @@ let currentObserver;
  * @return {Object}             Observer object
  */
 
-observe.index = observable(new Map());
+observe.index = new Map();
+
+observe.bx = observer => bit(bit.target, resolve => {
+    return function bx(path, fn, ...args) {
+        if (fn) path.push(value => fn(value, ...args));
+        return resolve(path, observer);
+    };
+});
 
 export function observe(fn, ...args) {
     if (typeof fn !== "function") throw new TypeError("First argument must be a function");
@@ -28,6 +36,8 @@ export function observe(fn, ...args) {
 
     const observer = createObserver(fn, args);
     runObserver(observer);
+
+    if (observer.target) return observe.bx(observer);
 
     return observer;
 }
@@ -40,41 +50,50 @@ function createObserver(fn, args) {
         paths: [],
         changes: [],
         changed: 0,
+        name: fn.displayName || fn.name,
         run() {
             runObserver(this);
+            return this.target;
         },
         unobserve() {
             if (this.fn) {
                 observe.index.delete(this.fn);
-                const paths = this.paths;
                 this.keys.forEach(observers => {
                     observers.delete(this);
                 });
                 this.fn = (this.paths = (this.args = (this.keys = undefined)));
                 queue.delete(this);
-
-                return paths;
             }
         },
         unqueue() {
             queue.delete(this);
         }
     };
+
+    // return bit(bit.target, resolve => {
+    //     function o(path, fn, ...args) {
+    //         if (fn) path.push(value => fn(value, ...args));
+    //         return resolve(path, observer);
+    //     };
+    //     observe.index.set(fn, o);
+    //     return Object.assign(o, observer)
+    // })
+
     observe.index.set(fn, observer);
 
     return observer;
 }
 
-function queueObservers(target, key, path) {
+function queueObservers(target, key, path = []) {
     const observersForKey = observers.get(target).get(key);
     if (observersForKey && observersForKey.constructor === Set) {
         observersForKey.forEach(o => {
-            o.changes.push(path);
+            o.changes.push(path.concat(String(key)).join("."));
             queueObserver(o, path);
         });
     } else if (observersForKey) {
-        observersForKey.changes.push(path);
-        queueObserver(observersForKey);
+        observersForKey.changes.push(path.concat(String(key)).join("."));
+        queueObserver(observersForKey, path);
     }
 }
 
@@ -83,39 +102,27 @@ function queueObserver(observer) {
         nextTick(runObservers);
         queued = true;
     }
-    observer.changes = [];
     queue.add(observer);
 }
 
 function runObserver(observer) {
     try {
-        observer.changed++;
         currentObserver = observer;
-        observer.fn.apply(observer, observer.args);
+        observer.target = observer.fn.apply(observer, observer.args);
     } finally {
         currentObserver = undefined;
-        //observer.changes = [];
+        observer.changed++;
+        observer.changes = [];
     }
 }
 
 function runObservers() {
-    // const q = [...queue];
-    // console.log(`runObservers(${queue.size})\n`);
-    // q.forEach((o, i) => {
-    //     console.log(
-    //         `#${i} [${o.changes.join(", ")}] -> ${o.fn.displayName || o.fn.name}(${o.changed})`,
-    //         o.paths
-    //     );
-    // });
-    // //.join("\n")
-
     queue.forEach(runObserver);
     queue.clear();
     queued = false;
 }
 
 function registerObserver(target, key, path) {
-    //&& proxies.get(target) !== observe.index
     if (currentObserver) {
         const targetObservers = observers.get(target);
         if (!targetObservers.has(key)) targetObservers.set(key, new Set());
@@ -124,9 +131,8 @@ function registerObserver(target, key, path) {
 
         if (!keyObservers.has(currentObserver)) {
             keyObservers.add(currentObserver);
-            //console.log(`path.concat(key)`, path.concat(key));
             currentObserver.keys.push(keyObservers);
-            if (path.length) currentObserver.paths.push(path);
+            currentObserver.paths.push(path.concat(String(key)));
         }
     }
 }
@@ -152,7 +158,7 @@ function createProxy(obj, path = []) {
             const observable = isObject && proxies.get(result);
 
             if (currentObserver) {
-                registerObserver(target, key, path.concat(key));
+                registerObserver(target, key, path);
 
                 if (isObject) return observable || createObservable(result, path.concat(key));
             }
@@ -162,8 +168,8 @@ function createProxy(obj, path = []) {
 
         set(target, key, value, receiver) {
             if (key === "length" || value !== Reflect.get(target, key, receiver)) {
-                queueObservers(target, key, path.concat(key));
-                queueObservers(target, enumerate);
+                queueObservers(target, key, path);
+                queueObservers(target, enumerate, path);
             }
             if (typeof value === "object" && value) {
                 value = value.$raw || value;
@@ -174,8 +180,8 @@ function createProxy(obj, path = []) {
 
         deleteProperty(target, key) {
             if (Reflect.has(target, key)) {
-                queueObservers(target, key, path.concat(key));
-                queueObservers(target, enumerate);
+                queueObservers(target, key, path);
+                queueObservers(target, enumerate, path);
             }
             return Reflect.deleteProperty(target, key);
         },

@@ -32,11 +32,14 @@ state(object, {
     id: "foo"
 });
 
-const timers = bit(function timers(p, target) {
-    return path(target.$resolve, target.$path.concat(p));
-});
+const timers = bit(
+    state.timers,
+    reducer => function timers(path) {
+        return reducer(...arguments);
+    }
+);
 
-const o = one({ x: 100, state: { count: 9 } });
+const o = bit({ x: 100, state: { count: 9 } });
 
 console.log(bit.count(o.state));
 

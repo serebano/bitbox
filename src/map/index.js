@@ -18,7 +18,7 @@ class Map {
                 if (is.map(object[key]) || is.compute(object[key]) || is.path(object[key]))
                     map[key] = object[key];
                 else if (is.array(object[key])) map[key] = new Compute(...object[key]);
-                else if (is.object(object[key])) map[key] = new Map(target, object[key]);
+                else if (is.object(object[key])) map[key] = new Map(target, object[key], props);
 
                 return map;
             },
@@ -27,10 +27,12 @@ class Map {
 
         return new Proxy(mapping, {
             get(map, key) {
+                //const o = Object.assign({}, target, { props });
+
                 if (key === "$") return map;
                 if (is.map(map[key])) return map[key];
-                if (is.compute(map[key])) return map[key].get(Object.assign({}, target, { props }));
-                if (is.path(map[key])) return map[key](Object.assign({}, target, { props }));
+                if (is.compute(map[key])) return map[key].get(target);
+                if (is.path(map[key])) return map[key](target);
 
                 return target[key];
             }
