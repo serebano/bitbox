@@ -1,8 +1,19 @@
 import box from "./box";
 
-export function key(name, next) {
-    return obj => next ? next(obj[name]) : obj[name];
-}
+export const key = new Proxy(
+    function key(name, next) {
+        return obj => next ? next(obj[name]) : obj[name];
+    },
+    {
+        get(target, key) {
+            return next => target(key, next);
+        }
+    }
+);
+
+// export function key(name, next) {
+//     return obj => next ? next(obj[name]) : obj[name];
+// }
 
 export function or(value) {
     return state => typeof state === "undefined" ? value : state;

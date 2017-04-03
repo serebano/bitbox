@@ -19,7 +19,12 @@ export default Path(function bit(path, target, value) {
     if (!path.length) {
         // level 0, object and path factory
         if (is.path(target)) return Path.extend(target, value);
-        //if (is.function(target)) return Path(target);
+        if (is.function(target)) {
+            path.push(...[...arguments].slice(1));
+
+            return path;
+        }
+
         if (arguments.length === 3) return new Map(observable(target), value);
 
         return observable(target);
