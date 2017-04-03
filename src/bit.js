@@ -38,9 +38,11 @@ export default Path(function bit(path, target, value) {
             });
         }
 
-        const keys = path.filter(p => !is.function(p));
+        const keys = path.filter(p => is.path(p) || is.compute(p) || !is.function(p));
         const keyIndex = keys.length - 1;
-        const reducers = is.function(value) ? path.filter(is.function) : [];
+        const reducers = is.function(value)
+            ? path.filter(p => is.function(p) && keys.indexOf(p) === -1)
+            : [];
         const reduce = value => reducers.reduce((value, reducer) => reducer(value), value);
 
         return keys.reduce(

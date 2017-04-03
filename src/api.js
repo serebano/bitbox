@@ -9,9 +9,7 @@ export const state = new bit.state();
 export const signal = new bit.signals(resolve => {
     return function Signal(path, target, tree) {
         if (arguments.length === 3) {
-            return resolve(path, target, () => {
-                return props => run(path.join("."), tree, props);
-            });
+            return resolve(path, target, () => props => run(path.join("."), tree, props));
         }
 
         return resolve(path, target);
@@ -37,20 +35,21 @@ export const github = new bit(resolve => {
 
 function fetch(path) {
     const parts = path.slice();
-    const url = `https://api.github.com/${parts.join("/")}`;
-    parts.shift();
-    return new Promise(resolve => {
-        setTimeout(
-            () => resolve({
-                endpoint: url,
-                repo: parts.shift(),
-                user: parts.shift(),
-                owner: {
-                    id: Date.now()
-                }
-            }),
-            200
-        );
-    }).then(result => result);
-    //.then(result => result.json())
+    const url = `https://api.github.com/${parts.slice(0, 3).join("/")}`;
+    console.log(`fetch`, url);
+    // parts.shift();
+    // return new Promise(resolve => {
+    //     setTimeout(
+    //         () => resolve({
+    //             endpoint: url,
+    //             repo: parts.shift(),
+    //             user: parts.shift(),
+    //             owner: {
+    //                 id: Date.now()
+    //             }
+    //         }),
+    //         200
+    //     );
+    // }).then(result => result);
+    return window.fetch(url).then(result => result.json());
 }

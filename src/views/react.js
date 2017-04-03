@@ -14,13 +14,19 @@ export default function Component(component, store, ...args) {
         componentWillMount() {
             const c = this;
             this.name = component.name;
-            this.target = bit({
+            this.target = {
                 get props() {
                     return c.props;
                 },
-                state: this.context.store.state,
-                signals: this.context.store.signals
-            });
+                get state() {
+                    return c.context.store.state;
+                },
+                get signals() {
+                    return c.context.store.signals;
+                }
+                //state: this.context.store.state,
+                //signals: this.context.store.signals
+            };
             this.mapped = new BBMap(this.target, component.map);
 
             const observer = () => this.update({ ...this.mapped });
@@ -31,7 +37,6 @@ export default function Component(component, store, ...args) {
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
             if (changes.length) {
-                //this.target.props = nextProps;
                 this.update(nextProps, changes);
             }
         }
@@ -47,24 +52,32 @@ export default function Component(component, store, ...args) {
             this.forceUpdate();
         }
         getProps() {
-            const $observer = this.observer
-                ? {
-                      ...this.observer,
-                      name: this.observer.fn.displayName,
-                      keys: this.observer.keys.length,
-                      changes: this.observer.changes.slice(),
-                      paths: this.observer.paths.map(path => path.map(String).join("."))
-                  }
-                : {};
+            // const $observer = this.observer
+            // ? {
+            //       ...this.observer,
+            //       name: this.observer.fn.displayName,
+            //       keys: this.observer.keys.length,
+            //       changes: this.observer.changes.slice(),
+            //       paths: this.observer.paths.map(path => path.map(String).join("."))
+            //   }
+            // : {};
             return Object.assign(
                 {
-                    $observer
+                    //$observer
                 },
                 this.props,
                 this.mapped
             );
         }
         render() {
+            if (box.debug === true) {
+                return View.createElement(
+                    "div",
+                    {},
+                    View.createElement(comp, this.getProps()),
+                    boxdebug(this)
+                );
+            }
             return View.createElement(comp, this.getProps());
         }
     }
@@ -76,6 +89,31 @@ export default function Component(component, store, ...args) {
 
     return CW;
 }
+
+function boxdebug(comp) {
+    return View.createElement(
+        "pre",
+        {
+            className: comp.observer.name,
+            style: {
+                fontSize: 12,
+                color: `#555`,
+                background: `#f4f4f4`
+            }
+        },
+        JSON.stringify(
+            {
+                name: comp.observer.name,
+                changes: comp.observer.changes,
+                changed: comp.observer.changed,
+                paths: comp.observer.paths.map(path => path.map(String).join("."))
+            },
+            null,
+            4
+        )
+    );
+}
+
 /**
  * Container
  */

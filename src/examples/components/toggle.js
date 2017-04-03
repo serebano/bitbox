@@ -5,7 +5,6 @@ function Toggle(props, h) {
     return (
         <div style={{ background: props.color, padding: 16 }}>
             <button onClick={props.clicked}>Toggle ({props.value})</button>
-            <pre>{JSON.stringify(props.$observer, null, 4)}</pre>
         </div>
     );
 }

@@ -11,13 +11,12 @@ function Remove({ onRemove, label }, h) {
 }
 Remove.map = {};
 
-function Timer({ timer, started, stopped, id, color, removeClicked, $observer }, h) {
+function Timer({ timer, started, stopped, id, color, removeClicked }, h) {
     return (
         <div style={{ padding: 16, border: "1px solid #c00", fontSize: 18, color }}>
             <button onClick={() => timer.startStop()}>[{timer.running ? "stop" : "start"}]</button>
             <Remove label={id} onRemove={() => removeClicked({ id })} />
             <span> *{id}* <strong>{timer.value}</strong></span>
-            <pre>{JSON.stringify($observer, null, 4)}</pre>
         </div>
     );
 }

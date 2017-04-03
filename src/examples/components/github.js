@@ -1,11 +1,11 @@
 /** @jsx h */
 import { state, props } from "../../api";
-import { or, eq, ensure, is, concat } from "../../bits";
+import { or, eq, join, ensure, is, concat } from "../../bits";
 
 function Github(props, h) {
     return (
         <section>
-            <h2>Github {props.users.join(", ")}</h2>
+            <h2>Github {props.users}</h2>
             <div>
                 {props.repos.map((repo, key) => {
                     return (
@@ -15,13 +15,12 @@ function Github(props, h) {
                     );
                 })}
             </div>
-            <pre>{JSON.stringify(props.$observer, null, 4)}</pre>
         </section>
     );
 }
 
 Github.map = {
-    users: state.repos[props.user](Object.keys),
+    users: state.repos[props.user](Object.keys, join(` * `)),
     repos: state.repos[props.user](Object.values)
 };
 

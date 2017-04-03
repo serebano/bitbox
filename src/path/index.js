@@ -11,7 +11,7 @@ export function isPath(path) {
 }
 
 export function resolve(path, ...args) {
-    return is.path(path) || is.compute(path) ? path(...args) : path;
+    return is.path(path) ? path(...args) : path;
 }
 
 export function reduce(path, target) {
@@ -47,7 +47,7 @@ function Path(reducer, root = [], isRoot = true) {
             if (isRoot) path = root.slice();
             keyPath = undefined;
 
-            return is.function(construct) ? Path(construct(target), path) : Path(target, path);
+            return is.function(construct) ? Path(construct(reducer), path) : Path(reducer, path);
         },
         apply(target, context, args) {
             if (isRoot) path = root.slice();
@@ -68,8 +68,8 @@ function Path(reducer, root = [], isRoot = true) {
                 keyPath = receiver;
                 return () => pathToString(path.slice());
             }
-            if (key !== "name" && Reflect.has(target, key, receiver))
-                return Reflect.get(target, key, receiver);
+            // if (key !== "name" && Reflect.has(target, key, receiver))
+            //     return Reflect.get(target, key, receiver);
             if (typeof key === "symbol" && wellKnownSymbols.has(key))
                 return Reflect.get(target, key, receiver);
 

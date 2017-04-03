@@ -1,4 +1,7 @@
 import { observe } from "./observer";
+
+observe.debug = true;
+
 /**
 
 xxx = bit({ x: 1 })
