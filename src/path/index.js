@@ -1,29 +1,36 @@
 import is from "../utils/is";
-import { pathToString } from "../utils";
 import { wellKnownSymbols } from "../utils";
 
 let keyPath = null;
 
-export const symbol = Symbol("bitbox.path");
+const Path = {};
+const methods = ["push", "pop", "key", "extend"];
+
+Path.key = Symbol.for("Path.key");
+Path.keys = Symbol.for("Path.keys");
+Path.root = Symbol.for("Path.root");
+Path.isRoot = Symbol.for("Path.isRoot");
+Path.reducer = Symbol.for("Path.reducer");
+
+Path.create = create;
+Path.extend = extend;
+Path.isPath = isPath;
+Path.get = get;
+
+export function get(target, key) {
+    return Reflect.get(target, Path[key]);
+}
 
 export function isPath(path) {
-    return is.function(path) && Reflect.has(path, symbol);
+    return is.function(path) && Reflect.has(path, Path.keys);
 }
 
-export function resolve(path, ...args) {
-    return is.path(path) ? path(...args) : path;
-}
-
-export function reduce(path, target) {
-    return is.function(target)
-        ? Path(path.concat(Array.prototype.slice.call(arguments, 1)))
-        : path.reduce((obj, key) => is.function(key) ? key(obj) : obj[key], target);
-}
-
-export function extend(path, construct) {
-    return is.function(construct)
-        ? Path(construct(path.$reducer), path.$path)
-        : Path(path.$reducer, path.$path);
+export function extend(target, construct) {
+    return create(
+        construct ? construct(get(target, "reducer")) : get(target, "reducer"),
+        get(target, "keys"),
+        true
+    );
 }
 
 /**
@@ -33,59 +40,149 @@ export function extend(path, construct) {
  * @param  {Boolean}    [isRoot=true]
  */
 
-function Path(reducer, root = [], isRoot = true) {
-    if (is.array(reducer)) return Path(reduce, reducer);
-    if (is.string(reducer)) return Path(reduce, reducer.split("."));
-    if (is.path(reducer)) return extend(reducer, root);
-
-    let path = keyPath ? root.concat(keyPath) : root.slice();
+export function create(reducer, root = [], isRoot = true) {
     keyPath = undefined;
 
-    return new Proxy(reducer, {
-        construct(target, args) {
-            const [construct] = args;
-            if (isRoot) path = root.slice();
-            keyPath = undefined;
+    function path(...args) {
+        keyPath = undefined;
+        if (path[Path.isRoot]) Reflect.set(path, Path.keys, path[Path.root].slice());
+        //console.log(`path.$args`, path.$args, args);
+        if (path.$args.length) args = path.$args.concat(args);
+        return reducer(proxy, ...args);
+    }
 
-            return is.function(construct) ? Path(construct(reducer), path) : Path(reducer, path);
-        },
-        apply(target, context, args) {
-            if (isRoot) path = root.slice();
-            keyPath = undefined;
+    path.$args = [];
+    path[Path.reducer] = reducer;
+    path[Path.isRoot] = isRoot;
+    path[Path.root] = root.slice();
+    path[Path.keys] = keyPath ? path[Path.root].concat(keyPath) : path[Path.root];
 
-            return target.apply(context, [path].concat(args));
-        },
+    path[Symbol.iterator] = () => PathIterator(Path.get(path, "keys"));
+    path[Symbol.toPrimitive] = () => toString(Path.get(path, "keys"));
+    path[Symbol.isConcatSpreadable] = false;
+
+    const proxy = PathProxy(path);
+
+    return proxy;
+}
+
+function PathProxy(path) {
+    const proxy = new Proxy(path, {
         get(target, key, receiver) {
-            if (key === symbol) return true;
-            if (isRoot) path = root.slice();
-            if (key === "$path") {
-                keyPath = undefined;
-                return path;
-            }
-            if (key === "$root") return root;
-            if (key === "$reducer") return target;
+            //console.log(`get ->`, target[SymbolPath], key);
+            const isRoot = Path.get(target, "isRoot");
+
+            if (key === Symbol.hasInstance)
+                return obj => obj && Path.get(obj, "reducer") === Path.get(target, "reducer");
+
             if (key === Symbol.toPrimitive) {
-                keyPath = receiver;
-                return () => pathToString(path.slice());
+                keyPath = target;
+                return Reflect.get(target, Symbol.toPrimitive);
             }
-            // if (key !== "name" && Reflect.has(target, key, receiver))
-            //     return Reflect.get(target, key, receiver);
-            if (typeof key === "symbol" && wellKnownSymbols.has(key))
-                return Reflect.get(target, key, receiver);
 
-            const step = keyPath || key;
-            keyPath = undefined;
+            if (typeof key === "symbol" && Reflect.has(target, key))
+                return Reflect.get(target, key);
 
-            if (isRoot) return Path(target, path.concat(step), false);
+            // reset path
+            if (isRoot) Reflect.set(target, Path.keys, Path.get(target, "root").slice());
 
-            path.push(step);
+            if (key === "displayName") {
+                return Reflect.get(target, Symbol.toPrimitive)();
+            }
 
-            return receiver;
+            if (key.charAt(0) === "$") {
+                const reducer = Path.get(target, "reducer");
+                //if (Reflect.has(reducer, key)) return Reflect.get(reducer, key);
+
+                const method = key.replace("$", "");
+
+                if (methods.includes(method)) {
+                    if (method === "key") {
+                        return Path.get(target, "keys").slice().pop();
+                    }
+
+                    if (method === "extend") {
+                        return function extend(construct) {
+                            return Path.create(
+                                construct
+                                    ? construct(Path.get(target, "reducer"))
+                                    : Path.get(target, "reducer"),
+                                Path.get(target, "keys"),
+                                true
+                            );
+                        };
+                    }
+                    if (method === "pop") {
+                        return () => Path.get(target, "keys").pop();
+                    }
+                    if (method === "push") {
+                        return function push() {
+                            const keys = Path.get(target, "keys");
+                            keys.push(...arguments);
+
+                            return isRoot
+                                ? Path.create(Path.get(target, "reducer"), keys, false)
+                                : proxy;
+                        };
+                    }
+                }
+
+                return Reflect.get(reducer, method);
+            }
+
+            if (keyPath === undefined) {
+                Path.get(target, "keys").push(key);
+            } else {
+                Path.get(target, "keys").push(keyPath);
+                keyPath = undefined;
+            }
+
+            return isRoot
+                ? Path.create(Path.get(target, "reducer"), Path.get(target, "keys"), false)
+                : proxy;
         },
-        has(target, key) {
+        has() {
             return true;
         }
     });
+
+    return proxy;
+}
+
+function PathIterator(array) {
+    return {
+        index: 0,
+        next() {
+            return this.index < array.length
+                ? { value: array[this.index++], done: false }
+                : { done: true };
+        }
+    };
+}
+
+export function resolve(path, ...args) {
+    return is.path(path) ? path(...args) : path;
+}
+
+export function reduce(path, target) {
+    return is.function(target)
+        ? Path.create(path.concat(Array.prototype.slice.call(arguments, 1)))
+        : path.reduce((obj, key) => is.function(key) ? key(obj) : obj[key], target);
+}
+
+function toString(path, hint) {
+    let f = false;
+    if (!path.length) return `$`;
+    if (path.length === 1)
+        return is.path(path[0]) ? `${toString(Path.get(path[0], "keys"))}` : path[0];
+    return `${path
+        .map(
+            (p, i) =>
+                is.path(p)
+                    ? `[${toString(Path.get(p, "keys"))}]`
+                    : is.function(p) ? f ? `(${p})` : `` : i > 0 ? `.${p}` : p
+        )
+        .join("")}`;
 }
 
 export default Path;

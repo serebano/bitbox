@@ -12,6 +12,12 @@ const enumerate = Symbol("enumerate");
 let queued = false;
 let currentObserver;
 
+export default {
+    observe,
+    observable,
+    isObservable
+};
+
 /**
  * Observe
  * @param  {Function}   fn      Observer function

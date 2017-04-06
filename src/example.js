@@ -1,59 +1,94 @@
 import * as bb from ".";
-import { render } from "react-dom";
-import { bit, path, run, component } from ".";
-import { inc, dec, toggle } from "./operators";
-import set from "./operators/set";
-import { state, signal, props, github, one } from "./api";
 import * as bits from "./bits";
-
+import { render } from "react-dom";
+import { bit, path, run, component, is } from ".";
+import { state, signal, props } from "./paths";
+import { set, assign, toggle, print } from "./bits";
 import App from "./examples/components/app";
 
-const object = (run.context = bit({
-    state: {},
-    signals: {}
-}));
-
-state(object, {
-    title: "Demo",
-    count: 0,
-    items: ["One", "Two"],
-    index: 0,
-    enabled: true,
-    timers: {
-        foo: {
-            value: 0
+const object = bit({
+    state: {
+        title: "Demo",
+        count: 0,
+        items: ["One", "Two"],
+        index: 0,
+        enabled: true,
+        timers: {
+            foo: {
+                value: 0
+            },
+            bar: {
+                value: 0
+            },
+            baz: {
+                value: 0
+            }
         },
-        bar: {
-            value: 0
-        },
-        baz: {
-            value: 0
-        }
+        id: "foo"
     },
-    id: "foo"
+    signals: {}
 });
-state.repos(object, {
-    serebano: {}
-});
-const timers = bit(
-    state.timers,
-    reducer => function timers(path) {
-        return reducer(...arguments);
+
+run.context = object;
+
+const timers = path.extend(state.timers, resolve => {
+    function timers() {
+        return resolve(...arguments);
     }
-);
 
-const o = bit({ x: 100, state: { count: 9 } });
+    return Object.assign(timers, resolve, {
+        add(value, obj) {
+            return set(
+                this,
+                {
+                    name: this.$key,
+                    value: value || 0
+                },
+                obj
+            );
+        }
+    });
+});
 
-console.log(bit.count(o.state));
+const add = (path, value, obj) => path.$add(value, obj);
 
-state.title(object, `bitbox`);
+add(timers.xxx, 100, object);
+add(timers.abc, 200, object);
 
-signal.incClicked(object, inc(state.count));
-signal.decClicked(object, dec(state.count));
+timers(print, console.log, object);
 
-signal.nameChanged(object, set(state.name, props.value));
+const r = action => {
+    return props => {
+        return run(
+            context => {
+                action(context);
+            },
+            props
+        );
+    };
+};
 
-signal.toggleClicked(object, toggle(state.enabled));
+run([
+    ctx => {
+        set(state.repos, { serebano: {} })(ctx);
+    },
+    ctx => {
+        set(state.name, `bitbox`)(ctx);
+    },
+    assign(signal, {
+        incClicked: r(set(state.count, count => count + 1)),
+        decClicked: r(set(state.count, count => count - 1)),
+        nameChanged: r(set(state.name, props.value)),
+        toggleClicked: r(toggle(state.enabled))
+    })
+]);
+
+// assign(signal, {
+//     incClicked: props => run(set(state.count, count => count + 1), props),
+//     decClicked: props => run(set(state.count, count => count - 1), props),
+//     nameChanged: props => run(set(state.name, props.value), props),
+//     toggleClicked: props => run(toggle(state.enabled), props)
+// })(object);
 
 //state(on(({ count }) => console.log(`{{count}}: ${count}`)))(object);
 
@@ -94,16 +129,14 @@ render(component(App, object), document.querySelector("#root"));
 
 Object.assign(window, bb, bits, {
     bb,
-    timers,
-    one,
-    o,
     obj: object,
-    github,
-    inc,
     //set,
     //bx,
     toggle,
     state,
+    props,
+    timers,
+    r,
     signal
     //mapping,
     //mapped

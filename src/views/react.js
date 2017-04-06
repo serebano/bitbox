@@ -2,7 +2,7 @@ import View from "react";
 import { getChangedProps } from "../utils";
 import bit from "../bit";
 import box from "../box";
-import BBMap from "../map";
+import { project } from "../bits";
 
 export default function Component(component, store, ...args) {
     if (store) return Provider(bit(store), component, ...args);
@@ -27,7 +27,7 @@ export default function Component(component, store, ...args) {
                 //state: this.context.store.state,
                 //signals: this.context.store.signals
             };
-            this.mapped = new BBMap(this.target, component.map);
+            this.mapped = new project(this.target, component.map);
 
             const observer = () => this.update({ ...this.mapped });
             observer.displayName = `${component.displayName || component.name}`;

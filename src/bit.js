@@ -1,10 +1,11 @@
-import { observable } from "./observer";
-import Path, { extend, resolve } from "./path";
-import Map from "./map";
 import is from "./utils/is";
+import Path from "./path";
+import Project from "./bits/project";
+import Observer from "./observer";
+import { $set } from "./bits/set";
 
 /**
- *  bit([object, function])
+ *  bit(object)
  *
  *  o = bit({count:0,app:{}})
  *  bit(o) === bit(o)
@@ -15,61 +16,65 @@ import is from "./utils/is";
  *  i = bit.store.count(obj, num => num + 1)
  */
 
-export default Path(function bit(path, target, value) {
-    // level 0, object and path factory
-    if (!path.length) {
-        if (is.path(target)) return extend(target, value);
-        if (is.object(target) || is.undefined(target))
-            return arguments.length === 3 ? new Map(observable(target), value) : observable(target);
+function bit(path, ...args) {
+    const object = is.object(args[args.length - 1]) ? args.pop() : undefined;
+
+    let [method, value] = args;
+    let target = object;
+    let keys = Array.from(path);
+
+    // create observable
+    if (!keys.length) {
+        if (arguments.length === 3 && is.object(arguments[1]))
+            return new Project(Observer.observable(object), arguments[1]);
+
+        if (arguments.length === 2) return Observer.observable(object);
     }
 
-    const isSet = arguments.length === 3;
+    if (args.length) {
+        if (method === $set) {
+            path.$args = [...args];
+        } else {
+            path = path.$push(...args);
+        }
+    }
 
-    if (is.path(target)) return target(obj => isSet ? bit(path, obj, value) : bit(path, obj));
-    if (is.promise(target)) return target.then(result => bit(path, result));
-    if (is.function(target)) return Path(bit, path.concat([...arguments].slice(1)));
+    if (!is.object(object)) return path;
 
-    if (isSet) {
-        value = resolve(value, target);
+    // setter
+    if (is.function(method) && method === $set) {
+        const key = path.$pop();
 
-        if (is.promise(value)) {
-            return value.then(result => {
-                return bit(path, target, result);
-            });
+        for (let key of path) {
+            key = is.path(key) ? key(object) : key;
+            target = target && key in target ? target[key] : (target = (target[key] = {}));
         }
 
-        const keys = path.filter(p => is.path(p) || is.compute(p) || !is.function(p));
-        const keyIndex = keys.length - 1;
-        const reducers = is.function(value)
-            ? path.filter(p => is.function(p) && keys.indexOf(p) === -1)
-            : [];
-        const reduce = value => reducers.reduce((value, reducer) => reducer(value), value);
-
-        return keys.reduce(
-            (obj, key, index) => {
-                if (is.path(key) || is.compute(key)) key = key(target);
-                if (index === keyIndex) {
-                    obj[key] = is.function(value)
-                        ? resolve(value(reduce(obj[key])), target)
-                        : value;
-                    if (is.undefined(obj[key])) delete obj[key];
-                } else if (is.object(obj) && !(key in obj)) {
-                    obj[key] = {};
-                }
-
-                return obj[key];
-            },
-            target
-        );
+        method(target, key, resolve(target, key, value, object), object);
+        return;
     }
 
-    return path.reduce(
-        (obj, key, index) => {
-            if (is.path(key) || is.compute(key)) key = key(target);
-            if (is.function(key)) return resolve(key(obj), target);
+    // getter
+    for (let key of path) {
+        key = is.path(key) ? key(object) : key;
+        target = is.function(key) ? key(target) : target[key];
+    }
 
-            return obj && obj[key];
+    return target;
+}
+
+function resolve(target, key, value, obj) {
+    if (is.path(value) || is.compute(value)) return value(obj);
+    return is.function(value) ? value(Reflect.get(target, key)) : value;
+}
+
+export default Path.create(
+    Object.assign(bit, {
+        keys() {
+            return Path.get(this, "keys");
         },
-        target
-    );
-});
+        set(value, obj) {
+            return this($set, value, obj);
+        }
+    })
+);

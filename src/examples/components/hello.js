@@ -1,22 +1,35 @@
 /** @jsx h */
-import { state, props } from "../../api";
-import { or, eq, ensure, is, concat } from "../../bits";
+import { state, signal } from "../../api";
+import { or, set } from "../../bits";
+// import Run from "../../run";
 
-function Hello(props, h) {
+function Hello({ value, nameChanged }, h) {
+    //console.log(`Helo`, { value, nameChanged });
     return (
         <form>
-            <h2>Hello {props.name}</h2>
-            <input onChange={props.nameChanged} value={props.name} />
+            <h2>Hello {value}</h2>
+            <input onChange={e => nameChanged({ value: e.target.value })} value={value} />
         </form>
     );
 }
 
+// function run(action) {
+//     return function signal(props) {
+//         console.log(`signal`, action, props);
+//         Run(
+//             context => {
+//                 console.log(`run/context`, context);
+//                 const res = action(context);
+//                 console.log(`run/res`, res);
+//             },
+//             props
+//         );
+//     };
+// }
+
 Hello.map = {
-    name: state.name(or(`World`)),
-    nameChanged: state(s => e => s.name = e.target.value)
-    //enabled: state.color(eq("green")),
-    //exists: state(ensure("users", { foo: { name: "Foo" } }))[props.id(or("foo"))](is("object")),
-    //array: state.items(concat(state(Object.keys, concat(state.timers(Object.keys)))))
+    value: state.name(or(`World`)),
+    nameChanged: signal.nameChanged
 };
 
 export default Hello;

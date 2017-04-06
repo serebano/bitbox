@@ -8,16 +8,18 @@ import Timer from "./timer";
 import Github from "./github";
 
 function App(props, h) {
+    console.log(`props`, props);
     return (
         <div>
             <h1>{props.title}</h1>
-            <Github user="serebano" />
             <Hello />
             <Count />
             <Toggle />
             <hr />
             <div>
-                {props.timers.map((id, key) => <Timer key={key} id={id} />)}
+                {Array.isArray(props.timers)
+                    ? props.timers.map((id, key) => <Timer key={key} id={id} />)
+                    : ""}
             </div>
         </div>
     );
