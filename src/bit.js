@@ -44,13 +44,14 @@ function bit(path, ...args) {
 
     // setter
     if (is.function(method) && methods.has(method)) {
-        const key = path.$pop();
+        const keys = [...path];
+        const key = keys.pop();
 
-        for (let key of path) {
+        for (let key of keys) {
             key = is.path(key) ? key(object) : key;
             target = target && key in target ? target[key] : (target = (target[key] = {}));
         }
-        path.$args = [];
+        //path.$args = [];
         method(target, key, resolve(target, key, value, object), object);
         return;
     }

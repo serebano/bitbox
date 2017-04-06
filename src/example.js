@@ -61,6 +61,7 @@ const r = action => {
     return props => {
         return run(
             context => {
+                console.log(`action`, action, context);
                 action(context);
             },
             props
