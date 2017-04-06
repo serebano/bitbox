@@ -1,6 +1,5 @@
 import Path from "../path";
 import bit from "../bit";
-import { $set } from "../bits/set";
 
 export const props = Path.extend(
     bit.props,
@@ -14,15 +13,11 @@ export const state = Path.extend(bit.state, resolve => {
         return resolve(...arguments);
     }
 
-    state.$set = function set(value, obj) {
-        return this($set, value, obj);
-    };
-
-    state.$print = function print(obj) {
-        return this(print, console.log, obj);
-    };
-
-    return state;
+    return Object.assign(state, resolve, {
+        print(object) {
+            return this(print, console.log, object);
+        }
+    });
 });
 
 export const signal = Path.extend(

@@ -19,9 +19,7 @@ import { $set } from "./bits/set";
 
 function bit(path, ...args) {
     const object = is.object(args[args.length - 1]) ? args.pop() : undefined;
-
-    let target = object;
-    let keys = Array.from(path);
+    const keys = Array.from(path);
 
     // create observable
     if (!keys.length) {
@@ -39,41 +37,45 @@ function bit(path, ...args) {
         }
     }
 
-    if (!is.object(object)) {
-        return path;
-    }
+    if (!is.object(object)) return path;
 
     // setter
     if (path[Path.setter]) {
         const keys = [...path];
         const key = keys.pop();
+
         let [method, value] = path[Path.setter];
+        let target = object;
 
         for (let key of keys) {
             key = is.path(key) ? key(object) : key;
             target = target && key in target ? target[key] : (target = (target[key] = {}));
         }
 
-        const resolved = resolve(target, key, value, object);
-        method(target, key, resolved, object);
+        try {
+            const resolved = resolve(target, key, value, object);
+            method(target, key, resolved, object);
 
-        //console.log(`${method.name}(%s, %o)`, str, resolved, value);
-        return;
+            return;
+        } catch (e) {
+            throw e;
+        }
     }
 
     // getter
-    let prevTarget;
+    let parent;
 
     return Array.from(path).reduce(
         (target, key, index, keys) => {
             key = is.path(key) ? key(object) : key;
+
             if (is.function(key)) {
                 return key.name.charAt(0) === "$"
-                    ? key(prevTarget, keys[index - 1], object)
+                    ? key(parent, keys[index - 1], object)
                     : key(target);
             }
 
-            prevTarget = target;
+            parent = target;
 
             return target && target[key];
         },
@@ -88,14 +90,17 @@ function resolve(target, key, value, obj) {
 
 export default Path.create(
     Object.assign(bit, {
+        reducer() {
+            return Path.get(this, "reducer");
+        },
         setters() {
-            return setters;
+            return Array.from(setters);
         },
-        keys() {
-            return Path.get(this, "keys");
+        path() {
+            return Array.from(this);
         },
-        set(value, obj) {
-            return this($set, value, obj);
+        set(value, object) {
+            return this($set, value, object);
         }
     })
 );
