@@ -1,5 +1,4 @@
 import is from "../utils/is";
-import { wellKnownSymbols } from "../utils";
 
 let keyPath = null;
 
@@ -43,6 +42,7 @@ export function extend(target, construct) {
 
 export function create(reducer, root = [], isRoot = true) {
     keyPath = undefined;
+    const proxy = PathProxy(path);
 
     function path() {
         keyPath = undefined;
@@ -60,8 +60,6 @@ export function create(reducer, root = [], isRoot = true) {
     path[Symbol.iterator] = () => PathIterator(Path.get(path, "keys"));
     path[Symbol.toPrimitive] = () => toString(Path.get(path, "keys"));
     path[Symbol.isConcatSpreadable] = false;
-
-    const proxy = PathProxy(path);
 
     return proxy;
 }

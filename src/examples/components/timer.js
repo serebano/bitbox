@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, props } from "../../api";
+import { state, props } from "../../paths";
 import { or } from "../../bits";
 
 function Remove({ onRemove, label }, h) {

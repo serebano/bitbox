@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signal } from "../../api";
+import { state, signal } from "../../paths";
 
 function Toggle(props, h) {
     return (

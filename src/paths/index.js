@@ -1,7 +1,5 @@
 import Path from "../path";
-import is from "../utils/is";
 import bit from "../bit";
-import { print } from "../bits";
 import { $set } from "../bits/set";
 
 export const props = Path.extend(

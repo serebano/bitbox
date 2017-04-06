@@ -4,7 +4,7 @@ import * as paths from "./paths";
 import { render } from "react-dom";
 import { bit, path, run, component } from ".";
 import { state, signal, props } from "./paths";
-import { set, assign, toggle, print, inc, dec, gt } from "./bits";
+import { set, assign, toggle, print, inc, dec, gt, on, compute, join } from "./bits";
 import App from "./examples/components/app";
 
 const object = bit({
@@ -67,23 +67,29 @@ run(
     })
 );
 
-//state(on(({ count }) => console.log(`{{count}}: ${count}`)))(object);
+setTimeout(
+    () => on(state.count, gt(6), set(state.name, state.count(c => `The count is: ${c}`)), object),
+    10
+);
 
-// const mapping = {
-//     count: state.count,
-//     items: state.items(items => items.map(String)),
-//     computed: [state.count, 10, (a, b) => a + b],
-//     item: state.items[state.items(items => items.length - 1)],
-//     color: state.enabled(enabled => enabled ? "red" : "green")
-// };
-//
-// const mapped = bit(object, mapping);
+const project = bit(
+    {
+        count: state.count,
+        items: state.items(join(` * `)),
+        computed: compute(state.count, 10, (a, b) => a + b),
+        item: state.items[state.items(items => items.length - 1)],
+        color: state.enabled(enabled => enabled ? "red" : "green")
+    },
+    object
+);
+
 // box(({ count, item }) => console.log(`count`, count, item), mapped);
 
 render(component(App, object), document.querySelector("#root"));
 
 Object.assign(window, bitbox, paths, bits, {
     bitbox,
+    project,
     obj: object,
     timers,
     action

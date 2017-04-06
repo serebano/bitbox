@@ -1,14 +1,12 @@
 /** @jsx h */
-import { state } from "../../api";
+import { state } from "../../paths";
 import { or } from "../../bits";
 import Hello from "./hello";
 import Count from "./count";
 import Toggle from "./toggle";
 import Timer from "./timer";
-import Github from "./github";
 
 function App(props, h) {
-    console.log(`props`, props);
     return (
         <div>
             <h1>{props.title}</h1>

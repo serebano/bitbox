@@ -46,7 +46,6 @@ function bit(path, ...args) {
     // setter
     if (path[Path.setter]) {
         const keys = [...path];
-        const str = keys.join(".");
         const key = keys.pop();
         let [method, value] = path[Path.setter];
 

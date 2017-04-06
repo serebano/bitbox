@@ -1,7 +1,3 @@
-import is from "../utils/is";
-import Path from "../path";
-import set from "./set";
-
 export { default as get } from "./get";
 export { default as has } from "./has";
 export { default as set } from "./set";
