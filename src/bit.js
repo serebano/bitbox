@@ -2,8 +2,8 @@ import is from "./utils/is";
 import Path from "./path";
 import Project from "./bits/project";
 import Observer from "./observer";
+import setters from "./bits/methods";
 import { $set } from "./bits/set";
-import methods from "./bits/methods";
 
 /**
  *  bit(object)
@@ -20,7 +20,6 @@ import methods from "./bits/methods";
 function bit(path, ...args) {
     const object = is.object(args[args.length - 1]) ? args.pop() : undefined;
 
-    let [method, value] = args;
     let target = object;
     let keys = Array.from(path);
 
@@ -33,36 +32,54 @@ function bit(path, ...args) {
     }
 
     if (args.length) {
-        if (methods.has(method)) {
-            path.$args = [...args];
+        if (setters.has(args[0])) {
+            path[Path.setter] = [...args];
         } else {
             path = path.$push(...args);
         }
     }
 
-    if (!is.object(object)) return path;
+    if (!is.object(object)) {
+        return path;
+    }
 
     // setter
-    if (is.function(method) && methods.has(method)) {
+    if (path[Path.setter]) {
         const keys = [...path];
+        const str = keys.join(".");
         const key = keys.pop();
+        let [method, value] = path[Path.setter];
 
         for (let key of keys) {
             key = is.path(key) ? key(object) : key;
             target = target && key in target ? target[key] : (target = (target[key] = {}));
         }
-        //path.$args = [];
-        method(target, key, resolve(target, key, value, object), object);
+
+        const resolved = resolve(target, key, value, object);
+        method(target, key, resolved, object);
+
+        //console.log(`${method.name}(%s, %o)`, str, resolved, value);
         return;
     }
 
     // getter
-    for (let key of path) {
-        key = is.path(key) ? key(object) : key;
-        target = is.function(key) ? key(target) : target[key];
-    }
+    let prevTarget;
 
-    return target;
+    return Array.from(path).reduce(
+        (target, key, index, keys) => {
+            key = is.path(key) ? key(object) : key;
+            if (is.function(key)) {
+                return key.name.charAt(0) === "$"
+                    ? key(prevTarget, keys[index - 1], object)
+                    : key(target);
+            }
+
+            prevTarget = target;
+
+            return target && target[key];
+        },
+        object
+    );
 }
 
 function resolve(target, key, value, obj) {
@@ -72,8 +89,8 @@ function resolve(target, key, value, obj) {
 
 export default Path.create(
     Object.assign(bit, {
-        methods() {
-            return methods;
+        setters() {
+            return setters;
         },
         keys() {
             return Path.get(this, "keys");

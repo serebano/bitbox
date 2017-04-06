@@ -11,6 +11,7 @@ Path.keys = Symbol.for("Path.keys");
 Path.root = Symbol.for("Path.root");
 Path.isRoot = Symbol.for("Path.isRoot");
 Path.reducer = Symbol.for("Path.reducer");
+Path.setter = Symbol.for("Path.setter");
 
 Path.create = create;
 Path.extend = extend;
@@ -43,15 +44,14 @@ export function extend(target, construct) {
 export function create(reducer, root = [], isRoot = true) {
     keyPath = undefined;
 
-    function path(...args) {
+    function path() {
         keyPath = undefined;
         if (path[Path.isRoot]) Reflect.set(path, Path.keys, path[Path.root].slice());
-        //console.log(`path.$args`, path.$args, args);
-        if (path.$args.length) args = path.$args.concat(args);
-        return reducer(proxy, ...args);
+
+        return reducer.call(path, proxy, ...arguments);
     }
 
-    path.$args = [];
+    path[Path.setter] = undefined;
     path[Path.reducer] = reducer;
     path[Path.isRoot] = isRoot;
     path[Path.root] = root.slice();
