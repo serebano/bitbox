@@ -1,7 +1,7 @@
 import * as bb from ".";
 import * as bits from "./bits";
 import { render } from "react-dom";
-import { bit, path, run, component, is } from ".";
+import { bit, path, run, component } from ".";
 import { state, signal, props } from "./paths";
 import { set, assign, toggle, print } from "./bits";
 import App from "./examples/components/app";

@@ -11,17 +11,16 @@ import is from "../utils/is";
  * bit.state(assign({name: 'bitbox'})) -> (obj)
  */
 
+export function $assign(target, key, args, obj) {
+    return Reflect.set(
+        target,
+        key,
+        Object.assign(target[key], ...args.map(arg => getValue(obj, target[key], arg)))
+    );
+}
+
 export default (path, ...args) => {
-    args = is.path(path) ? args : [path].concat(args);
-
-    function set(target, key, obj) {
-        target[key] = Object.assign(
-            target[key],
-            ...args.map(arg => getValue(obj, target[key], arg))
-        );
-    }
-
-    return is.path(path) ? path(set) : set;
+    return is.path(path) ? path($assign, args) : $assign;
 };
 
 function getValue(obj, oldValue, value) {

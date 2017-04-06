@@ -3,6 +3,7 @@ import Path from "./path";
 import Project from "./bits/project";
 import Observer from "./observer";
 import { $set } from "./bits/set";
+import methods from "./bits/methods";
 
 /**
  *  bit(object)
@@ -32,7 +33,7 @@ function bit(path, ...args) {
     }
 
     if (args.length) {
-        if (method === $set) {
+        if (methods.has(method)) {
             path.$args = [...args];
         } else {
             path = path.$push(...args);
@@ -42,14 +43,14 @@ function bit(path, ...args) {
     if (!is.object(object)) return path;
 
     // setter
-    if (is.function(method) && method === $set) {
+    if (is.function(method) && methods.has(method)) {
         const key = path.$pop();
 
         for (let key of path) {
             key = is.path(key) ? key(object) : key;
             target = target && key in target ? target[key] : (target = (target[key] = {}));
         }
-
+        path.$args = [];
         method(target, key, resolve(target, key, value, object), object);
         return;
     }
@@ -70,6 +71,9 @@ function resolve(target, key, value, obj) {
 
 export default Path.create(
     Object.assign(bit, {
+        methods() {
+            return methods;
+        },
         keys() {
             return Path.get(this, "keys");
         },
