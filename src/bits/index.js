@@ -52,18 +52,24 @@ export const type = value => {
     };
 };
 
-export function concat(path) {
-    return (arr1 = []) => path((arr2 = []) => arr1.concat(arr2));
-}
+export const concat = value => {
+    return function concat(state) {
+        return state.concat(value);
+    };
+};
 
-export function join(separator) {
-    return array => array.join(separator);
-}
+export const join = separator => {
+    return function join(array) {
+        return array.join(separator);
+    };
+};
 
-export function map(fn) {
-    return array => array.map(fn);
-}
+export const map = fn => {
+    return function map(array) {
+        return array.map(fn);
+    };
+};
 
-export function print(o, tab) {
-    return JSON.stringify(o, null, tab || 4);
+export function print(object) {
+    return JSON.stringify(object, null, 4);
 }
