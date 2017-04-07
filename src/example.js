@@ -3,8 +3,8 @@ import * as bits from "./bits";
 import * as paths from "./paths";
 import { render } from "react-dom";
 import { bit, path, run, component } from ".";
-import { state, signal, props } from "./paths";
-import { set, assign, toggle, print, inc, dec, gt, on, compute, join } from "./bits";
+import { state, props, signals } from "./paths";
+import { set, toggle, print, inc, dec, gt, on, compute, join } from "./bits";
 import App from "./examples/components/app";
 
 const object = bit({
@@ -27,15 +27,15 @@ const object = bit({
 run.context = object;
 
 const timers = path.extend(state.timers, resolve => {
-    function timers() {
-        return resolve(...arguments);
-    }
-
-    return Object.assign(timers, resolve);
+    return Object.assign(
+        function timers() {
+            return resolve.apply(this, arguments);
+        },
+        resolve
+    );
 });
 
 const add = (path, value, object) => set(path, { value }, object);
-const action = action => props => run(action, props);
 
 add(timers.xxx, 100, object);
 add(timers.abc, 200, object);
@@ -44,21 +44,14 @@ add(timers.abc, 200, object);
 set(state.enabled, state.count(gt(5)), object);
 // stringify timers and log
 timers(print, console.log, object);
+
+set(signals.nameChanged, set(state.name, props.value), object);
+set(signals.toggleClicked, set(state.enabled, toggle), object);
+set(signals.incClicked, set(state.count, inc), object);
+set(signals.decClicked, set(state.count, dec), object);
+
 // run multiple actions
 run([set(state.repos, { serebano: {} }), set(state.name, `bitbox`)]);
-
-run(
-    assign(
-        signal,
-        {
-            incClicked: action(set(state.count, inc)),
-            decClicked: action(set(state.count, dec)),
-            nameChanged: action(set(state.name, props.value)),
-            toggleClicked: action(set(state.enabled, toggle))
-        },
-        undefined
-    )
-);
 
 setTimeout(
     () => on(state.count, gt(6), set(state.name, state.count(c => `The count is: ${c}`)), object),
@@ -83,6 +76,5 @@ Object.assign(window, paths, bits, {
     bitbox,
     project,
     obj: object,
-    timers,
-    action
+    timers
 });

@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signal } from "../../paths";
+import { state, signals } from "../../paths";
 
 function Count({ count, incClicked, decClicked }, h) {
     return (
@@ -13,8 +13,8 @@ function Count({ count, incClicked, decClicked }, h) {
 
 Count.map = {
     count: state.count(String),
-    incClicked: signal.incClicked,
-    decClicked: signal.decClicked
+    incClicked: signals.incClicked,
+    decClicked: signals.decClicked
 };
 
 export default Count;

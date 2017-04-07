@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signal } from "../../paths";
+import { state, signals } from "../../paths";
 import { or } from "../../bits";
 
 function Hello({ value, nameChanged }, h) {
@@ -13,7 +13,7 @@ function Hello({ value, nameChanged }, h) {
 
 Hello.map = {
     value: state.name(or(`World`)),
-    nameChanged: signal.nameChanged
+    nameChanged: signals.nameChanged
 };
 
 export default Hello;

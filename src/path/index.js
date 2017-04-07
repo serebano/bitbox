@@ -16,6 +16,7 @@ Path.create = create;
 Path.extend = extend;
 Path.isPath = isPath;
 Path.get = get;
+Path.map = new Map();
 
 export function get(target, key) {
     return Reflect.get(target, Path[key]);
@@ -26,11 +27,13 @@ export function isPath(path) {
 }
 
 export function extend(target, construct) {
-    return create(
-        construct ? construct(get(target, "reducer")) : get(target, "reducer"),
-        get(target, "keys"),
-        true
-    );
+    const reducer = get(target, "reducer");
+    const root = get(target, "keys");
+    const path = create(construct(reducer), root, true);
+
+    Path.map.get(reducer).set(root.slice().pop(), path);
+
+    return path;
 }
 
 /**
@@ -51,6 +54,8 @@ export function create(reducer, root = [], isRoot = true) {
         return reducer.call(path, proxy, ...arguments);
     }
 
+    if (!Path.map.has(reducer)) Path.map.set(reducer, new Map());
+
     path[Path.setter] = undefined;
     path[Path.reducer] = reducer;
     path[Path.isRoot] = isRoot;
@@ -69,6 +74,9 @@ function PathProxy(path) {
         get(target, key, receiver) {
             //console.log(`get ->`, target[SymbolPath], key);
             const isRoot = Path.get(target, "isRoot");
+            const reducer = Path.get(target, "reducer");
+
+            if (isRoot && Path.map.get(reducer).has(key)) return Path.map.get(reducer).get(key);
 
             if (key === Symbol.hasInstance)
                 return obj => obj && Path.get(obj, "reducer") === Path.get(target, "reducer");
@@ -103,15 +111,16 @@ function PathProxy(path) {
                     }
 
                     if (method === "extend") {
-                        return function extend(construct) {
-                            return Path.create(
-                                construct
-                                    ? construct(Path.get(target, "reducer"))
-                                    : Path.get(target, "reducer"),
-                                Path.get(target, "keys"),
-                                true
-                            );
-                        };
+                        return construct => extend(target, construct);
+                        // return function extend(construct) {
+                        //     return Path.create(
+                        //         construct
+                        //             ? construct(Path.get(target, "reducer"))
+                        //             : Path.get(target, "reducer"),
+                        //         Path.get(target, "keys"),
+                        //         true
+                        //     );
+                        // };
                     }
                     if (method === "pop") {
                         return () => Path.get(target, "keys").pop();

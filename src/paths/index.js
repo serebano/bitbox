@@ -1,4 +1,4 @@
-import bit from "../bit";
+import { is, bit, run } from "../";
 
 function extend(path, construct) {
     return path.$extend(construct);
@@ -22,8 +22,16 @@ export const state = extend(bit.state, resolve => {
     });
 });
 
-export const signal = extend(bit.signals, resolve => {
-    return function signal(path, object) {
+export const signals = extend(bit.signals, resolve => {
+    return function signals(path, trap, chain, obj) {
+        if (is.trap(trap) && trap.name === "$set") {
+            const name = String(path); //.$key;
+            const signal = props => run(name, chain, props);
+            signal.toString = () => `${name}(props) { [Signal] }`;
+
+            arguments[2] = () => signal;
+        }
+
         return resolve.apply(this, arguments);
     };
 });

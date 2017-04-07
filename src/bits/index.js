@@ -8,6 +8,7 @@ export { default as on } from "./on";
 export { default as resolve } from "./resolve";
 export { default as push } from "./push";
 export { default as unset } from "./delete";
+export { default as signal } from "./signal";
 
 /**
  * Getters

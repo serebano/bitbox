@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signal } from "../../paths";
+import { state, signals } from "../../paths";
 
 function Toggle(props, h) {
     return (
@@ -12,7 +12,7 @@ function Toggle(props, h) {
 Toggle.map = {
     value: state.enabled(enabled => enabled ? "on" : "off"),
     color: state.enabled(enabled => enabled ? "green" : "#555"),
-    clicked: signal.toggleClicked
+    clicked: signals.toggleClicked
 };
 
 export default Toggle;
