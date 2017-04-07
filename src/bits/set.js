@@ -1,21 +1,23 @@
-import is from "../utils/is";
+import { resolve } from ".";
+import { is } from "../";
 
 /**
  * set()
  *
- * set('name', 'bitbox') -> (obj)
- * set.name('bitbox') -> (obj)
- *
- * set.count(count => count + 1) -> (obj)
- *
- * set(bit.name, 'bitbox') -> (obj)
- * bit.name(set('bitbox')) -> (obj)
+ * state.name(set, 'bitbox')
+ * set(state.name, 'bitbox')
  */
 
-export function $set(target, key, value) {
+export function $set(target, key, args, obj) {
+    if (is.path(target)) return target($set, key, args);
+
+    const value = resolve(target, key, args[0], obj);
+
     return Reflect.set(target, key, value);
 }
 
-export default function set(path, value, obj) {
-    return is.path(path) ? path($set, value, obj) : $set;
+export function set(path, value, obj) {
+    return path($set, value, obj);
 }
+
+export default $set;

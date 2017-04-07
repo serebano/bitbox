@@ -1,16 +1,18 @@
-import Path from "../path";
 import bit from "../bit";
 
-export const props = Path.extend(
-    bit.props,
-    resolve => function props(path, object) {
-        return resolve(...arguments);
-    }
-);
+function extend(path, construct) {
+    return path.$extend(construct);
+}
 
-export const state = Path.extend(bit.state, resolve => {
+export const props = extend(bit.props, resolve => {
+    return function props(path, object) {
+        return resolve.apply(this, arguments);
+    };
+});
+
+export const state = extend(bit.state, resolve => {
     function state(path, object) {
-        return resolve(...arguments);
+        return resolve.apply(this, arguments);
     }
 
     return Object.assign(state, resolve, {
@@ -20,9 +22,8 @@ export const state = Path.extend(bit.state, resolve => {
     });
 });
 
-export const signal = Path.extend(
-    bit.signals,
-    resolve => function signal(path, object) {
-        return resolve(...arguments);
-    }
-);
+export const signal = extend(bit.signals, resolve => {
+    return function signal(path, object) {
+        return resolve.apply(this, arguments);
+    };
+});

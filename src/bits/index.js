@@ -5,6 +5,9 @@ export { default as assign } from "./assign";
 export { default as project } from "./project";
 export { default as compute } from "./compute";
 export { default as on } from "./on";
+export { default as resolve } from "./resolve";
+export { default as push } from "./push";
+export { default as unset } from "./delete";
 
 /**
  * Getters

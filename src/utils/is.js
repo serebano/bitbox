@@ -7,6 +7,7 @@ const is = {
     bit: arg => arg && isObservable(arg),
     project: arg => Project.isProject(arg),
     path: arg => arg && Path.isPath(arg),
+    trap: arg => is.function(arg) && arg.name.charAt(0) === "$",
     compute: arg => arg && Compute.isCompute(arg),
     promise: arg => arg instanceof Promise,
     array: arg => Array.isArray(arg),

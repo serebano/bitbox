@@ -31,21 +31,10 @@ const timers = path.extend(state.timers, resolve => {
         return resolve(...arguments);
     }
 
-    return Object.assign(timers, resolve, {
-        add(value, obj) {
-            return set(
-                this,
-                {
-                    name: String(this.$key),
-                    value: value || 0
-                },
-                obj
-            );
-        }
-    });
+    return Object.assign(timers, resolve);
 });
 
-const add = (path, value, object) => path.$add(value, object);
+const add = (path, value, object) => set(path, { value }, object);
 const action = action => props => run(action, props);
 
 add(timers.xxx, 100, object);
@@ -59,12 +48,16 @@ timers(print, console.log, object);
 run([set(state.repos, { serebano: {} }), set(state.name, `bitbox`)]);
 
 run(
-    assign(signal, {
-        incClicked: action(set(state.count, inc)),
-        decClicked: action(set(state.count, dec)),
-        nameChanged: action(set(state.name, props.value)),
-        toggleClicked: action(set(state.enabled, toggle))
-    })
+    assign(
+        signal,
+        {
+            incClicked: action(set(state.count, inc)),
+            decClicked: action(set(state.count, dec)),
+            nameChanged: action(set(state.name, props.value)),
+            toggleClicked: action(set(state.enabled, toggle))
+        },
+        undefined
+    )
 );
 
 setTimeout(
@@ -83,11 +76,10 @@ const project = bit(
     object
 );
 
-// box(({ count, item }) => console.log(`count`, count, item), mapped);
-
 render(component(App, object), document.querySelector("#root"));
 
-Object.assign(window, bitbox, paths, bits, {
+Object.assign(window, paths, bits, {
+    bit,
     bitbox,
     project,
     obj: object,

@@ -2,11 +2,10 @@ import is from "./utils/is";
 import Path from "./path";
 import Project from "./bits/project";
 import Observer from "./observer";
-import setters from "./bits/methods";
-import { $set } from "./bits/set";
+import set from "./bits/set";
 
 /**
- *  bit(object)
+ *  bit()
  *
  *  o = bit({count:0,app:{}})
  *  bit(o) === bit(o)
@@ -19,61 +18,34 @@ import { $set } from "./bits/set";
 
 function bit(path, ...args) {
     const object = is.object(args[args.length - 1]) ? args.pop() : undefined;
-    const keys = Array.from(path);
 
     // create observable
-    if (!keys.length) {
-        if (arguments.length === 3 && is.object(arguments[1]))
-            return new Project(Observer.observable(object), arguments[1]);
-
-        if (arguments.length === 2) return Observer.observable(object);
+    if (!path.length && object) {
+        if (args.length === 1 && is.object(args[0]))
+            return new Project(Observer.observable(object), args[0]);
+        if (args.length === 0) return Observer.observable(object);
     }
 
-    if (args.length) {
-        if (setters.has(args[0])) {
-            path[Path.setter] = [...args];
-        } else {
-            path = path.$push(...args);
-        }
-    }
+    /**
+     * $trap(target, key, [...args], object)
+     */
 
-    if (!is.object(object)) return path;
+    if (args.length) path = path.$push(...args);
+    if (!object) return path;
 
-    // setter
-    if (path[Path.setter]) {
-        const keys = [...path];
-        const key = keys.pop();
-
-        let [method, value] = path[Path.setter];
-        let target = object;
-
-        for (let key of keys) {
-            key = is.path(key) ? key(object) : key;
-            target = target && key in target ? target[key] : (target = (target[key] = {}));
-        }
-
-        try {
-            const resolved = resolve(target, key, value, object);
-            method(target, key, resolved, object);
-
-            return;
-        } catch (e) {
-            throw e;
-        }
-    }
-
-    // getter
     let parent;
 
     return Array.from(path).reduce(
         (target, key, index, keys) => {
             key = is.path(key) ? key(object) : key;
 
-            if (is.function(key)) {
-                return key.name.charAt(0) === "$"
-                    ? key(parent, keys[index - 1], object)
-                    : key(target);
+            if (is.trap(key)) {
+                const result = key(parent, keys[index - 1], keys.splice(index + 1), object);
+
+                return object.execution ? undefined : result;
             }
+
+            if (is.function(key)) return key(target);
 
             parent = target;
 
@@ -83,24 +55,13 @@ function bit(path, ...args) {
     );
 }
 
-function resolve(target, key, value, obj) {
-    if (is.path(value) || is.compute(value)) return value(obj);
-    return is.function(value) ? value(Reflect.get(target, key)) : value;
-}
-
 export default Path.create(
     Object.assign(bit, {
-        reducer() {
-            return Path.get(this, "reducer");
-        },
-        setters() {
-            return Array.from(setters);
-        },
-        path() {
+        toArray() {
             return Array.from(this);
         },
         set(value, object) {
-            return this($set, value, object);
+            return this(set, value, object);
         }
     })
 );

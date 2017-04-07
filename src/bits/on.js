@@ -13,17 +13,16 @@ import { observe } from "../observer";
  * on(state.count, gt(6), set(state.name, state.count(c => `The count is: ${c}`)), object)
  */
 
-function on(path, cond, observer, object) {
-    return path(
-        function $observe(target, key, object) {
-            const fn = is.path(observer) ? () => observer(object) : () => observer(target[key]);
+function $observe(target, key, [cond, observer], object) {
+    const fn = is.path(observer) ? () => observer(object) : () => observer(target[key]);
 
-            return observe(function on() {
-                return cond(target[key]) && fn();
-            });
-        },
-        object
-    );
+    return observe(function on() {
+        return cond(target[key]) && fn();
+    });
+}
+
+function on(path, cond, observer, object) {
+    return path($observe, cond, observer, object);
 }
 
 export default on;

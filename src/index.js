@@ -1,14 +1,14 @@
-import { observe, observable, observers, proxies } from "./observer";
 import * as bits from "./bits";
+import * as paths from "./paths";
+import * as observer from "./observer";
+
 export { default as bit } from "./bit";
-export { default as box } from "./box";
+export { observe as box } from "./observer";
 export { default as run } from "./run";
-export { default as project } from "./bits/project";
 export { default as path } from "./path";
-export { default as compute } from "./bits/compute";
 export { default as component } from "./views/react";
 export { default as is } from "./utils/is";
 
-export { bits, observe, observable, observers, proxies };
+export { bits, paths, observer };
 
 import "./example";

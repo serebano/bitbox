@@ -78,15 +78,18 @@ function PathProxy(path) {
                 return Reflect.get(target, Symbol.toPrimitive);
             }
 
-            if (typeof key === "symbol" && Reflect.has(target, key))
+            if (
+                (typeof key === "symbol" || key === "apply" || key === "call") &&
+                Reflect.has(target, key)
+            )
                 return Reflect.get(target, key);
 
             // reset path
             if (isRoot) Reflect.set(target, Path.keys, Path.get(target, "root").slice());
 
-            if (key === "displayName") {
-                return Reflect.get(target, Symbol.toPrimitive)();
-            }
+            if (key === "displayName") return Reflect.get(target, Symbol.toPrimitive)();
+
+            if (key === "length") return Path.get(target, "keys").length;
 
             if (key.charAt(0) === "$") {
                 const reducer = Path.get(target, "reducer");
