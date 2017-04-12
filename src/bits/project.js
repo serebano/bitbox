@@ -1,6 +1,6 @@
 import compute from "./compute";
 import is from "../utils/is";
-import set from "./set";
+import { set } from "../handler";
 import { observable } from "../observer";
 
 export class Project {

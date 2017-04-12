@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, props, signals } from "../../paths";
+import { state, props, signals } from "../app";
 
 const timer = state.timers[props.id]();
 

@@ -9,14 +9,6 @@ const enumerate = Symbol("enumerate");
 let queued = false;
 let currentObserver;
 
-export default {
-    observe,
-    observable,
-    isObservable,
-    proxies,
-    observers
-};
-
 /**
  * Observe
  * @param  {Function}   fn      Observer function
@@ -45,9 +37,8 @@ function createObserver(fn, args) {
         changes: [],
         changed: 0,
         name: fn.displayName || fn.name,
-        run() {
-            runObserver(this);
-        },
+        run: () => runObserver(observer),
+        unqueue: () => queue.delete(observer),
         unobserve() {
             if (this.fn) {
                 observe.index.delete(this.fn);
@@ -57,9 +48,6 @@ function createObserver(fn, args) {
                 this.fn = (this.paths = (this.args = (this.keys = undefined)));
                 queue.delete(this);
             }
-        },
-        unqueue() {
-            queue.delete(this);
         }
     };
 

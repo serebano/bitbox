@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, props } from "../../paths";
+import { state, props } from "../app";
 import { or, eq, join, ensure, is, concat } from "../../bits";
 
 function Github(props, h) {

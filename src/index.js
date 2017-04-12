@@ -1,10 +1,16 @@
 import bitbox from "./bitbox";
-import * as bits from "./bits";
-export { default as is } from "./utils/is";
-export { default as observer } from "./observer";
-export { default as component } from "./views/react";
+import get from "./handler/get";
+import set from "./handler/set";
+import has from "./handler/has";
+import unset from "./handler/unset";
+import resolve from "./handler/resolve";
+import { observable, observe } from "./observer";
 
-export { bits };
-export default bitbox;
+export default Object.assign(bitbox, { get, set, has, unset, resolve, observable, observe });
+
+Object.assign(window, { get, set, has, unset, resolve, observable, observe, bitbox });
+
+//export default bitbox;
+export { get, set, has, unset, resolve, observable, observe };
 
 import "./examples";

@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state } from "../../paths";
+import { state } from "../app";
 import { or } from "../../bits";
 import Hello from "./hello";
 import Count from "./count";

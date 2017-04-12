@@ -1,13 +1,12 @@
-import * as bb from "../";
+import { set } from "../handler";
+import { observable } from "../observer";
 import * as bits from "../bits";
-import * as roots from "../paths";
-import bitbox from "../bitbox";
-import funtree from "../run";
+import funtree from "../bits/run";
 import { render } from "react-dom";
-import { component, is } from "../";
-import { state, props, signals, app } from "../paths";
+import { is } from "../utils";
+import component from "../views/react";
+import { app, state, props, signals } from "./app";
 import {
-    set,
     toggle,
     inc,
     dec,
@@ -21,7 +20,6 @@ import {
     template,
     observe
 } from "../bits";
-import { observable } from "../observer";
 import App from "./components/app";
 
 const object = observable({
@@ -150,16 +148,16 @@ const m2 = app(
 
 render(component(App, object), document.querySelector("#root"));
 
-Object.assign(window, bits, roots, {
-    observable,
-    observe,
+Object.assign(window, bits, {
     is,
-    bb,
-    bitbox,
     obj: object,
     mapping,
     mapped,
     m2,
     map,
-    run
+    run,
+    app,
+    state,
+    props,
+    signals
 });

@@ -1,4 +1,4 @@
-import { is } from "../";
+import { is } from "../utils";
 import { observe } from "../observer";
 
 /**
@@ -25,6 +25,7 @@ function $on(target, key, cond, observer, object) {
 function on(box, cond, observer, target) {
     return box($on, cond, observer, target);
 }
+
 function factory(box, cond, observer, o) {
     return box(
         function get(target, key, object) {

@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signals } from "../../paths";
+import { state, signals } from "../app";
 
 function Count({ count, incClicked, decClicked }, h) {
     return (

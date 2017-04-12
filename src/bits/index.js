@@ -1,13 +1,9 @@
-export { default as get } from "./get";
-export { default as has } from "./has";
-export { default as set } from "./set";
 export { default as assign } from "./assign";
 export { default as project } from "./project";
 export { default as compute } from "./compute";
 export { default as on } from "./on";
 export { default as resolve } from "./resolve";
 export { default as push } from "./push";
-export { default as unset } from "./delete";
 export { default as signal } from "./signal";
 export { default as template } from "./template";
 export { default as observe } from "./observe";

@@ -1,7 +1,6 @@
 import View from "react";
-import { getChangedProps } from "../utils";
+import { is, getChangedProps } from "../utils";
 import { observe } from "../observer";
-import { is } from "../";
 
 Component.debug = false;
 
