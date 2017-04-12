@@ -30,23 +30,23 @@ export default (target, path, registerObserver, queueObservers) => {
 
     target.set = function(key, value) {
         if (this.get(key) !== value) {
-            queueObservers(this, key);
-            queueObservers(this, masterKey);
+            queueObservers(this, key, path);
+            queueObservers(this, masterKey, path);
         }
         return native.set.apply(this, arguments);
     };
 
     target.delete = function(key) {
         if (this.has(key)) {
-            queueObservers(this, key);
-            queueObservers(this, masterKey);
+            queueObservers(this, key, path);
+            queueObservers(this, masterKey, path);
         }
         return native.delete.apply(this, arguments);
     };
 
     target.clear = function() {
         if (this.size) {
-            queueObservers(this, masterKey);
+            queueObservers(this, masterKey, path);
         }
         return native.clear.apply(this, arguments);
     };

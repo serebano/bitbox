@@ -1,14 +1,5 @@
 import FunctionTree, { sequence, parallel } from "function-tree";
 
-const run = FunctionTree([
-    function Context(context) {
-        return Object.assign(context, run.context);
-    }
-]);
+export default providers => new FunctionTree(providers);
 
-run.context = {};
-
-run.sequence = sequence;
-run.parallel = parallel;
-
-export default run;
+export { sequence, parallel };

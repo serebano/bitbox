@@ -1,19 +1,21 @@
 import Project from "../bits/project";
-import Path from "../path";
 import Compute from "../bits/compute";
 import { isObservable } from "../observer";
 
+const traps = ["resolve", "get", "set", "has", "apply", "deleteProperty"];
+
 const is = {
-    bit: arg => arg && isObservable(arg),
+    bit: arg => is.object(arg) && isObservable(arg),
+    box: arg => is.function(arg) && Reflect.has(arg, Symbol.for("bitbox.keys")),
     project: arg => Project.isProject(arg),
-    path: arg => arg && Path.isPath(arg),
-    trap: arg => is.function(arg) && arg.name.charAt(0) === "$",
     compute: arg => arg && Compute.isCompute(arg),
+    trap: arg => is.function(arg) && traps.includes(arg.name),
+    bitbox: arg => is.function(arg) && Reflect.has(arg, Symbol.for("bitbox.keys")),
     promise: arg => arg instanceof Promise,
     array: arg => Array.isArray(arg),
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",
-    object: arg => typeof arg === "object" && !is.array(arg),
+    object: arg => typeof arg === "object", // && !is.array(arg),
     function: arg => typeof arg === "function",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null

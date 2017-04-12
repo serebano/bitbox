@@ -8,16 +8,14 @@ import { is } from "../";
  * set(state.name, 'bitbox')
  */
 
-export function $set(target, key, args, obj) {
-    if (is.path(target)) return target($set, key, args);
+function set(target, key, value, object) {
+    if (is.box(target)) return factory(...arguments);
 
-    const value = resolve(target, key, args[0], obj);
-
-    return Reflect.set(target, key, value);
+    Reflect.set(target, key, resolve(target, key, value, object));
 }
 
-export function set(path, value, obj) {
-    return path($set, value, obj);
+function factory(box, ...args) {
+    return box(set, ...args);
 }
 
-export default $set;
+export default set;

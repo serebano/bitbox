@@ -15,9 +15,7 @@ function App(props, h) {
             <Toggle />
             <hr />
             <div>
-                {Array.isArray(props.timers)
-                    ? props.timers.map((id, key) => <Timer key={key} id={id} />)
-                    : ""}
+                {props.timers.map((id, key) => <Timer key={key} id={id} />)}
             </div>
         </div>
     );

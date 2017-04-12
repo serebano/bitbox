@@ -1,13 +1,9 @@
-import run from "../run";
+function signal(chain) {
+    const fn = props => signal.run("signal", chain, props);
+    fn.displayName = `props => run(${chain}, props)`;
+    fn.resolve = false;
 
-export default function signal(name, chain) {
-    if (arguments.length === 1) return props => run(name, props);
-
-    return props => run(name, chain, props);
+    return fn;
 }
 
-export function $signal(target, key, [name, chain]) {
-    return Reflect.set(target, key, props => run(name, chain, props));
-}
-
-export const s = (path, chain, obj) => path($signal, String(path), chain, obj);
+export default signal;

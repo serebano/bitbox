@@ -1,155 +1,165 @@
-import Tag from './Tag'
-//import state from './handlers/state'
-//import props from './handlers/props'
-import string from './handlers/string'
-import compute from './handlers/compute'
-import observe from './handlers/observe'
-import * as operators from './operators'
-import debug from './debug'
+import * as bb from "../";
+import * as bits from "../bits";
+import * as roots from "../paths";
+import bitbox from "../bitbox";
+import funtree from "../run";
+import { render } from "react-dom";
+import { component, is } from "../";
+import { state, props, signals, app } from "../paths";
+import {
+    set,
+    toggle,
+    inc,
+    dec,
+    gt,
+    eq,
+    on,
+    compute,
+    project,
+    join,
+    signal,
+    template,
+    observe
+} from "../bits";
+import { observable } from "../observer";
+import App from "./components/app";
 
-const props = observe('props', (path, value) => {
-	console.log(`(props)`, path, '=', value)
-})
-
-const state = observe('state', (path, value) => {
-    console.info(`(state)`, path, '=', value)
-})
-
-Object.assign(window, Tag.templates, operators)
-
-const context = {
+const object = observable({
     state: {
-        app: {
-            name: 'Falcon'
-        }
+        title: "Demo",
+        count: 0,
+        index: 0,
+        enabled: true,
+        nativeSet: new Set(["One", "Two"]),
+        timers: {
+            one: {
+                value: 0
+            }
+        },
+        items: ["Item #1", "Item #2"],
+        id: "one"
     },
-    props: {
-        color: 'red',
-        count: 1
-    }
-}
+    signals: {}
+});
 
-const arr = compute.array([ 1, 2, (a, b) => a + b ])
-const obj = compute.object({ arr, app: state`app`, bar: [1,2,3] })
-const mix = compute({
-    arr: [ 1, 2, (a, b) => a + b ],
-    obj: {
-        arr: [ 5, 7, (a, b) => a + b ],
-        app: state`app`,
-        bar: [1,2,3]
+const run = (signal.run = funtree([
+    context => {
+        context.state = object.state;
+        return context;
     }
-})
+]).run);
 
-const xxx = [
-    1,
-    [
-        obj,
-        Object.keys
-    ],
-    [
-        state`app.name`,
-        [
-            1,
-            2,
-            3,
-            state`app.count`,
-            (...ns) => ns.reduce((n,x) => n + x)
-        ]
-    ],
-    {
-        props: props``,
-        arr: [
-            100,
-            3,
-            (a,b) => a+b
-        ]
+object.state.items = {
+    one: {
+        count: 0,
+        name: "One"
+    }
+};
+
+state.timers.abc(set, { value: 200 }, object);
+state.timers.xxx(set, { value: 100 }, object);
+
+set(signals.nameChanged, signal(set(state.name, props.value)), object);
+set(signals.toggleClicked, signal(set(state.enabled, toggle)), object);
+set(signals.incClicked, signal(set(state.count, inc)), object);
+set(signals.decClicked, signal(set(state.count, dec)), object);
+
+set(
+    signals.timerRemoved,
+    signal(({ state, props }) => {
+        const timer = state.timers[props.id];
+        clearInterval(timer.iid);
+        delete state.timers[props.id];
+    }),
+    object
+);
+const timer = state.timers[state.id]();
+
+observe(state, o => console.warn(`observer\nname: ${o.name}\ncount: ${o.count}`), object);
+
+setTimeout(
+    () => {
+        window.f = observe(
+            timer,
+            function One(props = {}) {
+                console.log(`One(${props.iid}/${props.running})`, this.changes);
+            },
+            object
+        );
+        on(state.count, eq(9), set(state.name, template`Hola ${0}!`), object);
+        on(state.count, gt(5), set(state.enabled, true), object);
+        on(state.count, gt(6), set(state.name, state.count(template`Count: ${0}`)), object);
     },
-    state`app`,
-    (primitive, objKeys, deepArray, objArr, appTag) => {
-        return {primitive, objKeys, deepArray, objArr, appTag}
-    }
-]
+    10
+);
 
-function assign() {
-    return [
-        ...arguments,
-        (...values) => Object.assign({}, ...values)
-    ]
-}
-
-window.$g = (tag) => {
-
-    const result = tag.get(context)
-    const json = JSON.stringify(result, null, 4)
-    debug({json,tag})
-
-    console.group(tag.type)
-    console.log(tag.keys)
-    console.log(tag.values)
-    //console.log(result)
-    console.groupEnd()
-
-    window.hljs.highlightBlock(document.querySelector('pre code'))
-    return result
-}
-
-//compute(assign(state`app`, {cnt:props`count`}, {xxx,arrayFactory}))
-
-function objectFactory($) {
-    console.log(`objectFactory`, $)
+const mapping = app(
+    project({
+        timer,
+        count: state.count,
+        items: state.items(Object.keys, join(` * `)),
+        computed: compute(state.count, 10, (a, b) => a + b),
+        item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
+        color: state.enabled(enabled => enabled ? "red" : "green")
+    }),
+    object
+);
+const mapped = state => {
     return {
-        color: $.props`color`,
-        name: $.state`app.name`
-    }
-}
+        timer: state.timers[state.id],
+        get count() {
+            return state.count;
+        },
+        set count(value) {
+            state.count = value;
+        },
+        items: Object.keys(state.items),
+        computed: state.count + 10,
+        item: Array.from(state.nativeSet)[state.nativeSet.size - 1],
+        color: state.enabled ? "red" : "green"
+    };
+};
 
-function arrayFactory($) {
-    console.log(`arrayFactory`, $)
-    return [
-        $.props`color`,
-        $.state`app.name`
-    ]
-}
+const map = app(
+    project({
+        a: state.count,
+        b: {
+            name: state.name(template`App name: ${0}`)
+        },
+        d: [state(Object.keys, join(" * "))],
+        inc(obj) {
+            return (i = 10) => state.count(set, count => count + i, obj);
+        },
+        setName(obj) {
+            return name => state.name(set, name, obj);
+        },
+        print: () => () => print(map)
+    }),
+    object
+);
 
-window.objectFactory = objectFactory
-window.arrayFactory = arrayFactory
+const m2 = app(
+    project({
+        a: state.count,
+        k: state(Object.keys),
+        i: timer.value,
+        s: signals.incClicked
+    }),
+    object
+);
 
-window.assign = assign
-window.xxx = xxx
-window.arr = arr
-window.obj = obj
-window.mix = mix
+render(component(App, object), document.querySelector("#root"));
 
-const objects = compute(state`app`, props``, { stateCount: state`app.count`, propsCount: props`count` })
-
-
-const incAction = operators.inc(state`app.count`, props`count`)
-const setAction = operators.set(state`app.str2`, props`str2`)
-
-//(context)
-//operators.merge(state`app.merged`, state`app`, props``, { stateCount: state`app.count`, propsCount: props`count` })(context)
-
-const comp = compute({
-    name: state`app.name`,
-    color: props`color`,
-    strType: string`
-        App name: ${state`app.name`}
-        App count: ${state`app.count`}
-        Props color: ${props`color`}
-    `
-})
-
-window.str = string`name: ${state`app.name`}, color: ${props`color`}`
-window.str2 = string`
-    App name: ${state`app.name`}
-    App count: ${state`app.count`}
-    Props color: ${props`color`}
-`
-
-window.incAction = incAction
-window.setAction = setAction
-
-window.objects = objects
-window.comp = comp
-window.context = context
-window.tag = Tag
+Object.assign(window, bits, roots, {
+    observable,
+    observe,
+    is,
+    bb,
+    bitbox,
+    obj: object,
+    mapping,
+    mapped,
+    m2,
+    map,
+    run
+});

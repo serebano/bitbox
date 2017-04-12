@@ -1,12 +1,9 @@
 import native from "./native";
-import nextTick from "./nextTick";
-import { wellKnownSymbols } from "../utils";
-import bit from "../bit";
+import { wellKnownSymbols, nextTick } from "../utils";
 
-export const proxies = new WeakMap();
-export const observers = new WeakMap();
-export const queue = new Set();
-
+const proxies = new WeakMap();
+const observers = new WeakMap();
+const queue = new Set();
 const enumerate = Symbol("enumerate");
 
 let queued = false;
@@ -15,7 +12,9 @@ let currentObserver;
 export default {
     observe,
     observable,
-    isObservable
+    isObservable,
+    proxies,
+    observers
 };
 
 /**
@@ -27,21 +26,12 @@ export default {
 
 observe.index = new Map();
 
-observe.bx = observer => bit(bit, resolve => {
-    return function bx(path, fn, ...args) {
-        if (fn) path.push(value => fn(value, ...args));
-        return resolve(path, observer.target);
-    };
-});
-
 export function observe(fn, ...args) {
     if (typeof fn !== "function") throw new TypeError("First argument must be a function");
     args = args.length ? args : undefined;
 
     const observer = createObserver(fn, args);
     runObserver(observer);
-
-    if (observer.target) return observe.bx(observer);
 
     return observer;
 }
@@ -57,7 +47,6 @@ function createObserver(fn, args) {
         name: fn.displayName || fn.name,
         run() {
             runObserver(this);
-            return this.target;
         },
         unobserve() {
             if (this.fn) {
@@ -81,13 +70,14 @@ function createObserver(fn, args) {
 
 function queueObservers(target, key, path = []) {
     const observersForKey = observers.get(target).get(key);
+
     if (observersForKey && observersForKey.constructor === Set) {
-        observersForKey.forEach(o => {
-            o.changes.push(path.concat(String(key)).join("."));
-            queueObserver(o, path);
+        observersForKey.forEach(observer => {
+            observer.changes.push(path.concat(String(key)));
+            queueObserver(observer, path);
         });
     } else if (observersForKey) {
-        observersForKey.changes.push(path.concat(String(key)).join("."));
+        observersForKey.changes.push(path.concat(String(key)));
         queueObserver(observersForKey, path);
     }
 }
@@ -103,7 +93,7 @@ function queueObserver(observer) {
 function runObserver(observer) {
     try {
         currentObserver = observer;
-        observer.target = observer.fn.apply(observer, observer.args);
+        observer.fn.apply(observer, observer.args);
     } finally {
         currentObserver = undefined;
         observer.changed++;
@@ -121,9 +111,7 @@ function registerObserver(target, key, path) {
     if (currentObserver) {
         const targetObservers = observers.get(target);
         if (!targetObservers.has(key)) targetObservers.set(key, new Set());
-
         const keyObservers = targetObservers.get(key);
-
         if (!keyObservers.has(currentObserver)) {
             keyObservers.add(currentObserver);
             currentObserver.keys.push(keyObservers);
@@ -145,7 +133,6 @@ function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
             if (key === "$raw") return target;
-
             const result = Reflect.get(target, key, receiver);
             if (typeof key === "symbol" && wellKnownSymbols.has(key)) return result;
 
@@ -154,7 +141,6 @@ function createProxy(obj, path = []) {
 
             if (currentObserver) {
                 registerObserver(target, key, path);
-
                 if (isObject) return observable || createObservable(result, path.concat(key));
             }
 
@@ -202,6 +188,7 @@ function createObservable(obj, path = []) {
 
     proxies.set(obj, observable);
     proxies.set(observable, observable);
+
     observers.set(obj, new Map());
 
     return observable;

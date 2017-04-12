@@ -21,14 +21,14 @@ export default (target, path, registerObserver, queueObservers) => {
 
     target.set = function(key, value) {
         if (this.get(key) !== value) {
-            queueObservers(this, key);
+            queueObservers(this, key, path);
         }
         return native.set.apply(this, arguments);
     };
 
     target.delete = function(key) {
         if (this.has(key)) {
-            queueObservers(this, key);
+            queueObservers(this, key, path);
         }
         return native.delete.apply(this, arguments);
     };

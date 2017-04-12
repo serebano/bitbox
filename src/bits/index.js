@@ -9,6 +9,8 @@ export { default as resolve } from "./resolve";
 export { default as push } from "./push";
 export { default as unset } from "./delete";
 export { default as signal } from "./signal";
+export { default as template } from "./template";
+export { default as observe } from "./observe";
 
 /**
  * Getters
@@ -33,15 +35,21 @@ export const or = value => {
 };
 
 export const eq = value => {
-    return function eq(state) {
+    function eq(state) {
         return state === value;
-    };
+    }
+    eq.displayName = `eq(${value})`;
+    return eq;
 };
 
 export const gt = value => {
-    return function gt(state) {
+    function gt(state) {
         return state > value;
-    };
+    }
+
+    gt.displayName = `gt(${value})`;
+
+    return gt;
 };
 
 export const lt = value => {
@@ -63,9 +71,11 @@ export const concat = value => {
 };
 
 export const join = separator => {
-    return function join(array) {
+    function join(array) {
         return array.join(separator);
-    };
+    }
+    join.displayName = `join(${separator})`;
+    return join;
 };
 
 export const map = fn => {

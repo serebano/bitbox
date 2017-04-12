@@ -1,38 +1,42 @@
 import View from "react";
 import { getChangedProps } from "../utils";
-import bit from "../bit";
-import box from "../box";
-import { project } from "../bits";
+import { observe } from "../observer";
+import { is } from "../";
+
+Component.debug = false;
 
 export default function Component(component, store, ...args) {
-    if (store) return Provider(bit(store), component, ...args);
+    if (store) return Provider(store, component, ...args);
 
     const comp = props => component(props, createElement);
     comp.displayName = `${component.displayName || component.name}_Component`;
 
     class CW extends View.Component {
         componentWillMount() {
-            const c = this;
-            this.name = component.name;
-            this.target = {
-                get props() {
-                    return c.props;
-                },
-                get state() {
-                    return c.context.store.state;
-                },
-                get signals() {
-                    return c.context.store.signals;
-                }
-                //state: this.context.store.state,
-                //signals: this.context.store.signals
+            const getters = {
+                props: this.props,
+                state: this.context.store.state,
+                signals: this.context.store.signals
             };
-            this.mapped = new project(this.target, component.map);
 
-            const observer = () => this.update({ ...this.mapped });
-            observer.displayName = `${component.displayName || component.name}`;
+            this.observer = observe(() => {
+                this.__props = Object.assign(
+                    {},
+                    this.props,
+                    Object.keys(component.map).reduce(
+                        (map, key) => {
+                            const value = component.map[key];
+                            map[key] = is.box(value) || is.compute(value) ? value(getters) : value;
+                            return map;
+                        },
+                        {}
+                    )
+                );
 
-            this.observer = box(observer);
+                this.update();
+            });
+
+            this.observer.name = component.displayName || component.name;
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
@@ -51,34 +55,16 @@ export default function Component(component, store, ...args) {
             if (this._isUnmounting) return;
             this.forceUpdate();
         }
-        getProps() {
-            // const $observer = this.observer
-            // ? {
-            //       ...this.observer,
-            //       name: this.observer.fn.displayName,
-            //       keys: this.observer.keys.length,
-            //       changes: this.observer.changes.slice(),
-            //       paths: this.observer.paths.map(path => path.map(String).join("."))
-            //   }
-            // : {};
-            return Object.assign(
-                {
-                    //$observer
-                },
-                this.props,
-                this.mapped
-            );
-        }
         render() {
-            if (box.debug === true) {
+            if (Component.debug === true) {
                 return View.createElement(
                     "div",
                     {},
-                    View.createElement(comp, this.getProps()),
-                    boxdebug(this)
+                    View.createElement(comp, this.__props),
+                    View.createElement(boxdebug, this.observer)
                 );
             }
-            return View.createElement(comp, this.getProps());
+            return View.createElement(comp, this.__props);
         }
     }
 
@@ -90,26 +76,29 @@ export default function Component(component, store, ...args) {
     return CW;
 }
 
-function boxdebug(comp) {
+function boxdebug(observer) {
     return View.createElement(
         "pre",
         {
-            className: comp.observer.name,
+            className: observer.name,
             style: {
                 fontSize: 12,
+                padding: 8,
+                margin: 0,
                 color: `#555`,
-                background: `#f4f4f4`
+                background: `#f4f4f4`,
+                borderTop: `1px solid #aaa`
             }
         },
         JSON.stringify(
             {
-                name: comp.observer.name,
-                changes: comp.observer.changes,
-                changed: comp.observer.changed,
-                paths: comp.observer.paths.map(path => path.map(String).join("."))
+                name: observer.name,
+                changes: observer.changes.map(String),
+                changed: observer.changed,
+                paths: observer.paths.map(path => path.map(String).join("."))
             },
             null,
-            4
+            2
         )
     );
 }

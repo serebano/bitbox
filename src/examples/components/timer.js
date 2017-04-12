@@ -1,43 +1,55 @@
 /** @jsx h */
-import { state, props } from "../../paths";
-import { or } from "../../bits";
+import { state, props, signals } from "../../paths";
 
-function Remove({ onRemove, label }, h) {
+const timer = state.timers[props.id]();
+
+function Remove({ remove, id }, h) {
+    return <button onClick={() => remove({ id })}>remove ({id})</button>;
+}
+
+Remove.map = {
+    remove: signals.timerRemoved
+};
+
+function Toggle({ toggle, id, running }, h) {
+    return <button onClick={() => toggle()}>toggle ({id}) / [{running ? "stop" : "start"}]</button>;
+}
+
+Toggle.map = {
+    toggle: timer((timer = {}) => {
+        return () => {
+            clearInterval(timer.iid);
+            if (!timer.running) timer.iid = setInterval(() => timer.value++, 10);
+            timer.running = !timer.running;
+        };
+    }),
+    running: timer.running
+};
+
+function Value({ value, id }, h) {
     return (
-        <div style={{ padding: "6px 0" }}>
-            <button onClick={onRemove}>x ({label})</button>
+        <div style={{ padding: "6px 0", color: "#c00" }}>
+            {id} = <strong>{value}</strong>
         </div>
     );
 }
-Remove.map = {};
 
-function Timer({ timer, started, stopped, id, color, removeClicked }, h) {
+Value.map = {
+    value: timer.value(String)
+};
+
+function Timer({ id, background }, h) {
     return (
-        <div style={{ padding: 16, border: "1px solid #c00", fontSize: 18, color }}>
-            <button onClick={() => timer.startStop()}>[{timer.running ? "stop" : "start"}]</button>
-            <Remove label={id} onRemove={() => removeClicked({ id })} />
-            <span> *{id}* <strong>{timer.value}</strong></span>
+        <div style={{ padding: 16, border: "1px solid #c00", fontSize: 18, background }}>
+            <Toggle id={id} />
+            <Remove id={id} />
+            <Value id={id} />
         </div>
     );
 }
 
 Timer.map = {
-    color: state.color(or("#555")),
-    removeClicked: state.timers(object => {
-        return props => {
-            clearInterval(object[props.id].iid);
-            delete object[props.id];
-        };
-    }),
-    timer: state.timers[props.id]((timer = {}) => ({
-        value: timer.value,
-        running: timer.running,
-        startStop() {
-            clearInterval(timer.iid);
-            if (!timer.running) timer.iid = setInterval(() => timer.value++, 10);
-            timer.running = !timer.running;
-        }
-    }))
+    background: timer.running(value => value === true ? "#fff" : "#eee")
 };
 
 export default Timer;

@@ -1,5 +1,7 @@
 export { default as wellKnownSymbols } from "./wellKnownSymbols";
-export { default as pathToString } from "./pathToString";
+export { default as nextTick } from "./nextTick";
+export { default as toPrimitive } from "./toPrimitive";
+export { default as is } from "./is";
 
 export function delay(func, wait) {
     return function(...args) {

@@ -1,5 +1,8 @@
-export function $delete(target, key) {
-    return Reflect.deleteProperty(target, key);
+function $delete(target, key, obj) {
+    if (typeof target === "function") return target($delete, ...[...arguments].slice(1));
+
+    const result = Reflect.deleteProperty(target, key);
+    return Reflect.has(obj, "execution") ? undefined : result;
 }
 
-export default (path, object) => path($delete, object);
+export default $delete;

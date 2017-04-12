@@ -21,14 +21,14 @@ export default (target, path, registerObserver, queueObservers) => {
 
     target.add = function(value) {
         if (!this.has(value)) {
-            queueObservers(this, value);
+            queueObservers(this, value, path);
         }
         return native.add.apply(this, arguments);
     };
 
     target.delete = function(value) {
         if (this.has(value)) {
-            queueObservers(this, value);
+            queueObservers(this, value, path);
         }
         return native.delete.apply(this, arguments);
     };

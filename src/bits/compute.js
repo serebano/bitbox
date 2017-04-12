@@ -9,14 +9,21 @@ function Compute(...args) {
         return args.reduce(
             (result, arg, idx) => {
                 if (idx === args.length - 1) {
-                    if (is.path(arg) || is.compute(arg)) return arg(target);
+                    if (is.bitbox(arg) || is.compute(arg)) {
+                        //if (compute.$mapkey) arg.$mapkey = compute.$mapkey;
+                        return arg(target);
+                    }
+                    //if (is.path(arg) || is.compute(arg)) return arg(target);
                     if (is.function(arg)) return arg(...result);
 
                     return arg;
                 }
 
-                if (is.path(arg) || is.compute(arg)) result.push(arg(target));
-                else if (is.function(arg)) result.push(arg(...result));
+                if (is.bitbox(arg) || is.compute(arg)) {
+                    //if (compute.$mapkey) arg.$mapkey = compute.$mapkey;
+                    result.push(arg(target));
+                    //} else if (is.compute(arg)) result.push(arg(target));
+                } else if (is.function(arg)) result.push(arg(...result));
                 else result.push(arg);
 
                 return result;
