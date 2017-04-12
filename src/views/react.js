@@ -1,44 +1,70 @@
 import View from "react";
 import { getChangedProps } from "../utils";
+import { observe } from "../observer";
+import { is } from "../";
 
-export function Provider(store, component, props, children) {
-    window.store = store;
-    return createElement(Container, { store }, createElement(component, props, children));
-}
+Component.debug = false;
 
-export function Component(component, store, ...args) {
-    if (store) {
-        return Provider(store, component, ...args);
-    }
+export default function Component(component, store, ...args) {
+    if (store) return Provider(store, component, ...args);
 
-    const target = component.connect;
     const comp = props => component(props, createElement);
+    comp.displayName = `${component.displayName || component.name}_Component`;
 
     class CW extends View.Component {
         componentWillMount() {
-            const listener = changes => this.update(this.props, changes);
-            listener.displayName = component.displayName || component.name;
-            this.conn = this.context.store.connect(target, listener, this.props);
+            const getters = {
+                props: this.props,
+                state: this.context.store.state,
+                signals: this.context.store.signals
+            };
+
+            this.observer = observe(() => {
+                this.__props = Object.assign(
+                    {},
+                    this.props,
+                    Object.keys(component.map).reduce(
+                        (map, key) => {
+                            const value = component.map[key];
+                            map[key] = is.box(value) || is.compute(value) ? value(getters) : value;
+                            return map;
+                        },
+                        {}
+                    )
+                );
+
+                this.update();
+            });
+
+            this.observer.name = component.displayName || component.name;
         }
         componentWillReceiveProps(nextProps) {
             const changes = getChangedProps(this.props, nextProps);
-
-            if (changes.length) this.update(nextProps, changes);
+            if (changes.length) {
+                this.update(nextProps, changes);
+            }
         }
         componentWillUnmount() {
             this._isUnmounting = true;
-            this.conn.remove();
+            this.observer.unobserve();
         }
-
         shouldComponentUpdate() {
             return false;
         }
         update(props, changes) {
-            this.conn.update(props);
+            if (this._isUnmounting) return;
             this.forceUpdate();
         }
         render() {
-            return View.createElement(comp, this.conn.get(this.props));
+            if (Component.debug === true) {
+                return View.createElement(
+                    "div",
+                    {},
+                    View.createElement(comp, this.__props),
+                    View.createElement(boxdebug, this.observer)
+                );
+            }
+            return View.createElement(comp, this.__props);
         }
     }
 
@@ -48,6 +74,33 @@ export function Component(component, store, ...args) {
     };
 
     return CW;
+}
+
+function boxdebug(observer) {
+    return View.createElement(
+        "pre",
+        {
+            className: observer.name,
+            style: {
+                fontSize: 12,
+                padding: 8,
+                margin: 0,
+                color: `#555`,
+                background: `#f4f4f4`,
+                borderTop: `1px solid #aaa`
+            }
+        },
+        JSON.stringify(
+            {
+                name: observer.name,
+                changes: observer.changes.map(String),
+                changed: observer.changed,
+                paths: observer.paths.map(path => path.map(String).join("."))
+            },
+            null,
+            2
+        )
+    );
 }
 
 /**
@@ -74,17 +127,25 @@ Container.childContextTypes = {
     store: View.PropTypes.object.isRequired
 };
 
+export function Provider(store, component, props, children) {
+    window.store = store;
+    return createElement(
+        Container,
+        { store },
+        createElement(Component(component), props, children)
+    );
+}
+
 const _createElement = View.createElement;
 
 View.createElement = (arg, ...args) => {
-    if (typeof arg === "function" && arg.connect) return _createElement(Component(arg), ...args);
+    if (typeof arg === "function" && arg.map) return _createElement(Component(arg), ...args);
 
     return _createElement(arg, ...args);
 };
 
 export function createElement(arg, ...rest) {
-    if (typeof arg === "function" && arg.connect)
-        return View.createElement(Component(arg), ...rest);
+    if (typeof arg === "function" && arg.map) return View.createElement(Component(arg), ...rest);
 
     return View.createElement(arg, ...rest);
 }
