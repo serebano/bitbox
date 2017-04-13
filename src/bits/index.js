@@ -1,8 +1,7 @@
-export { default as assign } from "./assign";
 export { default as project } from "./project";
 export { default as compute } from "./compute";
 export { default as on } from "./on";
-export { default as resolve } from "./resolve";
+// export { default as resolve } from "./resolve";
 export { default as push } from "./push";
 export { default as signal } from "./signal";
 export { default as template } from "./template";
@@ -11,6 +10,9 @@ export { default as template } from "./template";
 /**
  * Getters
  */
+export function object(obj) {
+    return Object.assign({}, obj);
+}
 
 export function inc(number) {
     return number + 1;

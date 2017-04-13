@@ -54,10 +54,64 @@ function createBox(keys = [], isRoot = true) {
     return createProxy(box, isRoot);
 }
 
-function createProxy(box, isRoot) {
-    return new Proxy(box, {
+bitbox.proxy = mappingProxy;
+
+function mappingProxy(target, object) {
+    return new Proxy(target, {
+        get(target, key) {
+            if (Reflect.has(target, key)) {
+                const box = Reflect.get(target, key);
+                if (!object) return is.box(box) ? box : createBox(box);
+                return resolve(object, box);
+            }
+        },
+        set(target, key, value) {
+            if (Reflect.has(target, key)) {
+                const box = Reflect.get(target, key);
+                if (!object)
+                    return is.box(box)
+                        ? box
+                        : createBox(box)(bitbox.set, is.box(value) ? value(object) : value);
+
+                return resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
+            }
+            return false;
+        }
+    });
+}
+
+function createProxy(box, isRoot, mapping = {}) {
+    const proxy = new Proxy(box, {
+        apply(target, thisArg, args) {
+            const keys = Reflect.get(target, symbol.keys);
+            const last = keys[keys.length - 1];
+
+            if (is.object(last) && !is.array(last)) {
+                mapping = last;
+            }
+
+            if (Object.keys(mapping).length) {
+                const object = is.object(args[args.length - 1]) && args.pop();
+
+                if (object) return resolve(mappingProxy(mapping, object), args);
+            }
+
+            return Reflect.apply(target, thisArg, args);
+        },
         get(target, key, receiver) {
             if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
+
+            const keys = Reflect.get(target, symbol.keys);
+            const last = keys[keys.length - 1];
+
+            if (is.object(last) && !is.array(last)) {
+                const path = Reflect.get(last, key);
+                return is.box(path) ? path : bitbox.from(path);
+            }
+
+            if (Reflect.has(mapping, key)) {
+                return Reflect.get(mapping, key);
+            }
 
             if (key === "apply") return Reflect.get(target, key);
             if (key === "displayName") return toPrimitive(Reflect.get(target, symbol.keys));
@@ -79,6 +133,13 @@ function createProxy(box, isRoot) {
             keyPrimitive = undefined;
 
             return isRoot ? createBox(target, false) : receiver;
+        },
+        set(target, key, value) {
+            return Reflect.set(mapping, key, bitbox.from(value));
+        },
+        deleteProperty(target, key) {
+            return Reflect.deleteProperty(mapping, key);
         }
     });
+    return proxy;
 }
