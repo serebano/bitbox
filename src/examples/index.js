@@ -1,27 +1,14 @@
-import { set, observable } from "../main";
+import { set, observe } from "../main";
 import * as bits from "../bits";
 import funtree from "../bits/run";
 import { render } from "react-dom";
 import { is } from "../utils";
 import component from "../views/react";
 import { app, state, props, signals } from "./app";
-import {
-    toggle,
-    inc,
-    dec,
-    gt,
-    eq,
-    on,
-    compute,
-    project,
-    join,
-    signal,
-    template,
-    observe
-} from "../bits";
+import { toggle, inc, dec, gt, eq, on, compute, project, join, signal, template } from "../bits";
 import App from "./components/app";
 
-const object = observable({
+const object = {
     state: {
         title: "Demo",
         count: 0,
@@ -31,13 +18,15 @@ const object = observable({
         timers: {
             one: {
                 value: 0
-            }
+            },
+            abc: {},
+            xxx: {}
         },
         items: ["Item #1", "Item #2"],
         id: "one"
     },
     signals: {}
-});
+};
 
 const run = (signal.run = funtree([
     context => {
@@ -72,16 +61,18 @@ set(
 );
 const timer = state.timers[state.id]();
 
-observe(state, o => console.warn(`observer\nname: ${o.name}\ncount: ${o.count}`), object);
-
 setTimeout(
     () => {
+        observe(
+            (o = {}) => console.warn(`observer\nname: ${o.name}\ncount: ${o.count}`),
+            state(object)
+        );
+
         window.f = observe(
-            timer,
             function One(props = {}) {
                 console.log(`One(${props.iid}/${props.running})`, this.changes);
             },
-            object
+            timer(object)
         );
         on(state.count, eq(9), set(state.name, template`Hola ${0}!`), object);
         on(state.count, gt(5), set(state.enabled, true), object);
@@ -144,7 +135,7 @@ const m2 = app(
     }),
     object
 );
-
+component.debug = true;
 render(component(App, object), document.querySelector("#root"));
 
 Object.assign(window, bits, {

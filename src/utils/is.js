@@ -6,9 +6,8 @@ import { symbol } from "../bitbox";
 const handler = ["resolve", "get", "set", "has", "apply", "unset"];
 
 const is = {
-    bit: arg => is.object(arg) && isObservable(arg),
+    observable: arg => is.object(arg) && isObservable(arg),
     box: arg => is.function(arg) && Reflect.has(arg, symbol.keys),
-    bitbox: arg => is.function(arg) && Reflect.has(arg, symbol.keys),
     trap: arg => is.function(arg) && handler.includes(arg.name),
     project: arg => Project.isProject(arg),
     compute: arg => arg && Compute.isCompute(arg),

@@ -6,7 +6,7 @@ export { default as resolve } from "./resolve";
 export { default as push } from "./push";
 export { default as signal } from "./signal";
 export { default as template } from "./template";
-export { default as observe } from "./observe";
+// export { default as observe } from "./observe";
 
 /**
  * Getters
