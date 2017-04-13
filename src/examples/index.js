@@ -1,5 +1,4 @@
-import { set } from "../handler";
-import { observable } from "../observer";
+import { set, observable } from "../main";
 import * as bits from "../bits";
 import funtree from "../bits/run";
 import { render } from "react-dom";

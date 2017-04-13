@@ -1,12 +1,22 @@
-import bitbox from "../";
+import bitbox, { set, observable } from "../main";
+import { inc } from "../bits";
 
-const app = bitbox();
-const state = app.state();
-const signals = app.signals();
-const modules = app.modules();
+export const app = bitbox([
+    function resolve(resolve, object, keys) {
+        console.log(`resolve, object, keys`, { resolve, object, keys });
+        return resolve(observable(object), keys);
+    }
+]);
 
-function Store(object) {
-    const store = bitbox.observable(object);
+export const state = app.state();
+export const signals = app.signals();
 
-    return store;
-}
+export const store = app({
+    count: 0
+});
+
+bitbox.observe(({ count }) => console.warn(`count = ${count}`), store);
+bitbox.observe(({ name }) => console.warn(`name = ${name}`), store);
+
+app.name(set, `Demo App`, store);
+app.count(set, inc, store);
