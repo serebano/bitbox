@@ -10,7 +10,7 @@ import { is } from "../utils";
 function set(target, key, value, object) {
     if (is.box(target)) return target(set, key, value);
 
-    const resolved = is.box(value) || is.compute(value)
+    const resolved = is.box(value)
         ? value(object)
         : is.function(value) && !(value.resolve === false)
               ? value(Reflect.get(target, key))

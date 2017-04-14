@@ -49,7 +49,7 @@ function Timer({ id, background }, h) {
 }
 
 Timer.map = {
-    background: timer.running(value => value === true ? "#fff" : "#eee")
+    background: timer.running(value => value === true ? "#fff" : "#aaa")
 };
 
 export default Timer;

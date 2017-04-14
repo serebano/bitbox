@@ -69,27 +69,32 @@ function mappingProxy(target, object) {
             if (Reflect.has(target, key)) {
                 const box = Reflect.get(target, key);
                 if (!object)
-                    return is.box(box)
-                        ? box(bitbox.set, is.box(value) ? value(object) : value)
-                        : createBox(box)(bitbox.set, is.box(value) ? value(object) : value);
+                    return createBox(box)(bitbox.set, is.box(value) ? value(object) : value);
+                // return is.box(box)
+                //     ? box(bitbox.set, is.box(value) ? value(object) : value)
+                //     : createBox(box)(bitbox.set, is.box(value) ? value(object) : value);
 
-                return is.box(box)
-                    ? box(bitbox.set, is.box(value) ? value(object) : value, object)
-                    : resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
+                return resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
+                // return is.box(box)
+                //     ? box(bitbox.set, is.box(value) ? value(object) : value, object)
+                //     : resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
             }
             return false;
         }
     });
 }
 
-function createProxy(box, isRoot, mapping = {}) {
+function createProxy(box, isRoot) {
     const proxy = new Proxy(box, {
         apply(target, thisArg, args) {
-            const keys = Reflect.get(target, symbol.keys);
+            const keys = Reflect.get(target, symbol.root);
             const last = keys[keys.length - 1];
             if (is.object(last)) {
                 const object = is.object(args[args.length - 1]) && args.pop();
-                if (object) return resolve(mappingProxy(last, object), args);
+                if (object) {
+                    if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root));
+                    return resolve(mappingProxy(last, object), args);
+                }
             }
 
             return Reflect.apply(target, thisArg, args);
@@ -143,10 +148,10 @@ function createProxy(box, isRoot, mapping = {}) {
             }
             if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
             return true;
-        },
-        deleteProperty(target, key) {
-            return Reflect.deleteProperty(mapping, key);
         }
+        // deleteProperty(target, key) {
+        //     return Reflect.deleteProperty(mapping, key);
+        // }
     });
     return proxy;
 }

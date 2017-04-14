@@ -1,37 +1,27 @@
 import View from "react";
-import { is, getChangedProps } from "../utils";
-import { observe } from "../observer";
+import { getChangedProps } from "../utils";
+import bitbox, { observe } from "../main";
 
 Component.debug = false;
 
 export default function Component(component, store, ...args) {
     if (store) return Provider(store, component, ...args);
 
+    const box = bitbox(component.map);
     const comp = props => component(props, createElement);
+
     comp.displayName = `${component.displayName || component.name}_Component`;
 
     class CW extends View.Component {
         componentWillMount() {
-            const getters = {
+            this.box = box({
                 props: this.props,
                 state: this.context.store.state,
                 signals: this.context.store.signals
-            };
+            });
 
             this.observer = observe(() => {
-                this.__props = Object.assign(
-                    {},
-                    this.props,
-                    Object.keys(component.map).reduce(
-                        (map, key) => {
-                            const value = component.map[key];
-                            map[key] = is.box(value) || is.compute(value) ? value(getters) : value;
-                            return map;
-                        },
-                        {}
-                    )
-                );
-
+                this.map = Object.assign({}, this.props, this.box);
                 this.update();
             });
 
@@ -59,11 +49,11 @@ export default function Component(component, store, ...args) {
                 return View.createElement(
                     "div",
                     {},
-                    View.createElement(comp, this.__props),
+                    View.createElement(comp, this.map),
                     View.createElement(boxdebug, this.observer)
                 );
             }
-            return View.createElement(comp, this.__props);
+            return View.createElement(comp, this.map);
         }
     }
 

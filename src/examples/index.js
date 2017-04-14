@@ -1,15 +1,15 @@
-import { set, observe } from "../main";
+import bitbox, { set, observable } from "../main";
 import * as bits from "../bits";
 import funtree from "../bits/run";
 import { render } from "react-dom";
 import { is } from "../utils";
 import component from "../views/react";
 import { app, state, props, signals } from "./app";
-import { toggle, inc, dec, gt, eq, on, compute, project, join, signal, template } from "../bits";
+import { toggle, inc, dec, compute, join, signal } from "../bits";
 import App from "./components/app";
 
 const object = {
-    state: {
+    state: observable({
         title: "Demo",
         count: 0,
         index: 0,
@@ -24,7 +24,7 @@ const object = {
         },
         items: ["Item #1", "Item #2"],
         id: "one"
-    },
+    }),
     signals: {}
 };
 
@@ -34,13 +34,6 @@ const run = (signal.run = funtree([
         return context;
     }
 ]).run);
-
-object.state.items = {
-    one: {
-        count: 0,
-        name: "One"
-    }
-};
 
 state.timers.abc(set, { value: 200 }, object);
 state.timers.xxx(set, { value: 100 }, object);
@@ -59,92 +52,24 @@ set(
     }),
     object
 );
-const timer = state.timers[state.id]();
 
-setTimeout(
-    () => {
-        observe(
-            (o = {}) => console.warn(`observer\nname: ${o.name}\ncount: ${o.count}`),
-            state(object)
-        );
+const mapping = bitbox({
+    count: state.count,
+    timer: state.timers[state.id],
+    items: state.items(Object.keys, join(` * `)),
+    computed: compute(state.count, 10, (a, b) => a + b),
+    item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
+    color: state.enabled(enabled => enabled ? "red" : "green")
+});
 
-        window.f = observe(
-            function One(props = {}) {
-                console.log(`One(${props.iid}/${props.running})`, this.changes);
-            },
-            timer(object)
-        );
-        on(state.count, eq(9), set(state.name, template`Hola ${0}!`), object);
-        on(state.count, gt(5), set(state.enabled, true), object);
-        on(state.count, gt(6), set(state.name, state.count(template`Count: ${0}`)), object);
-    },
-    10
-);
+component.debug = false;
 
-const mapping = app(
-    project({
-        timer,
-        count: state.count,
-        items: state.items(Object.keys, join(` * `)),
-        computed: compute(state.count, 10, (a, b) => a + b),
-        item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
-        color: state.enabled(enabled => enabled ? "red" : "green")
-    }),
-    object
-);
-const mapped = state => {
-    return {
-        timer: state.timers[state.id],
-        get count() {
-            return state.count;
-        },
-        set count(value) {
-            state.count = value;
-        },
-        items: Object.keys(state.items),
-        computed: state.count + 10,
-        item: Array.from(state.nativeSet)[state.nativeSet.size - 1],
-        color: state.enabled ? "red" : "green"
-    };
-};
-
-const map = app(
-    project({
-        a: state.count,
-        b: {
-            name: state.name(template`App name: ${0}`)
-        },
-        d: [state(Object.keys, join(" * "))],
-        inc(obj) {
-            return (i = 10) => state.count(set, count => count + i, obj);
-        },
-        setName(obj) {
-            return name => state.name(set, name, obj);
-        },
-        print: () => () => print(map)
-    }),
-    object
-);
-
-const m2 = app(
-    project({
-        a: state.count,
-        k: state(Object.keys),
-        i: timer.value,
-        s: signals.incClicked
-    }),
-    object
-);
-component.debug = true;
 render(component(App, object), document.querySelector("#root"));
 
 Object.assign(window, bits, {
     is,
     obj: object,
     mapping,
-    mapped,
-    m2,
-    map,
     run,
     app,
     state,

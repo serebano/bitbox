@@ -1,41 +1,24 @@
-import is from "../utils/is";
+import { is } from "../utils";
 
-Compute.args = Symbol("bitbox.args");
-Compute.compute = Symbol("bitbox.compute");
-Compute.isCompute = arg => is.function(arg) && Reflect.has(arg, Compute.compute);
-
-function Compute(...args) {
-    function compute(target) {
+function compute(...args) {
+    return function compute(target) {
         return args.reduce(
             (result, arg, idx) => {
                 if (idx === args.length - 1) {
-                    if (is.bitbox(arg) || is.compute(arg)) {
-                        //if (compute.$mapkey) arg.$mapkey = compute.$mapkey;
-                        return arg(target);
-                    }
-                    //if (is.path(arg) || is.compute(arg)) return arg(target);
+                    if (is.box(arg)) return arg(target);
                     if (is.function(arg)) return arg(...result);
-
                     return arg;
                 }
 
-                if (is.bitbox(arg) || is.compute(arg)) {
-                    //if (compute.$mapkey) arg.$mapkey = compute.$mapkey;
-                    result.push(arg(target));
-                    //} else if (is.compute(arg)) result.push(arg(target));
-                } else if (is.function(arg)) result.push(arg(...result));
+                if (is.box(arg)) result.push(arg(target));
+                else if (is.function(arg)) result.push(arg(...result));
                 else result.push(arg);
 
                 return result;
             },
             []
         );
-    }
-
-    compute[Compute.args] = args;
-    compute[Compute.compute] = true;
-
-    return compute;
+    };
 }
 
-export default Compute;
+export default compute;

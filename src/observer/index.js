@@ -22,15 +22,16 @@ export function observe(fn, ...args) {
     if (typeof fn !== "function") throw new TypeError("First argument must be a function");
     args = args.length ? args : undefined;
 
-    const observer = createObserver(fn, args);
+    const observer = createObserver(fn, undefined, args);
     runObserver(observer);
 
     return observer;
 }
 
-function createObserver(fn, args) {
+function createObserver(fn, context, args) {
     const observer = {
         fn,
+        context,
         args,
         keys: [],
         paths: [],
@@ -81,7 +82,7 @@ function queueObserver(observer) {
 function runObserver(observer) {
     try {
         currentObserver = observer;
-        observer.fn.apply(observer, observer.args);
+        observer.fn.apply(observer.context, observer.args);
     } finally {
         currentObserver = undefined;
         observer.changed++;

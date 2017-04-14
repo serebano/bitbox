@@ -1,4 +1,4 @@
-export { default as project } from "./project";
+// export { default as project } from "./project";
 export { default as compute } from "./compute";
 export { default as on } from "./on";
 // export { default as resolve } from "./resolve";
@@ -10,6 +10,7 @@ export { default as template } from "./template";
 /**
  * Getters
  */
+
 export function object(obj) {
     return Object.assign({}, obj);
 }
