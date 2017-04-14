@@ -15,7 +15,7 @@ const is = {
     array: arg => Array.isArray(arg),
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",
-    object: arg => typeof arg === "object", // && !is.array(arg),
+    object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg), // && !is.array(arg),
     function: arg => typeof arg === "function",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null

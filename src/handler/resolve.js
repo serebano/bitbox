@@ -19,7 +19,9 @@ function resolve(object, path = []) {
             if (is.array(key)) {
                 key = resolve(object, key);
             }
-
+            if (is.object(key)) {
+                return target;
+            }
             if (is.function(key)) {
                 return key(target);
             }

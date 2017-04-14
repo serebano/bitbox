@@ -2,12 +2,10 @@ import bitbox, { observable } from "../main";
 
 const state = bitbox("state", observable);
 
-const foo = bitbox({
-    title: state.title,
-    count: [observable, "state", "count"],
-    timer: [observable, "state", "timers", ["state", "id"]],
-    nameChanged: ["signals", "nameChanged"]
-});
+const baz = state();
+baz.count = [...baz, "count"];
+baz.timer = baz.timers[baz.id];
+baz.count2 = baz.count(String);
 
 const bar = bitbox();
 
@@ -17,6 +15,19 @@ Object.assign(bar, {
     timer: state.timers[state.id]
 });
 
-export { foo, bar };
+const map = {
+    title: state.title,
+    count: [observable, "state", "count"],
+    timer: [observable, "state", "timers", ["state", "id"]],
+    nameChanged: ["signals", "nameChanged"],
+    baz,
+    bar
+};
 
-//observe(() => foo(print, console.log, obj))
+const foo = bitbox(map);
+
+//baz.bar = bar;
+
+export { foo, bar, baz, map };
+
+//observe(() => foo(stringify, console.log, obj))

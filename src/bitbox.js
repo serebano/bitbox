@@ -1,4 +1,4 @@
-import { is, toPrimitive } from "./utils";
+import { is, toPrimitive, toJSON } from "./utils";
 import { resolve } from "./handler";
 
 let keyPath, keyPrimitive;
@@ -62,7 +62,7 @@ function mappingProxy(target, object) {
             if (Reflect.has(target, key)) {
                 const box = Reflect.get(target, key);
                 if (!object) return is.box(box) ? box : createBox(box);
-                return resolve(object, box);
+                return is.box(box) ? box(object) : resolve(object, box);
             }
         },
         set(target, key, value) {
@@ -70,10 +70,12 @@ function mappingProxy(target, object) {
                 const box = Reflect.get(target, key);
                 if (!object)
                     return is.box(box)
-                        ? box
+                        ? box(bitbox.set, is.box(value) ? value(object) : value)
                         : createBox(box)(bitbox.set, is.box(value) ? value(object) : value);
 
-                return resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
+                return is.box(box)
+                    ? box(bitbox.set, is.box(value) ? value(object) : value, object)
+                    : resolve(object, [...box, bitbox.set, is.box(value) ? value(object) : value]);
             }
             return false;
         }
@@ -85,35 +87,18 @@ function createProxy(box, isRoot, mapping = {}) {
         apply(target, thisArg, args) {
             const keys = Reflect.get(target, symbol.keys);
             const last = keys[keys.length - 1];
-
-            if (is.object(last) && !is.array(last)) {
-                mapping = last;
-            }
-
-            if (Object.keys(mapping).length) {
+            if (is.object(last)) {
                 const object = is.object(args[args.length - 1]) && args.pop();
-
-                if (object) return resolve(mappingProxy(mapping, object), args);
+                if (object) return resolve(mappingProxy(last, object), args);
             }
 
             return Reflect.apply(target, thisArg, args);
         },
         get(target, key, receiver) {
-            if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
-
-            const keys = Reflect.get(target, symbol.keys);
-            const last = keys[keys.length - 1];
-
-            if (is.object(last) && !is.array(last)) {
-                const path = Reflect.get(last, key);
-                return is.box(path) ? path : bitbox.from(path);
-            }
-
-            if (Reflect.has(mapping, key)) {
-                return Reflect.get(mapping, key);
-            }
+            if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice());
 
             if (key === "apply") return Reflect.get(target, key);
+            if (key === "toJSON") return () => toJSON(Reflect.get(target, symbol.keys));
             if (key === "displayName") return toPrimitive(Reflect.get(target, symbol.keys));
 
             if (key === Symbol.toPrimitive) {
@@ -123,6 +108,17 @@ function createProxy(box, isRoot, mapping = {}) {
 
             if (typeof key === "symbol" && Reflect.has(target, key))
                 return Reflect.get(target, key);
+
+            const root = Reflect.get(target, symbol.root);
+            const last = root[root.length - 1];
+
+            if (is.object(last)) {
+                const box = Reflect.has(last, key) && Reflect.get(last, key);
+
+                if (box) return is.box(box) ? box : bitbox.from(box);
+
+                Reflect.set(target, symbol.keys, Reflect.get(target, symbol.keys).slice(0, -1));
+            }
 
             Reflect.set(target, symbol.keys, [
                 ...Reflect.get(target, symbol.keys),
@@ -135,7 +131,17 @@ function createProxy(box, isRoot, mapping = {}) {
             return isRoot ? createBox(target, false) : receiver;
         },
         set(target, key, value) {
-            return Reflect.set(mapping, key, bitbox.from(value));
+            if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
+            const keys = Reflect.get(target, symbol.root);
+            const last = keys[keys.length - 1];
+            if (is.object(last)) {
+                Reflect.set(last, key, bitbox.from(value));
+            } else {
+                keys.push({
+                    [key]: bitbox.from(value)
+                });
+            }
+            return true;
         },
         deleteProperty(target, key) {
             return Reflect.deleteProperty(mapping, key);

@@ -82,6 +82,6 @@ export const map = fn => {
     };
 };
 
-export function print(object) {
+export function stringify(object) {
     return JSON.stringify(object, null, 4);
 }
