@@ -16,15 +16,9 @@ function resolve(object, path = []) {
 
     return keys.reduce(
         (target, key, index) => {
-            if (is.array(key)) {
-                key = resolve(object, key);
-            }
-            if (is.object(key)) {
-                return target;
-            }
-            if (is.function(key)) {
-                return key(target);
-            }
+            if (is.array(key)) key = resolve(object, key);
+
+            if (is.function(key)) return key(target);
 
             if (is.trap(keys[index + 1])) {
                 const [fn, ...args] = keys.splice(index + 1);

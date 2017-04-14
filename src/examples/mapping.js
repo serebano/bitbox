@@ -26,7 +26,7 @@ const map = {
 
 const foo = bitbox(map);
 
-//baz.bar = bar;
+baz.bar = bar;
 
 export { foo, bar, baz, map };
 

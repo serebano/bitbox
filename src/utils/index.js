@@ -3,6 +3,7 @@ export { default as nextTick } from "./nextTick";
 export { default as toPrimitive } from "./toPrimitive";
 export { default as is } from "./is";
 export { default as toJSON } from "./toJSON";
+export { default as toArray } from "./toArray";
 
 export function delay(func, wait) {
     return function(...args) {

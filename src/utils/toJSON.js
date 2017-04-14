@@ -7,7 +7,7 @@ function toJSON(keys) {
             : is.object(key)
                   ? Object.keys(key).reduce(
                         (map, k) => {
-                            map[k] = is.box(key[k]) ? key[k].toJSON(true) : toJSON(key[k]);
+                            map[k] = is.box(key[k]) ? key[k].toJSON() : toJSON(key[k]);
                             return map;
                         },
                         {}

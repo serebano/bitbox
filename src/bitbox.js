@@ -1,4 +1,4 @@
-import { is, toPrimitive, toJSON } from "./utils";
+import { is, toPrimitive, toJSON, toArray } from "./utils";
 import { resolve } from "./handler";
 
 let keyPath, keyPrimitive;
@@ -49,7 +49,7 @@ function createBox(keys = [], isRoot = true) {
         () => keyPrimitive = toPrimitive(Reflect.get(box, symbol.keys))
     );
     Reflect.set(box, Symbol.iterator, () =>
-        Array.prototype[Symbol.iterator].call(Reflect.get(box, symbol.keys)));
+        Array.prototype[Symbol.iterator].call(toArray(Reflect.get(box, symbol.keys))));
 
     return createProxy(box, isRoot);
 }
@@ -99,6 +99,7 @@ function createProxy(box, isRoot, mapping = {}) {
 
             if (key === "apply") return Reflect.get(target, key);
             if (key === "toJSON") return () => toJSON(Reflect.get(target, symbol.keys));
+            if (key === "toArray") return () => toArray(Reflect.get(target, symbol.keys));
             if (key === "displayName") return toPrimitive(Reflect.get(target, symbol.keys));
 
             if (key === Symbol.toPrimitive) {
@@ -131,16 +132,16 @@ function createProxy(box, isRoot, mapping = {}) {
             return isRoot ? createBox(target, false) : receiver;
         },
         set(target, key, value) {
-            if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
             const keys = Reflect.get(target, symbol.root);
             const last = keys[keys.length - 1];
             if (is.object(last)) {
-                Reflect.set(last, key, bitbox.from(value));
+                Reflect.set(last, key, is.object(value) ? bitbox(value) : bitbox.from(value));
             } else {
                 keys.push({
-                    [key]: bitbox.from(value)
+                    [key]: is.object(value) ? bitbox(value) : bitbox.from(value)
                 });
             }
+            if (isRoot) Reflect.set(target, symbol.keys, Reflect.get(target, symbol.root).slice(0));
             return true;
         },
         deleteProperty(target, key) {
