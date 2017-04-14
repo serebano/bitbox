@@ -52,12 +52,12 @@ set(
     }),
     object
 );
-
+const timers = state.timers();
 const mapping = bitbox({
     count: state.count,
-    timer: state.timers[state.id],
+    timer: timers[state.id],
     items: state.items(Object.keys, join(` * `)),
-    computed: compute(state.count, 10, (a, b) => a + b),
+    computed: bitbox(compute(state.count, timers(Object.keys).length, join("-"))),
     item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
     color: state.enabled(enabled => enabled ? "red" : "green")
 });

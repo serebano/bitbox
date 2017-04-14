@@ -1,5 +1,5 @@
-import bitbox, { set, observable, observe, is } from "../main";
-import { inc, compute } from "../bits";
+import bitbox, { set, observable, observe } from "../main";
+import { inc, compute, join, template } from "../bits";
 
 export const app = bitbox();
 export const state = bitbox("state", observable);
@@ -14,10 +14,15 @@ export const store = {
 export const one = bitbox({
     count: state.count,
     name: state.name,
-    computed: app(compute(state.count, state.name, (count, name) => `${count}/${name}`))
+    computed: bitbox(compute(state.count, state.name, join(` | `)))
 });
 
-observe(one => console.info(`map = { name: ${one.name}, count: ${one.count} }`), one(store));
+observe(
+    ({ name, count }) => {
+        console.info(`map = { name: ${name}, count: ${count} }`);
+    },
+    one(store)
+);
 
 observe(state => console.info(`count = ${state.count}`), state(store));
 observe(state => console.info(`name = ${state.name}`), state(store));

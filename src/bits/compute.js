@@ -1,24 +1,23 @@
-import { is } from "../utils";
+import { is, toPrimitive } from "../utils";
 
 function compute(...args) {
-    return function compute(target) {
+    function compute(target) {
         return args.reduce(
             (result, arg, idx) => {
-                if (idx === args.length - 1) {
-                    if (is.box(arg)) return arg(target);
-                    if (is.function(arg)) return arg(...result);
-                    return arg;
-                }
+                if (idx === args.length - 1)
+                    return is.box(arg) ? arg(target) : is.function(arg) ? arg(result) : arg;
 
-                if (is.box(arg)) result.push(arg(target));
-                else if (is.function(arg)) result.push(arg(...result));
-                else result.push(arg);
-
-                return result;
+                return is.box(arg)
+                    ? [...result, arg(target)]
+                    : is.function(arg) ? [...result, arg(...result)] : [...result, arg];
             },
             []
         );
-    };
+    }
+
+    compute.displayName = `compute(${toPrimitive(args)})`;
+
+    return compute;
 }
 
 export default compute;
