@@ -41,12 +41,12 @@ function createBox(keys = [], isRoot = true) {
             }
         },
         [Symbol.toPrimitive]: {
-            value: function toPrimitive() {
+            value: function primitive() {
                 return (keyPrimitive = toPrimitive(Reflect.get(box, symbol.path)));
             }
         },
         [Symbol.toStringTag]: {
-            value: function toStringTag() {
+            value: function tag() {
                 return "bitbox";
             }
         },

@@ -2,14 +2,16 @@
 import bitbox from "../bitbox";
 import component from "../views/react";
 import { render } from "react-dom";
-import { compute, join, or, inc } from "../operators";
+import { compute, join, or, inc, set } from "../operators";
 import store, { root, props, state, foo, deep, count, app } from "./app";
+import Count from "./components/count";
 
 export { root, props, state, foo, deep, count, app, store, component };
 
 export function App(props, h) {
     return (
         <div>
+            <div><Count /></div>
             <Demo id={props.id} />
         </div>
     );
@@ -48,12 +50,12 @@ export const one = bitbox({
 //bitbox.observe(state => console.info(`{ name = ${state.name}, count = ${state.count} }`), one(store));
 
 state(store).count++;
-bitbox.set(store, state.count, 100);
-bitbox.set(store, state.name, `bitbox demo`);
+set(state.count, state.count(inc), store);
+set(state.name, `bitbox demo`, store);
 
-setInterval(() => {
-    bitbox.set(store, count, state.count(inc, store));
-}, 1);
+// setInterval(() => {
+//     bitbox.set(store, count, state.count(inc, store));
+// }, 1);
 
 component.debug = true;
 

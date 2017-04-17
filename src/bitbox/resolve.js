@@ -26,12 +26,14 @@ function resolve(object, path = [], trap, ...args) {
         if (is.function(key)) return key(target);
 
         if (trap && (!path.length || index === path.length - 1)) {
+            if (trap.name === "set") args[0] = is.box(args[0]) ? args[0](object) : args[0];
             return trap.call(undefined, target, key, ...args);
         }
 
         if (is.undefined(target)) {
+            console.log(object, key, path, target, trap, args);
             throw new Error(
-                `[bitbox.resolve] Cannot resolve path: [${path.map(toPrimitive)}] (key: ${key}, index: ${index})`
+                `[bitbox.resolve] Cannot resolve path: [${toPrimitive(path)}] (key: ${key}, index: ${index})`
             );
         }
 
@@ -39,7 +41,7 @@ function resolve(object, path = [], trap, ...args) {
     }
 
     if (!path.length) path = [rootKey];
-    else if (trap && trap.name === "set") path = path.filter(is.string);
+    //else if (trap && trap.name === "set") path = path.filter(is.string);
 
     return path.reduce(reducer, object);
 }

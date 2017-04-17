@@ -1,18 +1,15 @@
 export { default as wellKnownSymbols } from "./wellKnownSymbols";
-export { default as nextTick } from "./nextTick";
 export { default as toPrimitive } from "./toPrimitive";
-export { default as is } from "./is";
-export { default as toJSON } from "./toJSON";
 export { default as toArray } from "./toArray";
+export { default as toJSON } from "./toJSON";
+export { default as nextTick } from "./nextTick";
+export { default as is } from "./is";
 
 export function delay(func, wait) {
     return function(...args) {
-        const context = this;
-        const later = () => {
-            func.apply(context, args);
-        };
-
-        setTimeout(later, wait);
+        setTimeout(() => {
+            func.apply(this, args);
+        }, wait);
     };
 }
 
@@ -38,16 +35,4 @@ export function getChangedProps(propsA, propsB) {
     }
 
     return changedProps;
-}
-
-export function isPromise(result) {
-    return result && typeof result.then === "function" && typeof result.catch === "function";
-}
-
-export function isObject(obj) {
-    return typeof obj === "object" && obj !== null && !Array.isArray(obj);
-}
-
-export function isComplexObject(obj) {
-    return typeof obj === "object" && obj !== null;
 }

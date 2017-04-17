@@ -1,3 +1,4 @@
+import bitbox from "../bitbox";
 export { default as compute } from "./compute";
 export { default as signal } from "./signal";
 export { default as template } from "./template";
@@ -5,6 +6,53 @@ export { default as template } from "./template";
 /**
  * The Operators
  */
+
+export function get(box, target) {
+    if (arguments.length === 2) return bitbox.get(target, box);
+
+    const operator = target => bitbox.get(target, box);
+    operator.displayName = `get(${box})`;
+
+    return operator;
+}
+
+export function set(box, value, target) {
+    if (arguments.length === 3) return bitbox.set(target, box, value);
+
+    const operator = target => {
+        bitbox.set(target, box, value);
+    };
+    operator.displayName = `set(${box}, ${value})`;
+
+    return operator;
+}
+
+export function has(box, target) {
+    if (arguments.length === 2) return bitbox.has(target, box);
+
+    const operator = target => bitbox.has(target, box);
+    operator.displayName = `has(${box})`;
+
+    return operator;
+}
+
+export function keys(box, target) {
+    if (arguments.length === 2) return bitbox.keys(target, box);
+
+    const operator = target => bitbox.keys(target, box);
+    operator.displayName = `keys(${box})`;
+
+    return operator;
+}
+
+export function unset(box, target) {
+    if (arguments.length === 2) return bitbox.delete(target, box);
+
+    const operator = target => bitbox.delete(target, box);
+    operator.displayName = `unset(${box})`;
+
+    return operator;
+}
 
 export function stringify(object) {
     return JSON.stringify(object, null, 4);

@@ -1,20 +1,19 @@
 import { isObservable } from "../observer";
 import { symbol } from "../bitbox";
 
-const handler = ["resolve", "get", "set", "has", "apply", "unset"];
-
-const is = {
-    box: arg => is.function(arg) && Reflect.has(arg, symbol.path),
-    trap: arg => is.function(arg) && handler.includes(arg.name),
-    observable: arg => is.object(arg) && isObservable(arg),
-    promise: arg => arg instanceof Promise,
+export default {
+    box(arg) {
+        return this.function(arg) && Reflect.has(arg, symbol.path);
+    },
+    observable: arg => isObservable(arg),
+    object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
+    complexObject: arg => typeof arg === "object" && arg !== null,
+    function: arg => typeof arg === "function",
     array: arg => Array.isArray(arg),
+    promise: arg => arg instanceof Promise,
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",
-    object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
-    function: arg => typeof arg === "function",
+    symbol: arg => typeof arg === "symbol",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null
 };
-
-export default is;
