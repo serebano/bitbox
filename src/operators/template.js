@@ -1,9 +1,5 @@
-function templateString(strings, keys) {
-    return [strings[0], ...keys.map(key => `\${${key}}`)].join("");
-}
-
 function template(strings, ...keys) {
-    function getter(...values) {
+    function operator(...values) {
         const dict = values[values.length - 1] || {};
         const result = [strings[0]];
         keys.forEach((key, i) => {
@@ -12,10 +8,13 @@ function template(strings, ...keys) {
         });
         return result.join("");
     }
+    operator.displayName = `template \`${templateString(strings, keys)}\``;
 
-    getter.displayName = `template\`${templateString(strings, keys)}\``;
+    return operator;
+}
 
-    return getter;
+function templateString(strings, keys) {
+    return [strings[0], ...keys.map(key => `\${${key}}`)].join("");
 }
 
 export default template;

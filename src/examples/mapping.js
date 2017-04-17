@@ -1,4 +1,4 @@
-import bitbox, { observable } from "../main";
+import bitbox, { observable } from "../bitbox";
 
 const state = bitbox("state", observable);
 

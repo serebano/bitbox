@@ -1,60 +1,81 @@
-import native from "./native";
 import { wellKnownSymbols, nextTick } from "../utils";
+import wrappers from "./wrappers";
 
+const queue = new Set();
 const proxies = new WeakMap();
 const observers = new WeakMap();
-const queue = new Set();
 const enumerate = Symbol("enumerate");
+
+observe.index = new Map();
 
 let queued = false;
 let currentObserver;
 
 /**
- * Observe
- * @param  {Function}   fn      Observer function
- * @param  {Array}      args    Arguments to be passed
- * @return {Object}             Observer object
+ * bitbox.observable
+ * Creates observable target
+ * @param  {Object} object
+ * @return {Object}
  */
 
-observe.index = new Map();
+export function observable(object) {
+    object = object || {};
 
-export function observe(fn, ...args) {
-    if (typeof fn !== "function") throw new TypeError("First argument must be a function");
-    args = args.length ? args : undefined;
+    if (typeof object !== "object")
+        throw new TypeError(`[bitbox.observable] first argument must be an object or undefined`);
 
-    const observer = createObserver(fn, undefined, args);
-    runObserver(observer);
-
-    return observer;
+    return proxies.get(object) || createObservable(object);
 }
 
-function createObserver(fn, context, args) {
-    const observer = {
-        fn,
-        context,
+/**
+ * bitbox.observe
+ * Observes observable target
+ * @param  {Function}   fn
+ * @param  {Array}      args
+ * @return {Object}
+ */
+
+export function observe(observer, ...args) {
+    if (typeof observer !== "function") {
+        throw new TypeError(`[bitbox.observe] First argument must be a function`);
+    }
+
+    const o = createObserver(observer, args);
+    runObserver(o);
+
+    return o;
+}
+
+function createObserver(observer, args) {
+    const o = {
+        observer,
         args,
         keys: [],
         paths: [],
         changes: [],
         changed: 0,
-        name: fn.displayName || fn.name,
-        run: () => runObserver(observer),
-        unqueue: () => queue.delete(observer),
+        name: observer.displayName || observer.name,
+        run(...args) {
+            return runObserver(this, args);
+        },
+        skip() {
+            return queue.delete(this);
+        },
         unobserve() {
-            if (this.fn) {
-                observe.index.delete(this.fn);
+            if (this.observer) {
+                observe.index.delete(this.observer);
                 this.keys.forEach(observers => {
                     observers.delete(this);
                 });
-                this.fn = (this.paths = (this.args = (this.keys = undefined)));
+                this.observer = this.paths = this.args = this.keys = undefined;
                 queue.delete(this);
             }
         }
     };
 
-    observe.index.set(fn, observer);
+    observe.index.set(observer, o);
 
-    return observer;
+    return o;
 }
 
 function queueObservers(target, key, path = []) {
@@ -79,19 +100,24 @@ function queueObserver(observer) {
     queue.add(observer);
 }
 
-function runObserver(observer) {
+function runObserver(o, args) {
+    let result;
     try {
-        currentObserver = observer;
-        observer.fn.apply(observer.context, observer.args);
+        currentObserver = o;
+        result = o.observer.apply(undefined, args ? o.args.concat(args) : o.args);
     } finally {
         currentObserver = undefined;
-        observer.changed++;
-        observer.changes = [];
+        if (!args) {
+            o.changed++;
+            o.changes = [];
+        }
     }
+
+    return result;
 }
 
 function runObservers() {
-    queue.forEach(runObserver);
+    queue.forEach(o => runObserver(o));
     queue.clear();
     queued = false;
 }
@@ -104,24 +130,15 @@ function registerObserver(target, key, path) {
         if (!keyObservers.has(currentObserver)) {
             keyObservers.add(currentObserver);
             currentObserver.keys.push(keyObservers);
-            currentObserver.paths.push(path.concat(String(key)));
+            //currentObserver.paths.push(path.concat(String(key)));
         }
     }
-}
-
-export function observable(obj) {
-    obj = obj || {};
-
-    if (typeof obj !== "object")
-        throw new TypeError("first argument must be an object or undefined");
-
-    return proxies.get(obj) || createObservable(obj);
 }
 
 function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
-            if (key === "$raw") return target;
+            if (key === "$") return target;
             const result = Reflect.get(target, key, receiver);
             if (typeof key === "symbol" && wellKnownSymbols.has(key)) return result;
 
@@ -130,7 +147,9 @@ function createProxy(obj, path = []) {
 
             if (currentObserver) {
                 registerObserver(target, key, path);
-                if (isObject) return observable || createObservable(result, path.concat(key));
+                if (isObject) {
+                    return observable || createObservable(result, path.concat(key));
+                }
             }
 
             return observable || result;
@@ -142,7 +161,7 @@ function createProxy(obj, path = []) {
                 queueObservers(target, enumerate, path);
             }
             if (typeof value === "object" && value) {
-                value = value.$raw || value;
+                value = value.$ || value;
             }
 
             return Reflect.set(target, key, value, receiver);
@@ -165,7 +184,7 @@ function createProxy(obj, path = []) {
 
 function createObservable(obj, path = []) {
     let observable;
-    const builtIn = native.get(obj.constructor);
+    const builtIn = wrappers.get(obj.constructor);
 
     if (typeof builtIn === "function") {
         observable = builtIn(obj, path, registerObserver, queueObservers);
@@ -183,8 +202,10 @@ function createObservable(obj, path = []) {
     return observable;
 }
 
-export function isObservable(obj) {
-    if (typeof obj !== "object") throw new TypeError("first argument must be an object");
+export function isObservable(object) {
+    if (typeof object !== "object") {
+        throw new TypeError(`[bitbox.observable] first argument must be an object`);
+    }
 
-    return proxies.get(obj) === obj;
+    return proxies.get(object) === object;
 }

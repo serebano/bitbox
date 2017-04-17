@@ -1,11 +1,11 @@
-import bitbox, { set, observable } from "../main";
-import * as bits from "../bits";
-import funtree from "../bits/run";
-import { render } from "react-dom";
+import bitbox, { set, observable } from "../bitbox";
+import * as operators from "../operators";
 import { is } from "../utils";
+import funtree from "../operators/run";
+import { render } from "react-dom";
 import component from "../views/react";
 import { app, state, props, signals } from "./app";
-import { toggle, inc, dec, compute, join, signal } from "../bits";
+import { toggle, inc, dec, compute, join, signal } from "../operators";
 import App from "./components/app";
 
 const object = {
@@ -59,14 +59,14 @@ const mapping = bitbox({
     items: state.items(Object.keys, join(` * `)),
     computed: bitbox(compute(state.count, timers(Object.keys).length, join("-"))),
     item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
-    color: state.enabled(enabled => enabled ? "red" : "green")
+    color: state.enabled(enabled => (enabled ? "red" : "green"))
 });
 
-component.debug = false;
+component.debug = true;
 
 render(component(App, object), document.querySelector("#root"));
 
-Object.assign(window, bits, {
+Object.assign(window, operators, {
     is,
     obj: object,
     mapping,

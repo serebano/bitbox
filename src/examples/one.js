@@ -1,14 +1,42 @@
-import bitbox, { set, observable, observe } from "../main";
-import { inc, compute, join, template } from "../bits";
+/** @jsx h */
+import bitbox from "../bitbox";
+import component from "../views/react";
+import { render } from "react-dom";
+import { compute, join, or, inc } from "../operators";
+import store, { root, props, state, foo, deep, count, app } from "./app";
 
-export const app = bitbox();
-export const state = bitbox("state", observable);
-export const signals = app.signals();
+export { root, props, state, foo, deep, count, app, store, component };
 
-export const store = {
-    state: {
-        count: 0
-    }
+export function App(props, h) {
+    return (
+        <div>
+            <Demo id={props.id} />
+        </div>
+    );
+}
+
+App.map = {
+    id: state.id,
+    foo: foo(Object.keys)
+};
+
+export function Demo(props, h) {
+    return (
+        <div>
+            <h2>{props.name}</h2>
+            <h3 style={{ color: props.color }}>Count = {props.count}</h3>
+            <input onChange={e => props.name = e.target.value} value={props.name} />
+            <button onClick={() => props.count++}>Inc(+)</button>
+            <button onClick={() => props.count--}>Dec(-)</button>
+        </div>
+    );
+}
+
+Demo.map = {
+    id: props.id,
+    name: state.name,
+    count: ["state", "count"],
+    color: state.color(or("blue"))
 };
 
 export const one = bitbox({
@@ -17,17 +45,16 @@ export const one = bitbox({
     computed: bitbox(compute(state.count, state.name, join(` | `)))
 });
 
-observe(
-    ({ name, count }) => {
-        console.info(`map = { name: ${name}, count: ${count} }`);
-    },
-    one(store)
-);
+//bitbox.observe(state => console.info(`{ name = ${state.name}, count = ${state.count} }`), one(store));
 
-observe(state => console.info(`count = ${state.count}`), state(store));
-observe(state => console.info(`name = ${state.name}`), state(store));
+state(store).count++;
+bitbox.set(store, state.count, 100);
+bitbox.set(store, state.name, `bitbox demo`);
 
-state(store).count = 1;
+setInterval(() => {
+    bitbox.set(store, count, state.count(inc, store));
+}, 1);
 
-state.name(set, `Demo App`, store);
-state.count(set, inc, store);
+component.debug = true;
+
+render(component(App, store), document.querySelector("#root"));

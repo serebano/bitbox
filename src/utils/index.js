@@ -40,40 +40,8 @@ export function getChangedProps(propsA, propsB) {
     return changedProps;
 }
 
-export function Context(providers, ...args) {
-    if (!(this instanceof Context)) return new Context(...arguments);
-
-    return providers.reduce((context, Provider) => Provider(context, ...args), this);
-}
-
-export function ensureStrictPath(path, value) {
-    if (isComplexObject(value) && path.indexOf("*") === -1) {
-        return `${path}.**`;
-    }
-
-    return path;
-}
-
-export function ensurePath(path = []) {
-    if (Array.isArray(path)) {
-        return path;
-    } else if (typeof path === "string") {
-        return path === "." || path === "" ? [] : path.split(".");
-    }
-
-    return [];
-}
-
-export function isValidResult(result) {
-    return !result || (typeof result === "object" && !Array.isArray(result));
-}
-
 export function isPromise(result) {
     return result && typeof result.then === "function" && typeof result.catch === "function";
-}
-
-export function cleanPath(path) {
-    return path.indexOf("*") > -1 ? path.replace(/\.\*\*|\.\*/, "") : path;
 }
 
 export function isObject(obj) {
