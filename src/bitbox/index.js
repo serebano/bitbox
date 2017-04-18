@@ -1,13 +1,13 @@
-import { observable, observe } from "../observer";
-import resolve from "./resolve";
-import create from "./create";
-import map from "./map";
-import is from "../utils/is";
+import { observable, observe } from "../observer"
+import resolve from "./resolve"
+import create from "./create"
+import map from "./map"
+import is from "../utils/is"
 
 const symbol = {
     path: Symbol("bitbox.path"),
     handler: Symbol("bitbox.handler")
-};
+}
 
 /**
  * bitbox
@@ -17,12 +17,12 @@ const symbol = {
  */
 
 export default function bitbox() {
-    return create(Array.from(arguments));
+    return create(Array.from(arguments))
 }
 
 /**
  * Handler methods
- * bitbox[ get, set, has, ownKeys, delete ]
+ * bitbox[ get, set, has, keys, delete, define ]
  *
  * @param  {Object} target
  * @param  {Function|Array} path
@@ -30,24 +30,28 @@ export default function bitbox() {
  */
 
 bitbox.get = function get(target, box) {
-    return bitbox.resolve(target, bitbox.path(box), Reflect.get);
-};
+    return bitbox.resolve(target, box, Reflect.get)
+}
 
 bitbox.set = function set(target, box, value) {
-    return bitbox.resolve(target, bitbox.path(box), Reflect.set, value);
-};
+    return bitbox.resolve(target, box, Reflect.set, value)
+}
 
 bitbox.has = function has(target, box) {
-    return bitbox.resolve(target, bitbox.path(box), Reflect.has);
-};
+    return bitbox.resolve(target, box, Reflect.has)
+}
 
 bitbox.keys = function keys(target, box) {
-    return bitbox.resolve(target, bitbox.path(box), Reflect.ownKeys);
-};
+    return Reflect.ownKeys(bitbox.get(target, box))
+}
 
 bitbox.delete = function deleteProperty(target, box) {
-    return bitbox.resolve(target, bitbox.path(box), Reflect.deleteProperty);
-};
+    return bitbox.resolve(target, box, Reflect.deleteProperty)
+}
+
+bitbox.define = function defineProperty(target, box, descriptor) {
+    return bitbox.resolve(target, box, Reflect.defineProperty, descriptor)
+}
 
 /**
  * bitbox.path
@@ -57,8 +61,8 @@ bitbox.delete = function deleteProperty(target, box) {
  */
 
 bitbox.path = function path(box) {
-    return is.array(box) ? box : Reflect.get(box, symbol.path);
-};
+    return is.array(box) ? box : Reflect.get(box, symbol.path)
+}
 
 /**
  * Create root
@@ -68,16 +72,16 @@ bitbox.path = function path(box) {
 bitbox.root = function root() {
     return new Proxy(create(Array.from(arguments)), {
         get(target, key) {
-            return target(key);
+            return target(key)
         }
-    });
-};
+    })
+}
 
-bitbox.observable = observable;
-bitbox.observe = observe;
-bitbox.resolve = resolve;
-bitbox.map = map;
+bitbox.observable = observable
+bitbox.observe = observe
+bitbox.resolve = resolve
+bitbox.map = map
 
-export { map, resolve, observable, observe, symbol };
+export { map, resolve, observable, observe, symbol }
 
 /* ... */

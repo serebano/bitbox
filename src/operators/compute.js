@@ -18,7 +18,7 @@ function Compute(...args) {
         }, []);
     }
 
-    compute.displayName = `compute(${toPrimitive(args)})`;
+    compute.displayName = `compute${toPrimitive(args)}`;
 
     return compute;
 }

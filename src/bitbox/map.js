@@ -8,19 +8,19 @@ import bitbox from ".";
  * @return {Object}
  */
 
-function map(mapping, object) {
-    return new Proxy(mapping, {
+function map(target, mapping) {
+    return new Proxy(target, {
         get(target, key) {
-            return Reflect.has(target, key)
-                ? bitbox.get(object, Reflect.get(target, key))
-                : Reflect.get(object, key);
+            return Reflect.has(mapping, key)
+                ? bitbox.get(target, Reflect.get(mapping, key))
+                : Reflect.get(target, key);
         },
         set(target, key, value) {
-            const resolved = is.box(value) ? value(object) : value;
+            const resolved = is.box(value) ? value(target) : value;
 
-            return Reflect.has(target, key)
-                ? bitbox.set(object, Reflect.get(target, key), resolved)
-                : Reflect.set(object, key, resolved);
+            return Reflect.has(mapping, key)
+                ? bitbox.set(target, Reflect.get(mapping, key), resolved)
+                : Reflect.set(target, key, resolved);
         }
     });
 }

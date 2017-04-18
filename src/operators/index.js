@@ -2,89 +2,37 @@ import bitbox from "../bitbox";
 export { default as compute } from "./compute";
 export { default as signal } from "./signal";
 export { default as template } from "./template";
+export { default as get } from "./get";
+export { default as set } from "./set";
 
 /**
  * The Operators
  */
 
-export function get(box, target) {
-    if (arguments.length === 2) return bitbox.get(target, box);
-
-    const operator = target => bitbox.get(target, box);
-    operator.displayName = `get(${box})`;
-
-    return operator;
-}
-
-export function set(box, value, target) {
-    if (arguments.length === 3) return bitbox.set(target, box, value);
-
-    const operator = target => {
-        bitbox.set(target, box, value);
-    };
-    operator.displayName = `set(${box}, ${value})`;
-
-    return operator;
-}
-
-export function has(box, target) {
-    if (arguments.length === 2) return bitbox.has(target, box);
-
+export function has(box) {
     const operator = target => bitbox.has(target, box);
     operator.displayName = `has(${box})`;
 
     return operator;
 }
 
-export function keys(box, target) {
-    if (arguments.length === 2) return bitbox.keys(target, box);
-
+export function keys(box) {
     const operator = target => bitbox.keys(target, box);
     operator.displayName = `keys(${box})`;
 
     return operator;
 }
 
-export function unset(box, target) {
-    if (arguments.length === 2) return bitbox.delete(target, box);
-
+export function unset(box) {
     const operator = target => bitbox.delete(target, box);
     operator.displayName = `unset(${box})`;
 
     return operator;
 }
 
-export function stringify(object) {
-    return JSON.stringify(object, null, 4);
-}
-
-export function toUpper(value) {
-    return value.toUpperCase();
-}
-
-export function toLower(value) {
-    return value.toLowerCase();
-}
-
-export function object(obj) {
-    return Object.assign({}, obj);
-}
-
-export function inc(number) {
-    return number + 1;
-}
-
-export function dec(number) {
-    return number - 1;
-}
-
-export function toggle(value) {
-    return !value;
-}
-
 export function or(value) {
-    function operator(state) {
-        return typeof state === "undefined" ? value : state;
+    function operator(target) {
+        return typeof target === "undefined" ? value : target;
     }
     operator.displayName = `or(${value})`;
     return operator;
@@ -144,4 +92,32 @@ export function map(fn) {
     }
     operator.displayName = `map(${fn.displayName || fn.name})`;
     return operator;
+}
+
+export function stringify(target) {
+    return JSON.stringify(target, null, 4);
+}
+
+export function toUpper(value) {
+    return value.toUpperCase();
+}
+
+export function toLower(value) {
+    return value.toLowerCase();
+}
+
+export function object(obj) {
+    return Object.assign({}, obj);
+}
+
+export function inc(number) {
+    return number + 1;
+}
+
+export function dec(number) {
+    return number - 1;
+}
+
+export function toggle(value) {
+    return !value;
 }

@@ -1,49 +1,47 @@
-import { is, toPrimitive } from "../utils";
-import map from "./map";
-
-const rootKey = Symbol("bitbox[resolve@root]");
+import { is, toPrimitive } from "../utils"
+import map from "./map"
 
 /**
  * bitbox.resolve
- * Resolve target by path
+ *
  * @param  {Object} target
  * @param  {Function|Array} box
- * @param  {Function} trap
- * @param  {Any} args
+ * @param  {Function} method
  * @return {Any}
  */
 
-function resolve(object, path = [], trap, ...args) {
-    if (!is.array(path)) {
-        throw new Error(`[bitbox.resolve] Path must be typeof array`);
-    }
+function resolve(target, box, method) {
+    const path = [...box]
 
-    function reducer(target, key, index, path) {
-        key = is.array(key) ? resolve(object, key) : key;
+    if (!path.length) path.push(Symbol.for("@root"))
 
-        if (is.box(key)) return key(target);
-        if (is.object(key)) return map(key, target);
-        if (is.function(key)) return key(target);
+    return path.reduce((value, key, index) => {
+        const type = typeof key
 
-        if (trap && (!path.length || index === path.length - 1)) {
-            if (trap.name === "set") args[0] = is.box(args[0]) ? args[0](object) : args[0];
-            return trap.call(undefined, target, key, ...args);
+        if (type === "array") key = resolve(target, key)
+        if (type === "object") return map(value, key)
+        if (type === "function") return key(value)
+
+        if (method && (!path.length || index === path.length - 1)) {
+            if (type !== "string") {
+                throw new Error(`[bitbox.resolve] Invalid key type "${type}" for method "${method.name}"`)
+            }
+
+            return Reflect.apply(
+                method,
+                undefined,
+                [value, key].concat(
+                    Array.prototype.slice.call(arguments, 3).map(arg => (is.box(arg) ? arg(target) : arg))
+                )
+            )
         }
 
-        if (is.undefined(target)) {
-            console.log(object, key, path, target, trap, args);
-            throw new Error(
-                `[bitbox.resolve] Cannot resolve path: [${toPrimitive(path)}] (key: ${key}, index: ${index})`
-            );
+        if (is.undefined(value)) {
+            throw new Error(`[bitbox.resolve] Undefined value at path: [${toPrimitive(path)}]`)
         }
 
-        return Reflect.get(target, key);
-    }
-
-    if (!path.length) path = [rootKey];
-    //else if (trap && trap.name === "set") path = path.filter(is.string);
-
-    return path.reduce(reducer, object);
+        return Reflect.get(value, key)
+    }, target)
 }
 
-export default resolve;
+export default resolve

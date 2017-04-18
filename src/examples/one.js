@@ -11,7 +11,7 @@ export { root, props, state, foo, deep, count, app, store, component };
 export function App(props, h) {
     return (
         <div>
-            <div><Count /></div>
+            <Count />
             <Demo id={props.id} />
         </div>
     );
