@@ -455,6 +455,13 @@ babel-plugin-check-es2015-constants@^6.3.13:
   dependencies:
     babel-runtime "^6.22.0"
 
+babel-plugin-inferno@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-inferno/-/babel-plugin-inferno-3.2.0.tgz#62ae1ac223e74e0d54f29fb196e06e358250d82a"
+  dependencies:
+    babel-plugin-syntax-jsx "^6.18.0"
+    inferno-vnode-flags "3.0.0"
+
 babel-plugin-istanbul@^3.0.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/babel-plugin-istanbul/-/babel-plugin-istanbul-3.1.2.tgz#11d5abde18425ec24b5d648c7e0b5d25cd354a22"
@@ -484,7 +491,7 @@ babel-plugin-syntax-flow@^6.18.0, babel-plugin-syntax-flow@^6.3.13:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-flow/-/babel-plugin-syntax-flow-6.18.0.tgz#4c3ab20a2af26aa20cd25995c398c4eb70310c8d"
 
-babel-plugin-syntax-jsx@^6.3.13, babel-plugin-syntax-jsx@^6.8.0:
+babel-plugin-syntax-jsx@^6.18.0, babel-plugin-syntax-jsx@^6.3.13, babel-plugin-syntax-jsx@^6.8.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-jsx/-/babel-plugin-syntax-jsx-6.18.0.tgz#0af32a9a6e13ca7a3fd5069e62d7b0f58d0d8946"
 
@@ -2603,6 +2610,38 @@ indexes-of@^1.0.1:
 indexof@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/indexof/-/indexof-0.0.1.tgz#82dc336d232b9062179d05ab3293a66059fd435d"
+
+inferno-component@3.0.4, inferno-component@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/inferno-component/-/inferno-component-3.0.4.tgz#c326769b2d5dd4301e3933969781c085eb8b7a4a"
+  dependencies:
+    inferno "3.0.4"
+    inferno-shared "^3.0.0"
+    inferno-vnode-flags "^3.0.0"
+
+inferno-create-element@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/inferno-create-element/-/inferno-create-element-3.0.4.tgz#2dd0817795f06848609d6fa1e5f9b746b6713154"
+  dependencies:
+    inferno "3.0.4"
+    inferno-component "3.0.4"
+    inferno-shared "^3.0.0"
+    inferno-vnode-flags "^3.0.0"
+
+inferno-shared@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/inferno-shared/-/inferno-shared-3.0.0.tgz#daaeaf1b52803ab0572c7765ccfcfb925cfe8272"
+
+inferno-vnode-flags@3.0.0, inferno-vnode-flags@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/inferno-vnode-flags/-/inferno-vnode-flags-3.0.0.tgz#f396390f3dafae3b76eea04d04eed6cf2004473b"
+
+inferno@3.0.4, inferno@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/inferno/-/inferno-3.0.4.tgz#cac5495e6c145bfda071d5554b123c37c2033994"
+  dependencies:
+    inferno-shared "^3.0.0"
+    inferno-vnode-flags "^3.0.0"
 
 inflight@^1.0.4:
   version "1.0.6"

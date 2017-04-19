@@ -1,4 +1,4 @@
-import { toPrimitive } from "../utils"
+import { is, toPrimitive } from "../utils"
 import bitbox from "../bitbox"
 
 /**
@@ -8,6 +8,8 @@ import bitbox from "../bitbox"
  */
 
 export default function(mapping) {
+    mapping = is.function(mapping) ? mapping(bitbox.root()) : mapping
+
     function map(target) {
         return bitbox.map(target, mapping)
     }
