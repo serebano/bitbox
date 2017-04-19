@@ -1,5 +1,5 @@
 import { is, toPrimitive } from "../utils"
-import map from "./map"
+import bitbox from "."
 
 /**
  * bitbox.resolve
@@ -11,27 +11,28 @@ import map from "./map"
  */
 
 function resolve(target, box, method) {
-    const path = [...box]
+    return bitbox.path(box).reduce((value, key, index, path) => {
+        if (is.array(key)) key = resolve(target, key)
 
-    if (!path.length) path.push(Symbol.for("@root"))
-
-    return path.reduce((value, key, index) => {
         const type = typeof key
 
-        if (type === "array") key = resolve(target, key)
-        if (type === "object") return map(value, key)
+        if (type === "object") return bitbox.map(value, key)
         if (type === "function") return key(value)
 
         if (method && (!path.length || index === path.length - 1)) {
             if (type !== "string") {
-                throw new Error(`[bitbox.resolve] Invalid key type "${type}" for method "${method.name}"`)
+                throw new Error(
+                    `[bitbox.resolve] Invalid key type "${type}" for method "${method.name}"`
+                )
             }
 
             return Reflect.apply(
                 method,
                 undefined,
                 [value, key].concat(
-                    Array.prototype.slice.call(arguments, 3).map(arg => (is.box(arg) ? arg(target) : arg))
+                    Array.prototype.slice
+                        .call(arguments, 3)
+                        .map(arg => (is.box(arg) ? arg(target) : arg))
                 )
             )
         }

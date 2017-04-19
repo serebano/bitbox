@@ -1,8 +1,9 @@
-function signal(chain) {
-    const fn = props => signal.run(chain, props);
-    fn.displayName = `signal(${chain})`;
+export default function Signal(tree) {
+    function signal(...args) {
+        return Signal.run(tree, { args })
+    }
 
-    return fn;
+    signal.displayName = `signal(${tree})`
+
+    return signal
 }
-
-export default signal;

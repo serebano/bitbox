@@ -1,4 +1,3 @@
-import { is } from "../utils"
 import bitbox from "."
 
 /**
@@ -11,14 +10,14 @@ import bitbox from "."
 function map(target, mapping) {
     return new Proxy(mapping, {
         get(mapping, key) {
-            return Reflect.has(mapping, key) ? bitbox.get(target, Reflect.get(mapping, key)) : Reflect.get(target, key)
+            return Reflect.has(mapping, key)
+                ? bitbox.get(target, Reflect.get(mapping, key))
+                : bitbox.get(target, [key])
         },
         set(mapping, key, value) {
-            const resolved = is.box(value) ? value(target) : value
-
             return Reflect.has(mapping, key)
-                ? bitbox.set(target, Reflect.get(mapping, key), resolved)
-                : Reflect.set(target, key, resolved)
+                ? bitbox.set(target, Reflect.get(mapping, key), value)
+                : bitbox.set(target, [key], value)
         }
     })
 }

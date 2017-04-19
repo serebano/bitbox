@@ -1,0 +1,18 @@
+import { toPrimitive } from "../utils"
+import bitbox from "../bitbox"
+
+/**
+ * apply
+ * @param  {Function|Array} box
+ * @return {Any}
+ */
+
+export default function(box, args) {
+    function apply(target) {
+        return bitbox.apply(target, box, args)
+    }
+
+    apply.displayName = `apply(${box}, [${toPrimitive(args, ", ")}])`
+
+    return apply
+}

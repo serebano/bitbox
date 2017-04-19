@@ -1,10 +1,8 @@
-import { isObservable } from "../observer";
-import { symbol } from "../bitbox";
+import { isObservable } from "../observer"
+import { symbol } from "../bitbox"
 
-export default {
-    box(arg) {
-        return this.function(arg) && Reflect.has(arg, symbol.path);
-    },
+const is = {
+    box: arg => is.function(arg) && Reflect.has(arg, symbol.path),
     observable: arg => isObservable(arg),
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
     complexObject: arg => typeof arg === "object" && arg !== null,
@@ -16,4 +14,6 @@ export default {
     symbol: arg => typeof arg === "symbol",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null
-};
+}
+
+export default is

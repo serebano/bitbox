@@ -18,14 +18,14 @@ function Debug(observer, h) {
             JSON.stringify(
                 {
                     changed: observer.changed,
-                    changes: observer.changes.map(path => path.join(".")),
-                    paths: observer.paths.map(path => path.join("."))
+                    changes: observer.changes.map(path => path.join("."))
+                    //paths: observer.paths.map(path => path.join("."))
                 },
                 null,
                 2
             )
         )
-    );
+    )
 }
 
-export default Debug;
+export default Debug
