@@ -1,78 +1,56 @@
-import bitbox, { set, observable } from "../bitbox";
-import * as operators from "../operators";
-import { is } from "../utils";
-import funtree from "../operators/run";
-import { render } from "react-dom";
-import component from "../views/react";
-import { app, state, props, signals } from "./app";
-import { toggle, inc, dec, compute, join, signal } from "../operators";
-import App from "./components/app";
+import bitbox from "../bitbox"
+import { set, unset, or, inc, dec, toggle, stringify, map } from "../operators"
+import app, { state, args, props, signals } from "./app"
+import createSignal from "./run"
+import store from "./store"
+import Inferno from "inferno"
+import component from "../views/inferno"
+import App from "./components/app"
+import timer from "./components/timer/timer"
 
-const object = {
-    state: observable({
-        title: "Demo",
-        count: 0,
-        index: 0,
-        enabled: true,
-        nativeSet: new Set(["One", "Two"]),
-        timers: {
-            one: {
-                value: 0
-            },
-            abc: {},
-            xxx: {}
+export { App, store, app, state, args, props, signals, component }
+
+export const signal = createSignal(function(context, action, props) {
+    context.state = store.state
+
+    return context
+})
+
+bitbox.observe(app(map(App.map), stringify, console.info), store)
+
+bitbox.set(
+    store,
+    state.timers,
+    state.timers(timers =>
+        Object.assign(timers, {
+            abc: { value: 200 },
+            xxx: { value: 100 }
+        })
+    )
+)
+
+export const signalsDesc = {
+    nameChanged: set(state.name, args[0].target.value(or("Demo"))),
+    incClicked: set(state.count, state.count(inc)),
+    decClicked: set(state.count, state.count(dec)),
+    toggleClicked: set(state.enabled, state.enabled(toggle)),
+    timerRemoved: [set(timer.iid, timer.iid(clearInterval)), unset(state.timers[props.id])],
+    timerToggled: [
+        function toggleTimer({ state, props, path }) {
+            return state.timers[props.id].iid ? path.stop() : path.start()
         },
-        items: ["Item #1", "Item #2"],
-        id: "one"
-    }),
-    signals: {}
-};
+        {
+            start: set(timer.iid, timer(timer => () => timer.value++, setInterval)),
+            stop: set(timer.iid, timer.iid(clearInterval))
+        }
+    ]
+}
 
-const run = (signal.run = funtree([
-    context => {
-        context.state = object.state;
-        return context;
-    }
-]).run);
+Object.keys(signalsDesc).forEach(key => {
+    bitbox.set(store, app.signals[key], signal(key, signalsDesc[key]))
+})
 
-state.timers.abc(set, { value: 200 }, object);
-state.timers.xxx(set, { value: 100 }, object);
+//component.debug = true
+//component.observe = false
 
-set(signals.nameChanged, signal(set(state.name, props.value)), object);
-set(signals.toggleClicked, signal(set(state.enabled, toggle)), object);
-set(signals.incClicked, signal(set(state.count, inc)), object);
-set(signals.decClicked, signal(set(state.count, dec)), object);
-
-set(
-    signals.timerRemoved,
-    signal(({ state, props }) => {
-        const timer = state.timers[props.id];
-        clearInterval(timer.iid);
-        delete state.timers[props.id];
-    }),
-    object
-);
-const timers = state.timers();
-const mapping = bitbox({
-    count: state.count,
-    timer: timers[state.id],
-    items: state.items(Object.keys, join(` * `)),
-    computed: bitbox(compute(state.count, timers(Object.keys).length, join("-"))),
-    item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
-    color: state.enabled(enabled => (enabled ? "red" : "green"))
-});
-
-component.debug = true;
-
-render(component(App, object), document.querySelector("#root"));
-
-Object.assign(window, operators, {
-    is,
-    obj: object,
-    mapping,
-    run,
-    app,
-    state,
-    props,
-    signals
-});
+Inferno.render(component(App, store, app), document.querySelector("#root"))

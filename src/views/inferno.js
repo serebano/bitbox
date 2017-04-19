@@ -12,8 +12,9 @@ function createElement(arg, ...rest) {
         : CreateElement(arg, ...rest)
 }
 
-function HOC(component, store, ...args) {
+function HOC(component, store, app) {
     if (store) {
+        HOC.app = app
         class Container extends Component {
             static displayName = HOC.observe ? `Observable` : `Static`
             getChildContext() {
@@ -26,7 +27,7 @@ function HOC(component, store, ...args) {
             }
         }
 
-        return createElement(Container, { store }, createElement(component, ...args))
+        return createElement(Container, { store }, createElement(component))
     }
 
     return create(
@@ -34,7 +35,8 @@ function HOC(component, store, ...args) {
             Component,
             createElement,
             observe: HOC.observe,
-            debug: HOC.debug
+            debug: HOC.debug,
+            app: HOC.app
         },
         component
     )

@@ -1,5 +1,5 @@
 /** @jsx h */
-import { state, signals } from "../app";
+import { state, signals } from "../app"
 
 function Count({ count, incClicked, decClicked }, h) {
     return (
@@ -8,13 +8,13 @@ function Count({ count, incClicked, decClicked }, h) {
             <strong> - {count} - </strong>
             <button onClick={() => decClicked()}>- Decrement</button>
         </div>
-    );
+    )
 }
 
 Count.map = {
-    count: state.count(String),
+    count: state.count,
     incClicked: signals.incClicked,
     decClicked: signals.decClicked
-};
+}
 
-export default Count;
+export default Count

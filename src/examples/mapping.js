@@ -1,33 +1,13 @@
-import bitbox, { observable } from "../bitbox";
+import bitbox from "../bitbox"
+import { compute, join, toUpper } from "../operators"
+import { state } from "./app"
 
-const state = bitbox("state", observable);
-
-const baz = state();
-
-baz.count = [...baz, "count"];
-baz.timer = baz.timers[baz.id];
-baz.count2 = baz.count(String);
-
-const bar = bitbox();
-
-baz.bar = bar;
-
-Object.assign(bar, {
-    title: state.title,
+export default bitbox({
     count: state.count,
-    timer: state.timers[state.id]
-});
-
-const map = {
-    title: state.title,
-    count: ["state", "count"],
+    name: state.name(toUpper),
     timer: state.timers[state.id],
-    baz,
-    bar
-};
-
-const foo = bitbox(map);
-
-export { foo, bar, baz, map };
-
-//observe(() => foo(stringify, console.log, obj))
+    items: state.items(Object.keys, join(` * `)),
+    computed: bitbox(compute(state.count, state.timers(Object.keys).length, join(" - "))),
+    item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
+    color: state.enabled(enabled => (enabled ? "red" : "green"))
+})

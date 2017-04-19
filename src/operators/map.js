@@ -7,8 +7,8 @@ import bitbox from "../bitbox"
  * @return {Object}
  */
 
-export default function(mapping) {
-    mapping = is.function(mapping) ? mapping(bitbox.root()) : mapping
+export default function(mapping, app) {
+    mapping = is.function(mapping) ? mapping(app || bitbox.root()) : mapping
 
     function map(target) {
         return bitbox.map(target, mapping)

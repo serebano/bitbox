@@ -88,7 +88,6 @@ bitbox.root = function root() {
 bitbox.observable = observable
 bitbox.observe = observe
 bitbox.resolve = resolve
-bitbox.symbol = symbol
 bitbox.map = map
 
 export { map, resolve, observable, observe, symbol }

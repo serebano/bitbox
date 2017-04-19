@@ -12,8 +12,9 @@ function createElement(arg, ...rest) {
         : React.createElement(arg, ...rest)
 }
 
-function HOC(component, store, ...args) {
+function HOC(component, store, app) {
     if (store) {
+        HOC.app = app
         class Container extends React.Component {
             static displayName = HOC.observe ? `Observable` : `Static`
             static propTypes = {
@@ -33,7 +34,7 @@ function HOC(component, store, ...args) {
             }
         }
 
-        return createElement(Container, { store }, createElement(component, ...args))
+        return createElement(Container, { store }, createElement(component))
     }
 
     const Component = create(
@@ -41,7 +42,8 @@ function HOC(component, store, ...args) {
             Component: React.Component,
             createElement,
             observe: HOC.observe,
-            debug: HOC.debug
+            debug: HOC.debug,
+            app: HOC.app
         },
         component
     )

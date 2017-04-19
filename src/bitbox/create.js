@@ -29,7 +29,7 @@ function createProxy(keys, isRoot, root) {
         get(box, key, receiver) {
             if (isRoot) keys = root.slice(0)
 
-            if (key === "$") return [keys, isRoot, root]
+            if (key === "$") return [keys, isRoot]
             if (key === "apply") return Reflect.get(box, key)
             if (key === "toJSON") return () => toJSON(keys)
             if (key === "toArray") return () => toArray(keys)
@@ -47,7 +47,10 @@ function createProxy(keys, isRoot, root) {
             if (is.symbol(key) && Reflect.has(box, key)) return Reflect.get(box, key)
 
             const mapping = keys.length && keys[keys.length - 1]
-            if (is.object(mapping) && Reflect.has(mapping, key)) return Reflect.get(mapping, key)
+            if (is.object(mapping) && Reflect.has(mapping, key)) {
+                const value = Reflect.get(mapping, key)
+                return create(is.function(value) ? [value] : value)
+            }
 
             if (keyPath !== undefined && keyPrimitive === key) {
                 keys.push(keyPath)

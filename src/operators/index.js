@@ -7,8 +7,8 @@ export { default as unset } from "./unset"
 export { default as apply } from "./apply"
 export { default as call } from "./call"
 export { default as compute } from "./compute"
-export { default as signal } from "./signal"
 export { default as template } from "./template"
+//export { default as signal } from "./signal"
 
 /**
  * The Operators

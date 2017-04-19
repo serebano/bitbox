@@ -1,4 +1,4 @@
-import { is, toPrimitive } from "../utils"
+import { is } from "../utils"
 import bitbox from "."
 
 /**
@@ -19,6 +19,8 @@ function resolve(target, box, method) {
         if (type === "object") return bitbox.map(value, key)
         if (type === "function") return key(value)
 
+        if (is.undefined(value)) return value
+
         if (method && (!path.length || index === path.length - 1)) {
             if (type !== "string") {
                 throw new Error(
@@ -35,10 +37,6 @@ function resolve(target, box, method) {
                         .map(arg => (is.box(arg) ? arg(target) : arg))
                 )
             )
-        }
-
-        if (is.undefined(value)) {
-            throw new Error(`[bitbox.resolve] Undefined value at path: [${toPrimitive(path)}]`)
         }
 
         return Reflect.get(value, key)

@@ -100,7 +100,7 @@ function registerObserver(target, key, path) {
         if (!keyObservers.has(state.currentObserver)) {
             keyObservers.add(state.currentObserver)
             state.currentObserver.keys.push(keyObservers)
-            //state.currentObserver.paths.push(path.concat(String(key)))
+            state.currentObserver.paths.push(path.concat(String(key)))
         }
     }
 }
