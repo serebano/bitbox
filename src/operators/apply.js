@@ -1,4 +1,3 @@
-import { toPrimitive } from "../utils"
 import bitbox from "../bitbox"
 
 /**
