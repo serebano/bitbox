@@ -1,5 +1,6 @@
 import { is, toPrimitive, toJSON, toArray } from "../utils"
 import bitbox, { symbol } from "."
+import Mapping from "./map"
 
 let keyPath, keyPrimitive
 
@@ -9,44 +10,30 @@ function create(keys = [], isRoot = true) {
 
 function createProxy(keys, isRoot) {
     let mapping
-    let root = (keys = keys.map((key, idx) => {
-        if (is.object(key)) {
-            mapping = bitbox.map(key)
-            //console.log(`mapping`, mapping)
-            return mapping
-        }
+
+    const root = (keys = keys.map(key => {
+        if (is.object(key)) return (mapping = new Mapping(key))
         return key
     }))
 
     const proxy = new Proxy(
         Object.defineProperties(function box() {}, {
-            keys: {
-                get: () => keys
-            },
-            mapping: {
-                value: mapping
-            },
-            toString: {
-                value: () => toPrimitive(root)
-            }
+            keys: { get: () => (isRoot ? root : keys) }
+            //mapping: { get: () => mapping }
         }),
         {
             apply(box, context, args) {
                 if (isRoot) keys = root.slice(0)
-                if (is.complexObject(args[0]) && !(args[0] instanceof bitbox.map))
-                    return bitbox.resolve(args[0], keys, ...args.slice(1))
-
-                const object =
-                    is.complexObject(args[args.length - 1]) &&
-                    !(args[args.length - 1] instanceof bitbox.map) &&
-                    args.pop()
-
-                args.length && keys.push(...args)
 
                 try {
-                    if (object) return bitbox.resolve(object, keys)
+                    if (is.complexObject(args[0]))
+                        return bitbox.resolve(args.shift(), keys, ...args)
 
-                    return args.length ? create(keys) : proxy
+                    //if (isRoot) return create(keys.concat(args), false)
+
+                    args.length && keys.push(...args)
+                    return create(keys)
+                    //return proxy
                 } catch (e) {
                     throw e
                 }
@@ -70,7 +57,6 @@ function createProxy(keys, isRoot) {
                 }
 
                 if (is.symbol(key) && Reflect.has(box, key)) return Reflect.get(box, key)
-                if (box.mapping) return Reflect.get(box.mapping, key)
 
                 if (keyPath !== undefined && keyPrimitive === key) {
                     keys.push(keyPath)
@@ -78,6 +64,12 @@ function createProxy(keys, isRoot) {
                     keyPrimitive = undefined
                 } else {
                     keys.push(key)
+                }
+
+                if (mapping) {
+                    return Reflect.has(mapping, key)
+                        ? Reflect.get(mapping, key)
+                        : Reflect.has(mapping, "*") && Reflect.get(mapping, "*")[key]
                 }
 
                 return isRoot ? create(keys, false) : proxy

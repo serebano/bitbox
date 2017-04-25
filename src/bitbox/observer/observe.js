@@ -1,5 +1,5 @@
 import { queue, state } from "./store"
-import { is } from "../utils"
+import { is } from "../../utils"
 
 /**
  * bitbox.observe
@@ -53,7 +53,7 @@ export function runObserver(o, args, isRun) {
         result = o.observer.apply(undefined, args ? o.args.concat(args) : o.args)
     } finally {
         state.currentObserver = undefined
-        o.changes.pop()
+        if (!isRun) o.changes = []
         if (!isRun) o.changed++
     }
     return result

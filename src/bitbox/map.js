@@ -13,11 +13,11 @@ function Mapping(mapping, root) {
     if (!(this instanceof Mapping)) return new Mapping(...arguments)
 
     mapping = is.function(mapping) ? mapping(root || bitbox.root()) : mapping
-
+    root = root || []
     return Object.keys(mapping || {}).reduce((map, key) => {
         map[key] = is.array(mapping[key])
-            ? create(mapping[key])
-            : is.box(mapping[key]) ? mapping[key] : create([mapping[key]])
+            ? create([...root, ...mapping[key]])
+            : is.box(mapping[key]) ? mapping[key] : create([...root, mapping[key]])
         return map
     }, this)
 }

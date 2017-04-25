@@ -9,16 +9,42 @@ export { default as call } from "./call"
 export { default as compute } from "./compute"
 export { default as template } from "./template"
 export { default as push } from "./push"
+export { default as observe } from "./observe"
 
 /**
  * The Operators
  */
 
-export function or(value) {
-    function operator(target) {
-        return typeof target === "undefined" ? value : target
+export function or(...args) {
+    function operator(target, args) {
+        return target || args.find(arg => typeof arg !== "undefined")
     }
-    operator.displayName = `or(${value})`
+    operator.args = args
+    operator.displayName = `or(${args.map(String)})`
+    return operator
+}
+
+export function concat(...args) {
+    function operator(target, args) {
+        return target.concat(...args)
+    }
+    operator.args = args
+    return operator
+}
+
+export function merge(...args) {
+    function operator(target, args) {
+        return Object.assign(target, ...args)
+    }
+    operator.args = args
+    return operator
+}
+
+export function join(separator) {
+    function operator(array) {
+        return array.join(separator)
+    }
+    operator.displayName = `join(${separator})`
     return operator
 }
 
@@ -51,22 +77,6 @@ export function type(value) {
         return typeof state === value
     }
     operator.displayName = `type(${value})`
-    return operator
-}
-
-export function concat(value) {
-    function operator(state) {
-        return state.concat(value)
-    }
-    operator.displayName = `concat(${value})`
-    return operator
-}
-
-export function join(separator) {
-    function operator(array) {
-        return array.join(separator)
-    }
-    operator.displayName = `join(${separator})`
     return operator
 }
 

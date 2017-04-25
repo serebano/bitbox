@@ -6,6 +6,7 @@ function Remove({ remove, props }, h) {
 }
 
 Remove.map = {
+    props: ["props"],
     remove: signals.timerRemoved
 }
 

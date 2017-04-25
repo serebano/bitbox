@@ -1,4 +1,5 @@
 import bitbox from "."
+import Mapping from "./map"
 
 /**
  * bitbox.proxy
@@ -8,7 +9,7 @@ import bitbox from "."
  */
 
 function proxy(target, mapping, root) {
-    return new Proxy(bitbox.map(mapping, root), {
+    return new Proxy(new Mapping(mapping, root), {
         get(mapping, key) {
             return Reflect.has(mapping, key)
                 ? bitbox.get(target, Reflect.get(mapping, key))

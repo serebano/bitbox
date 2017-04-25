@@ -1,8 +1,7 @@
 import wrappers from "./wrappers"
-import { wellKnownSymbols, nextTick } from "../utils"
+import { is, wellKnownSymbols, nextTick } from "../../utils"
 import { proxies, observers, queue, state, enumerate } from "./store"
 import { runObservers } from "./observe"
-import { is } from "../utils"
 
 /**
  * bitbox.observable

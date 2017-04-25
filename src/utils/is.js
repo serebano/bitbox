@@ -1,4 +1,4 @@
-import { isObservable } from "../observer"
+import { isObservable } from "../bitbox/observer"
 import { symbol } from "../bitbox"
 
 const is = {

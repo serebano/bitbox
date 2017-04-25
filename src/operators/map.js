@@ -7,7 +7,7 @@ import bitbox from "../bitbox"
  */
 
 export default (mapping, root) => {
-    const map = bitbox.map(mapping, root)
-
-    return target => bitbox.proxy(target, map)
+    return function map(target) {
+        return bitbox.map(target, mapping, root)
+    }
 }

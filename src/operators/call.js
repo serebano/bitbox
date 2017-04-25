@@ -12,7 +12,5 @@ export default function(box, ...args) {
         return bitbox.apply(target, box, args)
     }
 
-    call.displayName = `call(${box}, ${toPrimitive(args, ", ")})`
-
     return call
 }

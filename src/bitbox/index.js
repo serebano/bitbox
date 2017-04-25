@@ -1,12 +1,10 @@
-import observable from "../observer/observable"
-import observe from "../observer/observe"
+import * as observer from "./observer"
 import resolve from "./resolve"
 import create from "./create"
-import proxy from "./proxy"
-import map from "./map"
+import Mapping from "./map"
 import is from "../utils/is"
 
-const symbol = {
+export const symbol = {
     path: Symbol("bitbox.path")
 }
 
@@ -55,11 +53,39 @@ bitbox.define = function defineProperty(target, box, descriptor) {
 }
 
 bitbox.apply = function apply(target, box, args) {
-    return Reflect.apply(
-        bitbox.resolve(target, box),
-        target,
-        args.map(arg => (is.box(arg) ? arg(target) : arg))
-    )
+    return Reflect.apply(bitbox.resolve(target, box), target, args)
+}
+
+/**
+ * bitbox.map
+ * @param  {Object} target
+ * @param  {Object} map
+ * @param  {Object|Function} root
+ * @return {Object}
+ */
+
+bitbox.map = function map(target, map, root) {
+    return new Proxy(new Mapping(map, root), {
+        get(mapping, key) {
+            if (Reflect.has(mapping, key)) return bitbox.resolve(target, Reflect.get(mapping, key))
+            if (Reflect.has(mapping, "*"))
+                return bitbox.resolve(target, Reflect.get(mapping, "*")(key))
+        },
+        set(mapping, key, value) {
+            if (Reflect.has(mapping, key))
+                return bitbox.resolve(target, Reflect.get(mapping, key), Reflect.set, value)
+            if (Reflect.has(mapping, "*"))
+                return bitbox.resolve(target, Reflect.get(mapping, "*")(key), Reflect.set, value)
+        }
+    })
+}
+
+bitbox.observable = function observable(target) {
+    return observer.observable(target)
+}
+
+bitbox.observe = function observe(target, box) {
+    return observer.observe(box, target)
 }
 
 /**
@@ -86,12 +112,6 @@ bitbox.root = function root() {
     })
 }
 
-bitbox.observable = observable
-bitbox.observe = observe
 bitbox.resolve = resolve
-bitbox.map = map
-bitbox.proxy = proxy
-
-export { map, resolve, observable, observe, symbol }
 
 /* ... */

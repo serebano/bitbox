@@ -12,7 +12,5 @@ export default function(box, args) {
         return bitbox.apply(target, box, args)
     }
 
-    apply.displayName = `apply(${box}, [${toPrimitive(args, ", ")}])`
-
     return apply
 }

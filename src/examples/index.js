@@ -1,11 +1,13 @@
 import Inferno from "inferno"
 import component from "../views/inferno"
+import createStore from "./createStore"
 import App from "./components/app"
 import app from "./app"
-import createStore from "./createStore"
 import appStore from "./store"
 
-export const store = createStore(appStore)
-export { app, appStore }
+const store = createStore(appStore)
+
+export { app, store }
+//component.debug = true
 
 Inferno.render(component(App, store, app), document.querySelector("#root"))

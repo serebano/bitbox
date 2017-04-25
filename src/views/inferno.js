@@ -7,7 +7,7 @@ HOC.observe = false
 HOC.debug = false
 
 function createElement(arg, ...rest) {
-    return is.function(arg) && arg.map
+    return is.function(arg) && (arg.map || arg.props)
         ? CreateElement(HOC(arg), ...rest)
         : CreateElement(arg, ...rest)
 }

@@ -10,6 +10,7 @@ function Value({ value, props }, h) {
 }
 
 Value.map = {
+    props: ["props"],
     value: timer.value(String)
 }
 

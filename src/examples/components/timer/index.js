@@ -1,8 +1,8 @@
 /** @jsx h */
-import timer from "./timer"
 import Value from "./value"
 import Remove from "./remove"
 import Toggle from "./toggle"
+import app from "../../app"
 
 function Timer({ id, background }, h) {
     return (
@@ -15,7 +15,8 @@ function Timer({ id, background }, h) {
 }
 
 Timer.map = {
-    background: timer.running(value => (value === true ? "#fff" : "#aaa"))
+    id: app.id,
+    background: app.timer.iid(id => (id ? "#fff" : "#aaa"))
 }
 
 export default Timer

@@ -1,18 +1,20 @@
 /** @jsx h */
-import timer from "./timer"
-import { signals } from "../../app"
+import { props, signals, timer } from "../../app"
 
-function Toggle({ toggle, props, running }, h) {
+function Toggle({ toggle, id, label }, h) {
     return (
-        <button onClick={() => toggle(props)}>
-            toggle ({props.id}) / [{running ? "stop" : "start"}]
+        <button onClick={() => toggle({ id })}>
+            {id} [{label}]
         </button>
     )
 }
 
 Toggle.map = {
+    id: props.id,
     toggle: signals.timerToggled,
-    running: timer.running
+    label: timer.iid(function label(id) {
+        return id > 0 ? "stop" : "start"
+    })
 }
 
 export default Toggle

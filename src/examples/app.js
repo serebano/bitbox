@@ -16,11 +16,10 @@ const app = bitbox({
                 return target.props ? app.props.id(target) : app.state.id(target)
             }
         ]
-    ]
+    ],
+    "*": ["props"]
 })
 
 export default app
 
 export const { args, props, state, signals, observer, timer } = app
-
-//bitbox.observe(app(map(App.map), stringify, console.info), store)

@@ -8,5 +8,5 @@ export default {
     items: state.items(Object.keys, join(` * `)),
     item: state.nativeSet(Array.from, arr => arr[arr.length - 1]),
     color: state.enabled(enabled => (enabled ? "red" : "green")),
-    computed: compute(state.count, state.timers(Object.keys).length, join(" - "))
+    computed: compute(state.count, state.timers(Object.keys, join(" * ")), join(" - "))
 }

@@ -2,16 +2,14 @@ import bitbox from "../bitbox"
 import Debug from "./debug"
 
 function create(View, component) {
-    //console.log(`view-create`, component.map)
-    const mapping = bitbox.map(component.map, View.app)
-
     if (!View.observe) {
         function Component(props, context) {
             return component(
-                bitbox.proxy(Object.assign({ props }, props, context.store), mapping),
+                bitbox.map(Object.assign({ props }, context.store), component.map, View.app),
                 View.createElement
             )
         }
+
         Component.displayName = `Component(${component.displayName || component.name})`
 
         return Component
@@ -19,16 +17,23 @@ function create(View, component) {
 
     return class extends View.Component {
         static displayName = `Component(${component.displayName || component.name})`
-        componentWillMount() {
-            const target = Object.assign({ props: this.props }, this.props, this.context.store)
-            const props = bitbox.proxy(target, mapping)
 
-            this.observer = target.observer = bitbox.observe(
-                render =>
-                    (render
-                        ? component(props, View.createElement)
-                        : !this._isUnmounting && this.observer && this.forceUpdate())
+        componentWillMount() {
+            const target = bitbox.map(
+                Object.defineProperties(Object.assign({ props: this.props }, this.context.store), {
+                    observer: {
+                        get: () => this.observer
+                    }
+                }),
+                component.map,
+                View.app
             )
+
+            this.observer = bitbox.observe(target, (props, render) => {
+                return render
+                    ? component(props, View.createElement)
+                    : !this._isUnmounting && this.observer && this.forceUpdate()
+            })
         }
         componentWillUnmount() {
             this._isUnmounting = true

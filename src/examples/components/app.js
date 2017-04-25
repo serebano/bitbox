@@ -11,9 +11,8 @@ import Mapped from "./mapped"
 function App(props, h) {
     return (
         <div>
-            <pre>{props.debug}</pre>
-            {props.isObservable ? <Mapped /> : null}
             <h1>{props.title}</h1>
+            {props.isObservable ? <Mapped /> : null}
             <Hello />
             <Count />
             <Toggle />
@@ -21,6 +20,7 @@ function App(props, h) {
             <div>
                 {props.timers.map(key => <Timer key={key} id={key} />)}
             </div>
+            <pre>{props.debug}</pre>
         </div>
     )
 }
