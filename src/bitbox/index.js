@@ -19,9 +19,11 @@ export default function bitbox() {
     return create(arguments)
 }
 
+bitbox.resolve = resolve // (target, box, method, ...args)
+
 /**
  * Handler methods
- * bitbox[ get, set, has, keys, delete, define ]
+ * bitbox[ get, set, map, has, keys, delete, define ]
  *
  * @param  {Object} target
  * @param  {Function|Array} path
@@ -34,6 +36,21 @@ bitbox.get = function get(target, box) {
 
 bitbox.set = function set(target, box, value) {
     return bitbox.resolve(target, box, Reflect.set, value)
+}
+
+bitbox.map = function map(target, map, root) {
+    return new Proxy(new Mapping(map, root), {
+        get(mapping, key) {
+            if (Reflect.has(mapping, key)) return bitbox.get(target, Reflect.get(mapping, key))
+            if (Reflect.has(mapping, "*")) return bitbox.get(target, Reflect.get(mapping, "*")(key))
+        },
+        set(mapping, key, value) {
+            if (Reflect.has(mapping, key))
+                return bitbox.set(target, Reflect.get(mapping, key), value)
+            if (Reflect.has(mapping, "*"))
+                return bitbox.set(target, Reflect.get(mapping, "*")(key), value)
+        }
+    })
 }
 
 bitbox.has = function has(target, box) {
@@ -56,36 +73,12 @@ bitbox.apply = function apply(target, box, args) {
     return Reflect.apply(bitbox.resolve(target, box), target, args)
 }
 
-/**
- * bitbox.map
- * @param  {Object} target
- * @param  {Object} map
- * @param  {Object|Function} root
- * @return {Object}
- */
-
-bitbox.map = function map(target, map, root) {
-    return new Proxy(new Mapping(map, root), {
-        get(mapping, key) {
-            if (Reflect.has(mapping, key)) return bitbox.resolve(target, Reflect.get(mapping, key))
-            if (Reflect.has(mapping, "*"))
-                return bitbox.resolve(target, Reflect.get(mapping, "*")(key))
-        },
-        set(mapping, key, value) {
-            if (Reflect.has(mapping, key))
-                return bitbox.resolve(target, Reflect.get(mapping, key), Reflect.set, value)
-            if (Reflect.has(mapping, "*"))
-                return bitbox.resolve(target, Reflect.get(mapping, "*")(key), Reflect.set, value)
-        }
-    })
+bitbox.observe = function observe(target, box, args) {
+    return observer.observe(box, observer.observable(target))
 }
 
 bitbox.observable = function observable(target) {
     return observer.observable(target)
-}
-
-bitbox.observe = function observe(target, box) {
-    return observer.observe(box, target)
 }
 
 /**
@@ -96,7 +89,7 @@ bitbox.observe = function observe(target, box) {
  */
 
 bitbox.path = function path(box) {
-    return is.array(box) ? box : Reflect.get(box, symbol.path)
+    return is.array(box) ? box : Reflect.get(box, symbol.path) || []
 }
 
 /**
@@ -111,7 +104,5 @@ bitbox.root = function root() {
         }
     })
 }
-
-bitbox.resolve = resolve
 
 /* ... */

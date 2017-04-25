@@ -14,6 +14,7 @@ function Mapping(mapping, root) {
 
     mapping = is.function(mapping) ? mapping(root || bitbox.root()) : mapping
     root = root || []
+
     return Object.keys(mapping || {}).reduce((map, key) => {
         map[key] = is.array(mapping[key])
             ? create([...root, ...mapping[key]])

@@ -1,15 +1,18 @@
 import bitbox from "./bitbox"
+import * as utils from "./utils"
 import * as operators from "./operators"
-import { is } from "./utils"
-//import * as example from "./examples"
+import * as example from "./examples"
 
 export default bitbox
-export { operators, is }
+export { operators, utils }
 
-// Object.assign(window, operators, {
-//     is,
-//     bitbox,
-//     operators
-// })
+if (!utils.is.undefined(window)) {
+    Object.assign(window, utils, operators, {
+        bitbox,
+        operators,
+        utils
+    })
+}
+
 //
 // Object.assign(window, example)

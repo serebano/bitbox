@@ -1,4 +1,4 @@
-import { is, toPrimitive } from "../utils"
+import { is } from "../utils"
 
 /**
  * Compute
@@ -17,8 +17,6 @@ function Compute(...args) {
                 : is.function(arg) ? [...result, arg(...result)] : [...result, arg]
         }, [])
     }
-
-    compute.displayName = `compute(${toPrimitive(args, ", ")})`
 
     return compute
 }

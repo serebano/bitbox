@@ -1,1 +1,4 @@
-{ "presets": ["react","env"], "plugins": ["syntax-class-properties", "transform-class-properties"] }
+{
+    "presets": ["react", "env"],
+    "plugins": ["syntax-class-properties", "transform-class-properties"]
+}

@@ -8,8 +8,14 @@ export { default as apply } from "./apply"
 export { default as call } from "./call"
 export { default as compute } from "./compute"
 export { default as template } from "./template"
-export { default as push } from "./push"
 export { default as observe } from "./observe"
+export { default as delay } from "./delay"
+
+import * as array from "./array"
+import * as object from "./object"
+import * as primitive from "./primitive"
+
+export { array, object, primitive }
 
 /**
  * The Operators
@@ -17,34 +23,25 @@ export { default as observe } from "./observe"
 
 export function or(...args) {
     function operator(target, args) {
-        return target || args.find(arg => typeof arg !== "undefined")
+        return args.find(arg => typeof arg !== "undefined")
     }
     operator.args = args
-    operator.displayName = `or(${args.map(String)})`
     return operator
 }
 
-export function concat(...args) {
+export function and(...args) {
     function operator(target, args) {
-        return target.concat(...args)
+        return args.every(arg => arg(target))
     }
     operator.args = args
     return operator
 }
 
-export function merge(...args) {
+export function not(...args) {
     function operator(target, args) {
-        return Object.assign(target, ...args)
+        return args.every(arg => !arg(target))
     }
     operator.args = args
-    return operator
-}
-
-export function join(separator) {
-    function operator(array) {
-        return array.join(separator)
-    }
-    operator.displayName = `join(${separator})`
     return operator
 }
 
@@ -52,7 +49,6 @@ export function eq(value) {
     function operator(state) {
         return state === value
     }
-    operator.displayName = `eq(${value})`
     return operator
 }
 
@@ -60,7 +56,6 @@ export function gt(value) {
     function operator(state) {
         return state > value
     }
-    operator.displayName = `gt(${value})`
     return operator
 }
 
@@ -68,50 +63,12 @@ export function lt(value) {
     function operator(state) {
         return state < value
     }
-    operator.displayName = `lt(${value})`
     return operator
 }
 
-export function type(value) {
-    function operator(state) {
-        return typeof state === value
+export function type(test) {
+    function operator(target) {
+        return typeof target === test
     }
-    operator.displayName = `type(${value})`
     return operator
-}
-
-export function arrayMap(fn) {
-    function operator(array) {
-        return array.map(fn)
-    }
-    operator.displayName = `map(${fn.displayName || fn.name})`
-    return operator
-}
-
-export function stringify(target) {
-    return JSON.stringify(target, null, 4)
-}
-
-export function toUpper(value) {
-    return value.toUpperCase()
-}
-
-export function toLower(value) {
-    return value.toLowerCase()
-}
-
-export function object(obj) {
-    return Object.assign({}, obj)
-}
-
-export function inc(number) {
-    return number + 1
-}
-
-export function dec(number) {
-    return number - 1
-}
-
-export function toggle(value) {
-    return !value
 }

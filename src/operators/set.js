@@ -1,3 +1,4 @@
+import bitbox from "../"
 /**
  * set(box, value)
  * @param {Function|Array} box
@@ -5,11 +6,7 @@
  */
 
 export default (box, value) => {
-    function set(target) {
-        box(target, Reflect.set, value)
+    return function set(target) {
+        return bitbox.set(target, box, value)
     }
-
-    set.displayName = `set(${box}, ${value})`
-
-    return set
 }
