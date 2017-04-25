@@ -1,4 +1,4 @@
-import { is } from ".";
+import { is } from "."
 
 function toJSON(keys) {
     return keys.map(
@@ -7,11 +7,12 @@ function toJSON(keys) {
                 ? toJSON(key.filter(k => !is.object(k)))
                 : is.object(key)
                       ? Object.keys(key).reduce((map, k) => {
-                            map[k] = is.box(key[k]) ? key[k].toJSON() : toJSON(key[k]);
-                            return map;
+                            map[k] = is.box(key[k]) ? key[k].toJSON() : toJSON(key[k])
+                            return map
                         }, {})
-                      : is.function(key) ? "(" + (key.displayName || key.name) + ")" : key)
-    );
+                      : is.function(key) ? key.toString() : key)
+        //"(" + (key.displayName || key.name) + ")"
+    )
 }
 
-export default toJSON;
+export default toJSON

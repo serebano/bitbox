@@ -10,13 +10,13 @@ import bitbox from "."
  * @return {Any}
  */
 
-function resolve(target, box, method) {
-    return bitbox.path(box).reduce((value, key, index, path) => {
+function resolve(target, path, method) {
+    return bitbox.path(path).reduce((value, key, index, path) => {
         if (is.array(key)) key = resolve(target, key)
 
         const type = typeof key
 
-        if (type === "object") return bitbox.map(value, key)
+        if (type === "object") return bitbox.proxy(value, key)
         if (type === "function") return key(value)
 
         if (is.undefined(value)) return value

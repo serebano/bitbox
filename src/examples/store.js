@@ -1,5 +1,4 @@
-import { join } from "../operators"
-import { args, state } from "./app"
+import signals from "./signals"
 
 export default {
     state: {
@@ -16,12 +15,12 @@ export default {
         enabled: true,
         nativeSet: new Set(["One", "Two"]),
         timers: {
-            one: {
-                value: 0
-            }
+            one: { value: 0 },
+            abc: { value: 200 },
+            xxx: { value: 100 }
         },
         items: ["Item #1", "Item #2"],
         id: "one"
     },
-    signals: {}
+    signals
 }

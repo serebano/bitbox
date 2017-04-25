@@ -2,6 +2,7 @@ import observable from "../observer/observable"
 import observe from "../observer/observe"
 import resolve from "./resolve"
 import create from "./create"
+import proxy from "./proxy"
 import map from "./map"
 import is from "../utils/is"
 
@@ -89,6 +90,7 @@ bitbox.observable = observable
 bitbox.observe = observe
 bitbox.resolve = resolve
 bitbox.map = map
+bitbox.proxy = proxy
 
 export { map, resolve, observable, observe, symbol }
 

@@ -1,13 +1,16 @@
 import bitbox from "../bitbox"
-import { map } from "../operators"
 import Debug from "./debug"
 
 function create(View, component) {
-    const app = map(component.map, View.app)
+    //console.log(`view-create`, component.map)
+    const mapping = bitbox.map(component.map, View.app)
 
     if (!View.observe) {
         function Component(props, context) {
-            return component(app(Object.assign({ props }, context.store)), View.createElement)
+            return component(
+                bitbox.proxy(Object.assign({ props }, props, context.store), mapping),
+                View.createElement
+            )
         }
         Component.displayName = `Component(${component.displayName || component.name})`
 
@@ -18,7 +21,8 @@ function create(View, component) {
         static displayName = `Component(${component.displayName || component.name})`
         componentWillMount() {
             const target = Object.assign({ props: this.props }, this.props, this.context.store)
-            const props = app(target)
+            const props = bitbox.proxy(target, mapping)
+
             this.observer = target.observer = bitbox.observe(
                 render =>
                     (render

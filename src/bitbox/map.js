@@ -1,25 +1,25 @@
 import bitbox from "."
+import create from "./create"
+import { is } from "../utils"
 
 /**
- * bitbox.map
- * @param  {Object} target
- * @param  {Object} mapping
- * @return {Object}
+ * bitbox.map(mapping, root)
+ * @param {Object} mapping
+ * @param {Function} root
  */
 
-function map(target, mapping) {
-    return new Proxy(mapping, {
-        get(mapping, key) {
-            return Reflect.has(mapping, key)
-                ? bitbox.get(target, Reflect.get(mapping, key))
-                : bitbox.get(target, [key])
-        },
-        set(mapping, key, value) {
-            return Reflect.has(mapping, key)
-                ? bitbox.set(target, Reflect.get(mapping, key), value)
-                : bitbox.set(target, [key], value)
-        }
-    })
+function Mapping(mapping, root) {
+    if (mapping instanceof Mapping) return mapping
+    if (!(this instanceof Mapping)) return new Mapping(...arguments)
+
+    mapping = is.function(mapping) ? mapping(root || bitbox.root()) : mapping
+
+    return Object.keys(mapping || {}).reduce((map, key) => {
+        map[key] = is.array(mapping[key])
+            ? create(mapping[key])
+            : is.box(mapping[key]) ? mapping[key] : create([mapping[key]])
+        return map
+    }, this)
 }
 
-export default map
+export default Mapping

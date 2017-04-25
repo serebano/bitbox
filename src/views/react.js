@@ -3,7 +3,7 @@ import PropTypes from "prop-types"
 import create from "./create"
 import { is } from "../utils"
 
-HOC.observe = true
+HOC.observe = false
 HOC.debug = false
 
 function createElement(arg, ...rest) {
@@ -14,7 +14,9 @@ function createElement(arg, ...rest) {
 
 function HOC(component, store, app) {
     if (store) {
+        HOC.observe = app.state(is.observable, store)
         HOC.app = app
+
         class Container extends React.Component {
             static displayName = HOC.observe ? `Observable` : `Static`
             static propTypes = {

@@ -3,6 +3,8 @@ import app from "../app"
 import { stringify } from "../../operators"
 import mapping from "../mapping"
 
+window.mapping = mapping
+
 function Mapped(props, h) {
     return (
         <div>
@@ -22,7 +24,7 @@ function Mapped(props, h) {
 Mapped.map = {
     changes: app.observer.changes,
     changed: app.observer.changed,
-    str: mapping(stringify),
+    str: [mapping, stringify],
     color: mapping.color
 }
 

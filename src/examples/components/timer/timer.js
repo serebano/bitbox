@@ -1,3 +1,3 @@
-import app, { state, props } from "../../app"
+import app from "../../app"
 
-export default app(state.timers[props.id])
+export default app.timer
