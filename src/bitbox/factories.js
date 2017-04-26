@@ -1,9 +1,9 @@
-import bitbox from "../"
-import * as observer from "../observer"
+import bitbox from "."
+import * as observer from "./observer"
 export { default as compute } from "./compute"
 
 /**
- * bitbox operators
+ * handler factories
  */
 
 export function get(box) {
@@ -15,8 +15,7 @@ export function set(box, value) {
 }
 
 export function map(mapping, context) {
-    const map = target => bitbox.map(target, mapping, context)
-    return map
+    return target => bitbox.map(target, mapping, context)
 }
 
 export function has(box) {
@@ -43,11 +42,10 @@ export function observe(box, args) {
     return target => bitbox.observe(target, box, args)
 }
 
-export function observable(target) {
-    return observer.observable(target)
+export function proxy(handler) {
+    return target => new Proxy(target, handler)
 }
 
-export function proxy(handler) {
-    const proxy = target => new Proxy(target, handler)
-    return proxy
+export function observable(target) {
+    return observer.observable(target)
 }

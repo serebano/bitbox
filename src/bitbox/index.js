@@ -1,9 +1,16 @@
-import * as observer from "./observer"
-import resolve from "./resolve"
 import create, { symbol } from "./create"
+import resolve from "./resolve"
 import Mapping from "./mapping"
-import is from "../utils/is"
-import { get, observable } from "./operators"
+import * as observer from "./observer"
+import { get, observable } from "./factories"
+import { is } from "../utils"
+
+/**
+ * factories
+ */
+
+export * from "./factories"
+
 /**
  * bitbox
  * Create new box
@@ -14,8 +21,6 @@ import { get, observable } from "./operators"
 export default function bitbox() {
     return create(arguments)
 }
-
-bitbox.resolve = resolve // (target, box, method, ...args)
 
 /**
  * Handler methods
@@ -87,5 +92,7 @@ bitbox.observable = function observable(target) {
 bitbox.path = function path(box) {
     return is.array(box) ? box : Reflect.get(box, symbol.path) || []
 }
+
+bitbox.resolve = resolve
 
 /* ... */
