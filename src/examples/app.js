@@ -1,4 +1,4 @@
-import bitbox, { proxy } from "../bitbox"
+import bitbox, { proxy } from "bitbox"
 import FunctionTree from "function-tree"
 import { is } from "../utils"
 

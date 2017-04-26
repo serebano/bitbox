@@ -1,6 +1,7 @@
 import React from "react"
 import PropTypes from "prop-types"
 import create from "./create"
+import bitbox from "../bitbox"
 import { is } from "../utils"
 
 HOC.observe = false
@@ -14,11 +15,10 @@ function createElement(arg, ...rest) {
 
 function HOC(component, store, app) {
     if (store) {
-        HOC.observe = app.state(is.observable, store)
+        HOC.observe = bitbox.get(store, app.state(is.observable))
         HOC.app = app
 
         class Container extends React.Component {
-            static displayName = HOC.observe ? `Observable` : `Static`
             static propTypes = {
                 store: PropTypes.object.isRequired,
                 children: PropTypes.node.isRequired
@@ -35,6 +35,8 @@ function HOC(component, store, app) {
                 return this.props.children
             }
         }
+
+        Container.displayName = HOC.observe ? `Observable` : `Static`
 
         return createElement(Container, { store }, createElement(component))
     }

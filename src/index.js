@@ -1,18 +1,20 @@
 import bitbox from "./bitbox"
+import * as operators from "./bitbox/operators"
+import * as factories from "./factories"
+import * as views from "./views"
 import * as utils from "./utils"
-import * as operators from "./operators"
-import * as example from "./examples"
-import * as handler from "./bitbox"
 
 export default bitbox
-export { operators, utils }
+export * from "./bitbox/operators"
+
+export { operators, factories, views, utils }
 
 if (!utils.is.undefined(window)) {
-    Object.assign(window, utils, operators, handler, {
+    Object.assign(window, utils, operators, factories, {
         bitbox,
-        handler,
+        factories,
         operators,
+        views,
         utils
     })
-    Object.assign(window, example)
 }

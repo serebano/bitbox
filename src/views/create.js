@@ -3,33 +3,26 @@ import Debug from "./debug"
 
 function create(View, component) {
     if (!View.observe) {
-        function Component(props, context) {
+        return function Component(props, context) {
             return component(
                 bitbox.map(Object.assign({ props }, context.store), component.map, View.app),
                 View.createElement
             )
         }
-
-        Component.displayName = `Component(${component.displayName || component.name})`
-
-        return Component
     }
 
-    class Component extends View.Component {
+    return class Component extends View.Component {
         componentWillMount() {
-            const target = bitbox.map(
-                Object.defineProperties(Object.assign({ props: this.props }, this.context.store), {
-                    observer: { get: () => this.observer }
-                }),
-                component.map,
-                View.app
-            )
+            const target = Object.assign({ props: this.props }, this.context.store)
 
-            this.observer = bitbox.observe(target, (props, render) => {
-                return render
-                    ? component(props, View.createElement)
-                    : !this._isUnmounting && this.observer && this.forceUpdate()
-            })
+            this.observer = target.observer = bitbox.observe(
+                bitbox.map(target, component.map, View.app),
+                (props, render) => {
+                    return render
+                        ? component(props, View.createElement)
+                        : !this._isUnmounting && this.observer && this.forceUpdate()
+                }
+            )
         }
         componentWillUnmount() {
             this._isUnmounting = true
@@ -44,10 +37,6 @@ function create(View, component) {
                 : this.observer.run(true)
         }
     }
-
-    Component.displayName = `Component(${component.displayName || component.name})`
-
-    return Component
 }
 
 export default create

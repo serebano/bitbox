@@ -1,5 +1,5 @@
-import { is } from "../utils"
-import bitbox from "../bitbox"
+import { is } from "../../utils"
+import bitbox from "../"
 
 /**
  * Compute

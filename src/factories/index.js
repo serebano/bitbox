@@ -1,4 +1,3 @@
-export { default as compute } from "./compute"
 export { default as template } from "./template"
 export { default as delay } from "./delay"
 

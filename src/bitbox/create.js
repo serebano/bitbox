@@ -1,4 +1,4 @@
-import Mapping from "./map"
+import Mapping from "./mapping"
 import { is, toPrimitive, toJSON, toArray } from "../utils"
 
 export const symbol = {
@@ -30,6 +30,7 @@ function createProxy(keys, isRoot, $box) {
     const root = (keys = keys.map(key => {
         if (!keyTypes.includes(typeof key))
             throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
+
         return is.object(key) ? new Mapping(key) : key
     }))
 
@@ -56,12 +57,12 @@ function createProxy(keys, isRoot, $box) {
             if (key === Symbol.iterator) return iterator(keys)
             if (key === Symbol.toPrimitive) return primitive(keys)
             if (key === Symbol.toStringTag) return identity
+            if (currentKey instanceof Mapping) return mappedKey(currentKey, key)
 
             keys.push(!is.undefined(__keys) && key === __key ? __keys : key)
+
             __keys = undefined
             __key = undefined
-
-            if (currentKey instanceof Mapping) return mappedKey(currentKey, key)
 
             return isRoot ? createProxy(keys, false, $box) : proxy
         },
