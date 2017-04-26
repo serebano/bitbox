@@ -2,19 +2,20 @@ import CreateElement from "inferno-create-element"
 import Component from "inferno-component"
 import create from "./create"
 import { is } from "../utils"
+import bitbox from "../bitbox"
 
 HOC.observe = false
 HOC.debug = false
 
 function createElement(arg, ...rest) {
-    return is.function(arg) && (arg.map || arg.props)
+    return is.func(arg) && (arg.map || arg.props)
         ? CreateElement(HOC(arg), ...rest)
         : CreateElement(arg, ...rest)
 }
 
 function HOC(component, store, app) {
     if (store) {
-        HOC.observe = app.state(is.observable, store)
+        HOC.observe = bitbox.get(store, app.state(is.observable))
         HOC.app = app
 
         class Container extends Component {

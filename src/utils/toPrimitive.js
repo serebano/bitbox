@@ -10,14 +10,14 @@ export default function toPrimitive(keys, sep = ".", isKey) {
                     " })"
                 )
             }
-            if (is.function(key)) {
+            if (is.func(key)) {
                 if (isKey) {
                     return "function " + (key.displayName || key.name)
                 }
                 return (
-                    (!is.function(keys[idx - 1]) ? "(" : "") +
+                    (!is.func(keys[idx - 1]) ? "(" : "") +
                     (key.displayName || key.name || String(key)) +
-                    (!is.function(keys[idx + 1]) ? ")" : ", ")
+                    (!is.func(keys[idx + 1]) ? ")" : ", ")
                 )
             }
             return is.array(key)

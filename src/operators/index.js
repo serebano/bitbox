@@ -1,28 +1,35 @@
-export { default as get } from "./get"
-export { default as set } from "./set"
-export { default as has } from "./has"
-export { default as map } from "./map"
-export { default as keys } from "./keys"
-export { default as unset } from "./unset"
-export { default as apply } from "./apply"
-export { default as call } from "./call"
 export { default as compute } from "./compute"
 export { default as template } from "./template"
-export { default as observe } from "./observe"
 export { default as delay } from "./delay"
 
 import * as array from "./array"
 import * as object from "./object"
-import * as primitive from "./primitive"
+import * as string from "./string"
 
-export { array, object, primitive }
+export { array, object, string }
 
 /**
  * The Operators
  */
 
+export function stringify(target) {
+    return JSON.stringify(target, null, 4)
+}
+
+export function inc(number) {
+    return number + 1
+}
+
+export function dec(number) {
+    return number - 1
+}
+
+export function toggle(value) {
+    return !value
+}
+
 export function or(...args) {
-    function operator(target, args) {
+    function operator(target, ...args) {
         return args.find(arg => typeof arg !== "undefined")
     }
     operator.args = args
@@ -30,7 +37,7 @@ export function or(...args) {
 }
 
 export function and(...args) {
-    function operator(target, args) {
+    function operator(target, ...args) {
         return args.every(arg => arg(target))
     }
     operator.args = args
@@ -38,7 +45,7 @@ export function and(...args) {
 }
 
 export function not(...args) {
-    function operator(target, args) {
+    function operator(target, ...args) {
         return args.every(arg => !arg(target))
     }
     operator.args = args

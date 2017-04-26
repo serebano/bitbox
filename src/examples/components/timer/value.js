@@ -1,5 +1,5 @@
 /** @jsx h */
-import timer from "./timer"
+import { props, timer } from "../../app"
 
 function Value({ value, props }, h) {
     return (
@@ -10,7 +10,7 @@ function Value({ value, props }, h) {
 }
 
 Value.map = {
-    props: ["props"],
+    props,
     value: timer.value(String)
 }
 

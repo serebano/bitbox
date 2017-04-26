@@ -1,13 +1,15 @@
-import { set, unset, or, inc, dec, toggle } from "../operators"
-import { state, args, props } from "./app"
-import timer from "./components/timer/timer"
+import { get, set, unset } from "../bitbox"
+import { inc, dec, toggle } from "../operators"
+import { state, args, props, timer } from "./app"
+
+const isRunning = get(timer.iid(Boolean))
 
 function toggleTimer({ state, props, path }) {
-    return state.timers[props.id].iid ? path.stop() : path.start()
+    return isRunning({ state, props }) ? path.stop() : path.start()
 }
 
 export default {
-    nameChanged: set(state.name, args[0].target.value(or("Demo"))),
+    nameChanged: set(state.name, args[0].target.value),
     incClicked: set(state.count, state.count(inc)),
     decClicked: set(state.count, state.count(dec)),
     toggleClicked: set(state.enabled, state.enabled(toggle)),

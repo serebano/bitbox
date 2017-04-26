@@ -26,43 +26,43 @@ const { args, state, counter } = app
 const set = (box, value) => {
     return target => {
         return (...args) => {
-            return box(Object.assign({ args }, target), Reflect.set, value)
+            return bitbox.set(Object.assign({ args }, target), box, value)
         }
     }
 }
 
-function Component(props) {
-    window.props = props
-    return `
+const box = bitbox(
+    {
+        count: counter.count,
+        selected: state.selected,
+        counters: state.counters(Object.keys),
+        inc: set(counter.count, counter.count(inc)),
+        dec: set(counter.count, counter.count(dec)),
+        reset: set(counter.count, args(0, or(0))),
+        select: set(state.selected, args(0, or("bar"))),
+        add: set(
+            state.counters[args(0, or(state.counters(Object.keys).length(i => `counter ${i}`)))],
+            args(1, (count = 0) => ({
+                count
+            }))
+        )
+    },
+    function Component(props) {
+        window.props = props
+        return `
         <h1>${props.selected} = ${props.count}</h1>
 		${props.counters.map(id => `<button onclick="props.select('${id}')">${id}</button>`).join("")}
 		<hr />
         <button onclick="props.inc()">Inc</button>
         <button onclick="props.dec()">Dec</button>
         <button onclick="props.reset()">Reset</button>
-
     `
-}
-
-Component.map = {
-    count: counter.count,
-    selected: state.selected,
-    counters: state.counters(Object.keys),
-    inc: set(counter.count, counter.count(inc)),
-    dec: set(counter.count, counter.count(dec)),
-    reset: set(counter.count, args(0, or(0))),
-    select: set(state.selected, args(0, or("bar"))),
-    add: set(
-        state.counters[args(0, or(state.counters(Object.keys).length(i => `counter ${i}`)))],
-        args(1, (count = 0) => ({
-            count
-        }))
-    )
-}
+    }
+)
 
 bitbox.observe(
     store,
-    bitbox(Component.map, Component, function render(html) {
+    box(function render(html) {
         document.body.innerHTML = html
     })
 )

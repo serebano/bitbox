@@ -1,5 +1,5 @@
 /** @jsx h */
-import { observer } from "../app"
+import app, { observer } from "../app"
 import { stringify } from "../../operators"
 import mapping from "../mapping"
 
@@ -22,7 +22,7 @@ function Mapped(props, h) {
 Mapped.map = {
     changes: observer.changes,
     changed: observer.changed,
-    str: [mapping, stringify],
+    str: app(mapping, stringify),
     color: mapping.color
 }
 

@@ -15,15 +15,11 @@ function create(View, component) {
         return Component
     }
 
-    return class extends View.Component {
-        static displayName = `Component(${component.displayName || component.name})`
-
+    class Component extends View.Component {
         componentWillMount() {
             const target = bitbox.map(
                 Object.defineProperties(Object.assign({ props: this.props }, this.context.store), {
-                    observer: {
-                        get: () => this.observer
-                    }
+                    observer: { get: () => this.observer }
                 }),
                 component.map,
                 View.app
@@ -48,6 +44,10 @@ function create(View, component) {
                 : this.observer.run(true)
         }
     }
+
+    Component.displayName = `Component(${component.displayName || component.name})`
+
+    return Component
 }
 
 export default create

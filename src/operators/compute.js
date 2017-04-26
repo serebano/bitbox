@@ -1,4 +1,5 @@
 import { is } from "../utils"
+import bitbox from "../bitbox"
 
 /**
  * Compute
@@ -10,11 +11,11 @@ function Compute(...args) {
     function compute(target) {
         return args.reduce((result, arg, idx) => {
             if (idx === args.length - 1)
-                return is.box(arg) ? arg(target) : is.function(arg) ? arg(result) : arg
+                return is.box(arg) ? bitbox.get(target, arg) : is.func(arg) ? arg(result) : arg
 
             return is.box(arg)
-                ? [...result, arg(target)]
-                : is.function(arg) ? [...result, arg(...result)] : [...result, arg]
+                ? [...result, bitbox.get(target, arg)]
+                : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
         }, [])
     }
 

@@ -1,12 +1,12 @@
 import { isObservable } from "../bitbox/observer"
-import { symbol } from "../bitbox"
+import { symbol } from "../bitbox/create"
 
 const is = {
-    box: arg => is.function(arg) && Reflect.has(arg, symbol.path),
+    func: arg => typeof arg === "function",
+    box: arg => is.func(arg) && Reflect.has(arg, symbol.path),
     observable: arg => isObservable(arg),
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
     complexObject: arg => typeof arg === "object" && arg !== null,
-    function: arg => typeof arg === "function",
     array: arg => Array.isArray(arg),
     promise: arg => arg instanceof Promise,
     string: arg => typeof arg === "string",

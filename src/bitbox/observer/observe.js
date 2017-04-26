@@ -4,15 +4,14 @@ import { is } from "../../utils"
 /**
  * bitbox.observe
  * Observes observable target
- * @param  {Function}   fn
+ * @param  {Function}   observer
  * @param  {Array}      args
  * @return {Object}
  */
 
 export default function observe(observer, ...args) {
-    if (!is.function(observer)) {
+    if (!is.func(observer))
         throw new TypeError(`[bitbox.observe] First argument must be a function`)
-    }
 
     const o = createObserver(observer, args)
     runObserver(o)

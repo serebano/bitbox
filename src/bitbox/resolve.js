@@ -36,7 +36,7 @@ function resolve(target, box, method) {
         if (method && (!path.length || index === path.length - 1)) {
             if (type !== "string" && type !== "number") {
                 throw new Error(
-                    `[bitbox.resolve] Invalid key type "${type}" for method "${method.name}"`
+                    `[bitbox.resolve] Invalid key type "${type}" for method "${method.name}" [${path.join(".")}]`
                 )
             }
 
