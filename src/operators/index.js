@@ -1,5 +1,6 @@
 export { default as template } from "./template"
 export { default as delay } from "./delay"
+export { default as print } from "./print"
 
 import * as array from "./array"
 import * as object from "./object"

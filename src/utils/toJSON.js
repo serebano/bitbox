@@ -10,7 +10,7 @@ function toJSON(keys) {
                             map[k] = is.box(key[k]) ? key[k].toJSON() : toJSON(key[k])
                             return map
                         }, {})
-                      : is.function(key) ? key.toString() : key)
+                      : is.func(key) ? key.toString() : key)
         //"(" + (key.displayName || key.name) + ")"
     )
 }

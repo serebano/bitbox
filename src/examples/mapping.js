@@ -1,4 +1,5 @@
-import { compute, array, string } from "../operators"
+import { compute } from "../bitbox"
+import { array, string } from "../operators"
 import { state } from "./app"
 
 export default {

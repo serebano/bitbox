@@ -1,5 +1,7 @@
 import create from "./create"
 import { is } from "../utils"
+import bitbox from "."
+import * as factories from "./factories"
 
 /**
  * bitbox.map(mapping, context)
@@ -7,15 +9,34 @@ import { is } from "../utils"
  * @param {Function} context
  */
 
-function Mapping(mapping, context) {
+function Mapping(mapping, context, strict) {
     if (mapping instanceof Mapping) return mapping
-    if (is.func(mapping)) return new Mapping(mapping(context), context)
-    if (!(this instanceof Mapping)) return new Mapping(...arguments)
+
+    if (is.func(mapping)) {
+        return new Mapping(
+            mapping(
+                new Proxy(new Mapping(context), {
+                    get(box, key) {
+                        if (Reflect.has(box, key)) return Reflect.get(box, key)
+                        if (!strict) return bitbox(key)
+                    }
+                }),
+                factories
+            )
+        )
+    }
 
     return Object.keys(mapping || {}).reduce((map, key) => {
-        map[key] = is.array(mapping[key])
-            ? context ? context(...mapping[key]) : create(mapping[key])
-            : is.box(mapping[key]) ? mapping[key] : create([mapping[key]])
+        const value = Reflect.get(mapping, key)
+
+        if (is.array(value) || is.box(value)) {
+            Reflect.set(map, key, create(value))
+        } else if (is.func(value) || is.object(value)) {
+            Reflect.set(map, key, create([value]))
+        } else {
+            console.warn(`mapping key -> ${key}`, mapping)
+        }
+
         return map
     }, this)
 }

@@ -1,10 +1,10 @@
 import Mapping from "./mapping"
+import resolve from "./resolve"
 import { is, toPrimitive, toJSON, toArray } from "../utils"
 
 export const symbol = {
     path: Symbol("bitbox.path")
 }
-
 /** primitive key transfer */
 let __keys, __key
 const primitive = keys => {
@@ -12,59 +12,56 @@ const primitive = keys => {
     return () => __key = toPrimitive(keys)
 }
 const identity = () => "bitbox"
-const keyTypes = ["string", "number", "array", "object", "function"]
+const keyTypes = ["string", "number", "function", "symbol"]
 const iterator = keys => Array.prototype[Symbol.iterator].bind(keys)
-const mappedKey = (mapping, key) =>
-    (Reflect.has(mapping, key)
-        ? Reflect.get(mapping, key)
-        : Reflect.has(mapping, "*") && Reflect.get(mapping, "*")[key])
-
-function create(keys = [], isRoot = true) {
-    keys = [...keys]
-    const box = is.func(keys[0]) && keys[0].name === "box" && keys.shift()
-
-    return createProxy(keys, isRoot, box)
+const validate = key => {
+    if (keyTypes.includes(typeof key) || key instanceof Mapping || is.array(key)) return key
+    throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
 }
 
-function createProxy(keys, isRoot, $box) {
-    const root = (keys = keys.map(key => {
-        if (!keyTypes.includes(typeof key))
-            throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
+function create(keys = [], isRoot = true) {
+    return createProxy(
+        [].concat(Array.from(keys)).map(key => {
+            if (is.object(key)) return new Mapping(key)
+            return validate(key)
+        }),
+        isRoot
+    )
+}
 
-        return is.object(key) ? new Mapping(key) : key
-    }))
+function createProxy(keys, isRoot = true) {
+    const root = keys
+    const bitbox = () => {}
 
-    const proxy = new Proxy($box || function box() {}, {
+    const proxy = new Proxy(bitbox, {
         apply(target, context, args) {
             if (isRoot) keys = root.slice(0)
-            if ($box) return $box.apply(context, [keys, args, proxy])
+            if (args.length && is.complexObject(args[0])) {
+                return resolve(args[0], keys, ...args.slice(1))
+            }
 
-            keys.push(...args)
-
-            return isRoot ? createProxy(keys, false, $box) : proxy
+            return create(keys.concat(args))
         },
-        get(box, key, receiver) {
+        get(box, key) {
             if (isRoot) keys = root.slice(0)
             const currentKey = keys[keys.length - 1]
 
-            if (key === "$") return keys
+            if (key === "$") return toArray(keys)
             if (key === "apply") return Reflect.get(box, key)
             if (key === "toJSON") return () => toJSON(keys)
-            if (key === "toArray") return () => toArray(keys)
             if (key === "displayName") return toPrimitive(keys)
-            if (key === symbol.path) return keys
             if (key === Symbol.isConcatSpreadable) return false
             if (key === Symbol.iterator) return iterator(keys)
             if (key === Symbol.toPrimitive) return primitive(keys)
             if (key === Symbol.toStringTag) return identity
-            if (currentKey instanceof Mapping) return mappedKey(currentKey, key)
+            if (currentKey instanceof Mapping) return Reflect.get(currentKey, key)
 
             keys.push(!is.undefined(__keys) && key === __key ? __keys : key)
 
             __keys = undefined
             __key = undefined
 
-            return isRoot ? createProxy(keys, false, $box) : proxy
+            return isRoot ? createProxy(keys, false) : proxy
         },
         has(box, key) {
             return true

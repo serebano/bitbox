@@ -20,7 +20,7 @@ export default function observe(observer, ...args) {
 }
 
 function createObserver(observer, args) {
-    return {
+    const o = {
         observer,
         args,
         keys: [],
@@ -28,21 +28,31 @@ function createObserver(observer, args) {
         changes: [],
         changed: 0,
         run(...args) {
-            return runObserver(this, args, true)
+            return runObserver(o, args, true)
         },
         skip() {
-            return queue.delete(this)
+            return queue.delete(o)
         },
-        unobserve() {
-            if (this.observer) {
-                this.keys.forEach(observers => {
-                    observers.delete(this)
+        on() {
+            o.observer = observer
+            o.args = args
+            o.keys = []
+            o.paths = []
+            runObserver(o)
+            return o
+        },
+        off() {
+            if (o.observer) {
+                o.keys.forEach(observers => {
+                    observers.delete(o)
                 })
-                this.observer = this.paths = this.args = this.keys = undefined
-                queue.delete(this)
+                o.observer = o.paths = o.args = o.keys = undefined
+                queue.delete(o)
             }
         }
     }
+
+    return o
 }
 
 export function runObserver(o, args, isRun) {
