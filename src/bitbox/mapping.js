@@ -1,7 +1,6 @@
-import create from "./create"
-import { is } from "../utils"
 import bitbox from "."
 import * as operators from "../operators"
+import { is } from "../utils"
 
 /**
  * bitbox.map(mapping, context)
@@ -9,33 +8,37 @@ import * as operators from "../operators"
  * @param {Function} context
  */
 
+function create(context, strict) {
+    return new Proxy(new Mapping(context), {
+        get(target, key) {
+            if (Reflect.has(target, key)) return bitbox.create(Reflect.get(target, key))
+            if (!strict) return bitbox(key)
+        },
+        set(target, key, value) {
+            if (is.box(value)) {
+                return Reflect.set(target, key, value)
+            }
+        }
+    })
+}
+
 function Mapping(mapping, context, strict) {
     if (mapping instanceof Mapping) return mapping
-
-    if (is.func(mapping)) {
-        return new Mapping(
-            mapping(
-                new Proxy(new Mapping(context), {
-                    get(box, key) {
-                        if (Reflect.has(box, key)) return Reflect.get(box, key)
-                        if (!strict) return bitbox(key)
-                    }
-                }),
-                operators
-            )
-        )
-    }
+    if (is.func(mapping)) return new Mapping(mapping(create(context, strict), operators))
 
     return Object.keys(mapping || {}).reduce((map, key) => {
-        const value = Reflect.get(mapping, key)
+        let value = Reflect.get(mapping, key)
 
-        if (is.array(value) || is.box(value)) {
-            Reflect.set(map, key, create(value))
-        } else if (is.func(value) || is.object(value)) {
-            Reflect.set(map, key, create([value]))
-        } else {
-            console.warn(`mapping key -> ${key}`, mapping)
-        }
+        if (is.object(value)) value = [...bitbox.create(value, context, strict)]
+        else if (is.array(value)) value = [...value]
+        else if (is.box(value))
+            //bitbox.create(value)
+            value = Array.from(value)
+        else if (is.func(value))
+            value = [value] //bitbox.create([value])
+        else throw new Error(`[mapping] Invalid mapping { ${key}: ${typeof value} }`)
+
+        Reflect.set(map, key, value)
 
         return map
     }, this)

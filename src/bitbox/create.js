@@ -1,6 +1,5 @@
 import Mapping from "./mapping"
 import resolve from "./resolve"
-import * as operators from "../operators"
 import { is, toPrimitive, toJSON, toArray } from "../utils"
 
 export const symbol = {
@@ -20,59 +19,27 @@ const validate = key => {
     throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
 }
 
-/** create operator */
-const operator = (operator, args) => {
-    if (!is.func(operator)) throw new Error(`Operator must be a function: ${typeof operator}`)
-    const argsMap = operator.args || []
+function create(arg) {
+    if (is.func(arg) || is.object(arg)) {
+        const mapping = new Mapping(...arguments)
 
-    argsMap.slice(1).forEach((arg, idx) => {
-        const [label, ...fns] = arg
-        if (!fns.some(fn => fn(args[idx])))
-            throw new Error(
-                `${operator.name} argument [#${idx} ${label}] not valid: ${fns.map(fn => fn.name)}`
-            )
-    })
+        map.mapping = mapping
+        map.displayName = toPrimitive([mapping])
+        map.toJSON = () => mapping
 
-    function box(target) {
-        return operator.apply(
-            operator,
-            [target].concat(args).map(arg => (is.box(arg) ? arg(target) : arg))
-        )
+        function map(target) {
+            return new Proxy(mapping, {
+                get(map, key) {
+                    if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key))
+                },
+                set(map, key, value) {
+                    if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key), value)
+                }
+            })
+        }
+        return createProxy([map])
     }
-
-    box.function = operator
-    box.args = args
-    box.displayName = `${operator.name}(${toPrimitive(args)})`
-    box.toString = () =>
-        `function box.${operator.name}(${argsMap.map(([label]) => label).join(", ")}) { [box api] }`
-
-    return box
-}
-
-function keysReducer(arr, key, idx, keys) {
-    if (is.object(key)) return arr.concat(new Mapping(key))
-    validate(key)
-
-    if (is.string(key) && key.startsWith("$"))
-        return arr.concat(operator(operators[key.substr(1)], keys.splice(idx + 1)))
-
-    if (is.array(key)) {
-        const pk = key[0]
-        if (is.func(pk)) return arr.concat(operator(pk, key.splice(1)))
-        if (is.string(pk) && pk.startsWith("$"))
-            return arr.concat(operator(operators[pk.substr(1)], key.splice(1)))
-    }
-
-    if (is.box(key)) return arr.concat(key(...keys.splice(idx + 1)))
-    if (is.func(key)) return arr.concat(operator(key, keys.splice(idx + 1)))
-
-    arr.push(key)
-
-    return arr
-}
-
-function create(keys) {
-    return createProxy(Array.from(keys).reduce(keysReducer, []))
+    return createProxy(arg.map(validate))
 }
 
 function createProxy(keys, isRoot = true) {
@@ -88,11 +55,12 @@ function createProxy(keys, isRoot = true) {
                 return resolve(target, keys, ...rest)
             }
 
-            return args.length ? createProxy(args.reduce(keysReducer, keys)) : createProxy(keys)
+            if (args.length) keys.push(...args.map(validate))
+
+            return createProxy(keys)
         },
         get(box, key) {
             if (isRoot) keys = root.slice(0)
-            const currentKey = keys[keys.length - 1]
 
             if (key === "$") return toArray(keys)
             if (key === "apply") return Reflect.get(box, key)
@@ -102,7 +70,6 @@ function createProxy(keys, isRoot = true) {
             if (key === Symbol.iterator) return iterator(keys)
             if (key === Symbol.toPrimitive) return primitive(keys)
             if (key === Symbol.toStringTag) return identity
-            if (currentKey instanceof Mapping) return Reflect.get(currentKey, key)
 
             keys.push(!is.undefined(__keys) && key === __key ? __keys : key)
 

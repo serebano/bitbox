@@ -11,8 +11,8 @@ import * as operators from "../operators"
  * @return {Function}
  */
 
-export default function bitbox() {
-    return create(arguments)
+export default function bitbox(...keys) {
+    return create(keys)
 }
 
 /**
@@ -21,14 +21,11 @@ export default function bitbox() {
 
 export * from "../operators"
 
-export { default as resolve } from "./resolve"
-export { default as observable } from "./observer/observable"
-export function observe(target, fn) {
+bitbox.observe = function observe(target, fn) {
     return observer.observe(fn, target)
 }
 
 bitbox.observable = observable
-bitbox.observe = observe
 bitbox.create = create
 bitbox.resolve = resolve
 bitbox.operators = operators

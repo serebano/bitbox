@@ -5,6 +5,10 @@ import { is } from "../utils"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 
+export function action(box, ...rest) {
+    return target => (...args) => box(Object.assign({ args }, target), ...rest)
+}
+
 export function set(box, value) {
     return target => (...args) => box(Object.assign({ args }, target), value)
 }
@@ -22,7 +26,8 @@ map.args = [
 ]
 
 export function map(target, mapping, context) {
-    return new Proxy(new Mapping(mapping, context), {
+    const m = new Mapping(mapping, context)
+    return new Proxy(m, {
         get(map, key) {
             if (Reflect.has(map, key)) {
                 return resolve(target, Reflect.get(map, key))
