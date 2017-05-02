@@ -5,6 +5,10 @@ import { is } from "../utils"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 
+export function set(box, value) {
+    return target => (...args) => box(Object.assign({ args }, target), value)
+}
+
 proxy.args = [[`target`, is.object], [`handler`, is.object, is.undefined]]
 
 export function proxy(target, handler) {
