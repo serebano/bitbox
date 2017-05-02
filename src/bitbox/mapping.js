@@ -1,7 +1,7 @@
 import create from "./create"
 import { is } from "../utils"
 import bitbox from "."
-import * as factories from "./factories"
+import * as operators from "../operators"
 
 /**
  * bitbox.map(mapping, context)
@@ -21,7 +21,7 @@ function Mapping(mapping, context, strict) {
                         if (!strict) return bitbox(key)
                     }
                 }),
-                factories
+                operators
             )
         )
     }

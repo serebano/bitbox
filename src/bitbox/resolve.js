@@ -1,5 +1,4 @@
 import { is } from "../utils"
-import bitbox from "."
 
 /**
  * bitbox.resolve
@@ -10,62 +9,31 @@ import bitbox from "."
  * @return {Any}
  */
 
-function toValue(target) {
-    return arg => (is.box(arg) ? resolve(target, arg) : arg)
-}
-
-function map(target, mapping) {
-    return new Proxy(mapping, {
-        get(map, key) {
-            if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key))
-        },
-        set(map, key, value) {
-            if (Reflect.has(map, key))
-                return resolve(target, Reflect.get(map, key), Reflect.set, value)
-        }
-    })
-}
-
-function resolve(target, box, method) {
+function resolve(target, box, ...args) {
     return Array.from(box).reduce((value, key, index, path) => {
-        if (is.array(key)) {
-            key = resolve(target, key)
-        }
-
         if (is.box(key)) return resolve(value, key)
+        if (is.func(key)) return key(value, ...args)
+        if (is.array(key)) key = resolve(target, key)
 
-        const type = typeof key
-
-        if (type === "object") return map(value, key)
-        if (type === "function") {
-            return Reflect.apply(
-                key,
-                undefined,
-                key.args ? [value].concat(key.args.map(toValue(target))) : [value]
-            )
-        }
-
-        if (method && (!path.length || index === path.length - 1)) {
-            if (type !== "string" && type !== "number") {
+        if (args.length && (!path.length || index === path.length - 1)) {
+            if (!is.string(key) && !is.number(key)) {
                 throw new Error(
-                    `[bitbox.resolve] Invalid key type "${type}" for method "${method.name}" [${path.join(".")}]`
+                    `[resolve] Invalid key type "${typeof key}" for method "${args[0].name}" [${path.join(".")}]`
                 )
             }
+            const [method, ...rest] = args
+            if (!is.func(method) || is.box(method))
+                return Reflect.set(value, key, toValue(target)(method))
 
-            return Reflect.apply(
-                method,
-                undefined,
-                [value, key].concat(Array.prototype.slice.call(arguments, 3).map(toValue(target)))
-            )
-        }
-
-        if (!is.complexObject(value)) {
-            console.log({ target, value, key, box, path })
-            throw new Error(`resolve error: "${key}" (${box})`)
+            return method(value, key, ...rest.map(toValue(target)))
         }
 
         return Reflect.get(value, key)
     }, target || {})
+}
+
+function toValue(target) {
+    return arg => (is.box(arg) ? resolve(target, arg) : arg)
 }
 
 export default resolve

@@ -1,9 +1,7 @@
 export default function print(json) {
-    if (typeof json !== "string") {
-        json = JSON.stringify(json, undefined, "\t")
-    }
+    if (typeof json !== "string") json = JSON.stringify(json, undefined, "\t")
 
-    var arr = [],
+    let arr = [],
         _string = "color:green",
         _number = "color:darkorange",
         _boolean = "color:blue",

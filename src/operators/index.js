@@ -1,81 +1,132 @@
-export { default as template } from "./template"
+import Mapping from "../bitbox/mapping"
+import resolve from "../bitbox/resolve"
+import { is } from "../utils"
+
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 
-import * as array from "./array"
-import * as object from "./object"
-import * as string from "./string"
+proxy.args = [[`target`, is.object], [`handler`, is.object, is.undefined]]
 
-export { array, object, string }
-
-/**
- * The Operators
- */
-
-export function stringify(target) {
-    return JSON.stringify(target, null, 4)
+export function proxy(target, handler) {
+    return new Proxy(target, handler)
 }
 
-export function inc(number) {
-    return number + 1
+map.args = [
+    [`target`, is.object],
+    [`mapping`, is.object, is.func],
+    [`context`, is.object, is.undefined]
+]
+
+export function map(target, mapping, context) {
+    return new Proxy(new Mapping(mapping, context), {
+        get(map, key) {
+            if (Reflect.has(map, key)) {
+                return resolve(target, Reflect.get(map, key))
+            }
+        },
+        set(map, key, value) {
+            if (Reflect.has(map, key)) {
+                return resolve(target, Reflect.get(map, key), Reflect.set, value)
+            }
+        }
+    })
 }
 
-export function dec(number) {
-    return number - 1
+compute.args = [[`target`, is.object]]
+
+export function compute(target, ...args) {
+    return args.reduce((result, arg, idx) => {
+        if (idx === args.length - 1)
+            return is.box(arg) ? resolve(target, arg) : is.func(arg) ? arg(result) : arg
+
+        return is.box(arg)
+            ? [...result, resolve(target, arg)]
+            : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
+    }, [])
 }
 
-export function toggle(value) {
-    return !value
+export function keys(target) {
+    return Object.keys(target)
 }
 
-export function or(...args) {
-    function operator(target, ...args) {
-        return args.find(arg => typeof arg !== "undefined")
-    }
-    operator.args = args
-    return operator
+export function assign(target, ...args) {
+    return Object.assign(target, ...args)
 }
 
-export function and(...args) {
-    function operator(target, ...args) {
-        return args.every(arg => arg(target))
-    }
-    operator.args = args
-    return operator
+export function join(target, separator) {
+    return target.join(separator)
 }
 
-export function not(...args) {
-    function operator(target, ...args) {
-        return args.every(arg => !arg(target))
-    }
-    operator.args = args
-    return operator
+export function concat(target, ...args) {
+    return target.concat(...args)
 }
 
-export function eq(value) {
-    function operator(state) {
-        return state === value
-    }
-    return operator
+export function push(target, ...args) {
+    return target.push(...args)
 }
 
-export function gt(value) {
-    function operator(state) {
-        return state > value
-    }
-    return operator
+export function pop(target) {
+    return target.pop()
 }
 
-export function lt(value) {
-    function operator(state) {
-        return state < value
-    }
-    return operator
+export function unshift(target, ...args) {
+    return target.unshift(...args)
 }
 
-export function type(test) {
-    function operator(target) {
-        return typeof target === test
-    }
-    return operator
+export function shift(target) {
+    return target.shift()
+}
+
+export function slice(target, ...args) {
+    return target.slice(...args)
+}
+
+export function splice(target, ...args) {
+    return target.splice(...args)
+}
+
+export function stringify(target, tab = 4) {
+    return JSON.stringify(target, null, tab)
+}
+
+export function split(target, sep) {
+    return target.split(sep)
+}
+
+export function toUpper(target) {
+    return target.toUpperCase()
+}
+
+export function toLower(target) {
+    return target.toLowerCase()
+}
+
+/** ... */
+
+export function inc(target) {
+    return target + 1
+}
+
+export function dec(target) {
+    return target - 1
+}
+
+export function toggle(target) {
+    return !target
+}
+
+export function eq(target, value) {
+    return target === value
+}
+
+export function gt(target, value) {
+    return target > value
+}
+
+export function lt(target, value) {
+    return target < value
+}
+
+export function type(target, value) {
+    return typeof target === value
 }

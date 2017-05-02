@@ -12,7 +12,7 @@
         "test": "react-scripts test --env=jsdom",
         "eject": "react-scripts eject",
         "dist": "react-scripts build",
-        "build": "babel src --out-dir lib",
+        "build": "babel src --out-dir lib -w",
         "prepublish": "npm run build"
     },
     "dependencies": {},
