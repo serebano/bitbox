@@ -7,8 +7,8 @@ import * as operators from "./operators"
 export * from "./operators"
 
 /**
- * bitbox
- * Create new box
+ * bitbox(...)
+ * Constructor
  * @param  {Array}
  * @return {Function}
  */
@@ -29,7 +29,9 @@ bitbox.operators = operators
 bitbox.version = ["bitbox", 1, 2, 32, "@may4"]
 
 function dev(box, operators) {
-    typeof window !== "undefined" && Object.assign(window, operators, { box, operators, bitbox })
+    typeof window !== "undefined" &&
+        Object.assign(window, operators, { box, operators, bitbox }) &&
+        console.dir(bitbox)
     const { keys, join } = operators
 
     return {
