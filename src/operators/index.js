@@ -1,21 +1,26 @@
 import resolve from "../bitbox/resolve"
-import { is, toPrimitive } from "../utils"
+import { is } from "../utils"
 
 export { default as delay } from "./delay"
 export { default as print } from "./print"
+export { default as observe } from "../bitbox/observer/observe"
 export { default as observable } from "../bitbox/observer/observable"
-export { default as map } from "../bitbox/mapping"
+export { default as map } from "../bitbox/map"
 export { default as resolve } from "../bitbox/resolve"
 
+function $(fn, factory, ...args) {
+    fn.displayName = `${factory.name}(${args
+        .map(arg => (!is.box(arg) && is.func(arg) ? arg.name : arg))
+        .join(", ")})`
+    return fn
+}
+
 export function action(box) {
-    return target => (...args) => box(Object.assign({ args }, target))
+    return $(target => (...args) => box(Object.assign({ args }, target)), action, ...arguments)
 }
 
 export function set(box, value) {
-    const operator = target => (...args) => box(Object.assign({ args }, target), value)
-    operator.displayName = toPrimitive(["set", box, value])
-
-    return operator
+    return $(target => (...args) => box(Object.assign({ args }, target), value), set, ...arguments)
 }
 
 export function proxy(handler) {
@@ -114,8 +119,4 @@ export function gt(value) {
 
 export function lt(value) {
     return target => target < value
-}
-
-export function type(value) {
-    return target => typeof target === value
 }

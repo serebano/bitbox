@@ -9,16 +9,17 @@ import { is } from "../utils"
  * @return {Any}
  */
 
-function map(target, mapping) {
+function proxy(target, mapping) {
     return new Proxy(mapping, {
         get(map, key) {
             if (Reflect.has(map, key)) {
-                const value = Reflect.get(map, key)
                 return resolve(target, Reflect.get(map, key))
             }
         },
         set(map, key, value) {
-            if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key), value)
+            if (Reflect.has(map, key)) {
+                return resolve(target, Reflect.get(map, key), value)
+            }
         }
     })
 }
@@ -28,7 +29,7 @@ function resolve(target, box, ...args) {
         if (is.box(key)) return resolve(value, key)
         if (is.func(key)) return key(value)
         if (is.array(key)) key = resolve(target, key)
-        if (is.object(key)) return map(value, key)
+        if (is.object(key)) return proxy(value, key)
 
         if (args.length && (!path.length || index === path.length - 1)) {
             if (!is.string(key) && !is.number(key)) {

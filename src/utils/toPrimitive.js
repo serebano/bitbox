@@ -18,7 +18,7 @@ export default function toPrimitive(keys, sep = ".", isKey) {
                     return "function " + (key.displayName || key.name)
                 }
                 return (
-                    (!is.func(keys[idx - 1]) ? "(" : "") +
+                    (idx > 0 && !is.func(keys[idx - 1]) ? "(" : "") +
                     (key.displayName || key.name || String(key)) +
                     (!is.func(keys[idx + 1]) ? ")" : ", ")
                 )

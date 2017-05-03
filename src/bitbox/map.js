@@ -1,6 +1,6 @@
-import bitbox from "."
+import create, { symbol } from "./create"
 import * as operators from "../operators"
-import { is } from "../utils"
+import { is, toPrimitive } from "../utils"
 
 /**
  * bitbox.map(mapping, context)
@@ -8,39 +8,43 @@ import { is } from "../utils"
  * @param {Function} context
  */
 
-function create(context, strict) {
-    return new Proxy(new Mapping(context, strict), {
+function proxy(context, strict) {
+    return new Proxy(context || {}, {
         get(target, key) {
-            if (Reflect.has(target, key)) return bitbox.create(Reflect.get(target, key))
+            if (key === symbol.map) return target
+            if (key === "toString") return () => toPrimitive([target])
+            if (Reflect.has(target, key)) return create(Reflect.get(target, key))
 
-            if (!strict) return bitbox(key)
+            if (!strict) return create([key])
         },
         set(target, key, value) {
             if (is.box(value)) {
                 return Reflect.set(target, key, value)
             }
+        },
+        has(target, key) {
+            return Reflect.has(target, key)
         }
     })
 }
 
-function Mapping(mapping, context, strict) {
-    if (mapping instanceof Mapping) return mapping
-    if (is.func(mapping)) return new Mapping(mapping(create(context, strict), operators))
-    if (!is.map(this)) return new Mapping(...arguments)
+function map(mapping, context) {
+    if (is.map(mapping)) return mapping
+    if (is.func(mapping)) return new map(mapping(new map(context), operators), context)
 
-    return Object.keys(mapping || {}).reduce((map, key) => {
-        let value = Reflect.get(mapping, key)
+    Object.keys(mapping || {}).reduce((obj, key) => {
+        const value = Reflect.get(mapping, key)
 
-        if (is.object(value)) value = Array.from(bitbox.create(value, context, strict))
-        else if (is.array(value)) value = Array.from(value)
-        else if (is.box(value)) value = Array.from(value)
-        else if (is.func(value)) value = [value]
+        if (is.array(value)) Reflect.set(obj, key, Array.from(value))
+        else if (is.box(value)) Reflect.set(obj, key, Array.from(value))
+        else if (is.func(value)) Reflect.set(obj, key, [value])
+        else if (is.object(value)) Reflect.set(obj, key, Array.from(create(value, context)))
         else throw new Error(`[mapping] Invalid mapping { ${key}: ${typeof value} }`)
 
-        Reflect.set(map, key, value)
-
-        return map
+        return obj
     }, this)
+
+    return proxy(this, context)
 }
 
-export default Mapping
+export default (...args) => new map(...args)

@@ -1,10 +1,10 @@
 import map from "./map"
 import resolve from "./resolve"
-import { is, toPrimitive, toJSON, toArray } from "../utils"
-import * as operators from "../operators"
+import { is, toPrimitive, toJSON } from "../utils"
 
 export const symbol = {
-    path: Symbol("bitbox.path")
+    path: Symbol("bitbox.path"),
+    map: Symbol("bitbox.map")
 }
 /** primitive key transfer */
 let __keys, __key
@@ -16,6 +16,7 @@ const identity = () => "bitbox"
 const keyTypes = ["string", "number", "function", "symbol", "object"]
 const iterator = keys => Array.prototype[Symbol.iterator].bind(keys)
 const validate = key => {
+    if (is.object(key)) return map(key)
     if (keyTypes.includes(typeof key)) return key
     throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
 }
@@ -28,11 +29,9 @@ function create(arg) {
 
 function createProxy(keys, isRoot = true) {
     const root = keys
-    const map = is.object(keys[0]) && keys[0]
+    const map = is.map(keys[0]) && keys[0]
 
     function bitbox() {}
-
-    bitbox.toString = () => `function ${proxy}(object) { [bitbox api] }`
 
     const proxy = new Proxy(bitbox, {
         apply(target, thisArg, args) {
@@ -52,7 +51,7 @@ function createProxy(keys, isRoot = true) {
         },
         get(box, key) {
             if (isRoot) keys = root.slice(0)
-            if (map && Reflect.has(map, key)) return create(Reflect.get(map, key))
+            if (map && Reflect.has(map, key)) return Reflect.get(map, key)
 
             if (key === "$") return keys
             if (key === "apply") return Reflect.get(box, key)
@@ -74,6 +73,8 @@ function createProxy(keys, isRoot = true) {
             return true
         }
     })
+
+    bitbox.toString = () => `function ${proxy}(object) { [bitbox api] }`
 
     return proxy
 }
