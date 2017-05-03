@@ -1,6 +1,7 @@
-import Mapping from "./mapping"
+import map from "./map"
 import resolve from "./resolve"
 import { is, toPrimitive, toJSON, toArray } from "../utils"
+import * as operators from "../operators"
 
 export const symbol = {
     path: Symbol("bitbox.path")
@@ -20,31 +21,18 @@ const validate = key => {
 }
 
 function create(arg) {
-    if (is.func(arg) || is.object(arg)) {
-        const mapping = new Mapping(...arguments)
+    if ((is.func(arg) || is.object(arg)) && !is.map(arg)) return createProxy([map(...arguments)])
 
-        map.mapping = mapping
-        map.displayName = toPrimitive([mapping])
-        map.toJSON = () => mapping
-
-        function map(target) {
-            return new Proxy(mapping, {
-                get(map, key) {
-                    if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key))
-                },
-                set(map, key, value) {
-                    if (Reflect.has(map, key)) return resolve(target, Reflect.get(map, key), value)
-                }
-            })
-        }
-        return createProxy([map])
-    }
     return createProxy(arg.map(validate))
 }
 
 function createProxy(keys, isRoot = true) {
     const root = keys
-    const bitbox = () => {}
+    const map = is.object(keys[0]) && keys[0]
+
+    function bitbox() {}
+
+    bitbox.toString = () => `function ${proxy}(object) { [bitbox api] }`
 
     const proxy = new Proxy(bitbox, {
         apply(target, thisArg, args) {
@@ -54,15 +42,19 @@ function createProxy(keys, isRoot = true) {
                 const [target, ...rest] = args
                 return resolve(target, keys, ...rest)
             }
-
+            if (args.length > 1 && is.func(args[0])) {
+                const operator = args.shift()
+                return createProxy(keys.concat(operator(...args)))
+            }
             if (args.length) keys.push(...args.map(validate))
 
             return createProxy(keys)
         },
         get(box, key) {
             if (isRoot) keys = root.slice(0)
+            if (map && Reflect.has(map, key)) return create(Reflect.get(map, key))
 
-            if (key === "$") return toArray(keys)
+            if (key === "$") return keys
             if (key === "apply") return Reflect.get(box, key)
             if (key === "toJSON") return () => toJSON(keys)
             if (key === "displayName") return toPrimitive(keys)

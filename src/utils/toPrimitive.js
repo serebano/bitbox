@@ -4,11 +4,14 @@ export default function toPrimitive(keys, sep = ".", isKey) {
     const result = keys
         .map((key, idx) => {
             if (is.object(key)) {
-                return (
-                    "map({ " +
-                    Object.keys(key).map(k => `${k}: ` + toPrimitive([...key[k]], sep)).join(", ") +
-                    " })"
-                )
+                const okeys = Object.keys(key)
+                return okeys.length
+                    ? "{\n" +
+                          okeys
+                              .map(k => `${" ".repeat(4)}${k}: ` + toPrimitive([...key[k]], sep))
+                              .join(",\n") +
+                          "\n}"
+                    : "{}"
             }
             if (is.func(key)) {
                 if (isKey) {

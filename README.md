@@ -29,9 +29,8 @@ observe(() => console.log(`${props.name} - count(${props.count})`))
 // set / classic
 app(obj).count++
 // use operator
-app.count(inc, obj)
-// action factory, if no target argument
-app.count(inc) // -> (obj)
+app.count(obj, app.count(inc))
+
 
 // using handler / set(target, box/path, value)
 bitbox.set(obj, app.count, 10)

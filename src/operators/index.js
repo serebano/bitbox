@@ -1,106 +1,84 @@
-import Mapping from "../bitbox/mapping"
 import resolve from "../bitbox/resolve"
-import { is } from "../utils"
+import { is, toPrimitive } from "../utils"
 
 export { default as delay } from "./delay"
 export { default as print } from "./print"
+export { default as observable } from "../bitbox/observer/observable"
+export { default as map } from "../bitbox/mapping"
+export { default as resolve } from "../bitbox/resolve"
 
-export function action(box, ...rest) {
-    return target => (...args) => box(Object.assign({ args }, target), ...rest)
+export function action(box) {
+    return target => (...args) => box(Object.assign({ args }, target))
 }
 
 export function set(box, value) {
-    return target => (...args) => box(Object.assign({ args }, target), value)
+    const operator = target => (...args) => box(Object.assign({ args }, target), value)
+    operator.displayName = toPrimitive(["set", box, value])
+
+    return operator
 }
 
-proxy.args = [[`target`, is.object], [`handler`, is.object, is.undefined]]
-
-export function proxy(target, handler) {
-    return new Proxy(target, handler)
+export function proxy(handler) {
+    return target => new Proxy(handler)
 }
 
-map.args = [
-    [`target`, is.object],
-    [`mapping`, is.object, is.func],
-    [`context`, is.object, is.undefined]
-]
+export function compute(...args) {
+    return target =>
+        args.reduce((result, arg, idx) => {
+            if (idx === args.length - 1)
+                return is.box(arg) ? resolve(arg) : is.func(arg) ? arg(result) : arg
 
-export function map(target, mapping, context) {
-    const m = new Mapping(mapping, context)
-    return new Proxy(m, {
-        get(map, key) {
-            if (Reflect.has(map, key)) {
-                return resolve(target, Reflect.get(map, key))
-            }
-        },
-        set(map, key, value) {
-            if (Reflect.has(map, key)) {
-                return resolve(target, Reflect.get(map, key), Reflect.set, value)
-            }
-        }
-    })
+            return is.box(arg)
+                ? [...result, resolve(arg)]
+                : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
+        }, [])
 }
 
-compute.args = [[`target`, is.object]]
-
-export function compute(target, ...args) {
-    return args.reduce((result, arg, idx) => {
-        if (idx === args.length - 1)
-            return is.box(arg) ? resolve(target, arg) : is.func(arg) ? arg(result) : arg
-
-        return is.box(arg)
-            ? [...result, resolve(target, arg)]
-            : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
-    }, [])
+export function assign(...args) {
+    return target => Object.assign(...args)
 }
 
-export function keys(target) {
-    return Object.keys(target)
+export function join(separator) {
+    return target => target.join(separator)
 }
 
-export function assign(target, ...args) {
-    return Object.assign(target, ...args)
+export function concat(...args) {
+    return target => target.concat(...args)
 }
 
-export function join(target, separator) {
-    return target.join(separator)
-}
-
-export function concat(target, ...args) {
-    return target.concat(...args)
-}
-
-export function push(target, ...args) {
-    return target.push(...args)
+export function push(...args) {
+    return target => target.push(...args)
 }
 
 export function pop(target) {
-    return target.pop()
+    return target => target.pop()
 }
 
-export function unshift(target, ...args) {
-    return target.unshift(...args)
+export function unshift(...args) {
+    return target => target.unshift(...args)
 }
 
 export function shift(target) {
-    return target.shift()
+    return target => target.shift()
 }
 
-export function slice(target, ...args) {
-    return target.slice(...args)
+export function slice(...args) {
+    return target => target.slice(...args)
 }
 
-export function splice(target, ...args) {
-    return target.splice(...args)
+export function splice(...args) {
+    return target => target.splice(...args)
 }
 
-export function stringify(target, tab = 4) {
-    return JSON.stringify(target, null, tab)
+export function stringify(tab = 4) {
+    return target => JSON.stringify(null, tab)
 }
 
-export function split(target, sep) {
-    return target.split(sep)
+export function split(sep) {
+    return target => target.split(sep)
 }
+
+/** ... */
 
 export function toUpper(target) {
     return target.toUpperCase()
@@ -110,7 +88,9 @@ export function toLower(target) {
     return target.toLowerCase()
 }
 
-/** ... */
+export function keys(target) {
+    return Object.keys(target)
+}
 
 export function inc(target) {
     return target + 1
@@ -124,18 +104,18 @@ export function toggle(target) {
     return !target
 }
 
-export function eq(target, value) {
-    return target === value
+export function eq(value) {
+    return target => target === value
 }
 
-export function gt(target, value) {
-    return target > value
+export function gt(value) {
+    return target => target > value
 }
 
-export function lt(target, value) {
-    return target < value
+export function lt(value) {
+    return target => target < value
 }
 
-export function type(target, value) {
-    return typeof target === value
+export function type(value) {
+    return target => typeof target === value
 }

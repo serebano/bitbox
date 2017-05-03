@@ -1,18 +1,4 @@
-import bitbox, { map, print } from "../bitbox"
-
-const obj = {}
-
-const box = bitbox(map, {
-    foo: ["foo"],
-    bar: ["bar"]
-})
-
-box(Object.assign, {
-    bar: 20,
-    foo: 100
-})(print)(obj)
-
-a = bitbox(
+const app = bitbox(
     map(
         ({ state, foo }) => {
             return {
@@ -36,6 +22,20 @@ a = bitbox(
     )
 )
 
-a.count(store, a.count(inc))
+const obj = {
+    state: {
+        count: 0,
+        items: []
+    }
+}
 
-export default { box, obj }
+app.count(obj, app.count(inc))
+
+bitbox(
+    target => [
+        app.items(concat(1, 2, 3))(target),
+        app.items(concat, 1, 2, 3)(target),
+        app.items(target).concat(1, 2, 3)
+    ],
+    print
+)(obj)

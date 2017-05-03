@@ -1,7 +1,8 @@
 import create from "./create"
 import resolve from "./resolve"
-import * as observer from "./observer"
+import map from "./map"
 import observable from "./observer/observable"
+import observe from "./observer/observe"
 import * as operators from "../operators"
 
 /**
@@ -21,13 +22,10 @@ export default function bitbox(...keys) {
 
 export * from "../operators"
 
-bitbox.observe = function observe(target, fn) {
-    return observer.observe(fn, target)
-}
-
+bitbox.map = map
 bitbox.observable = observable
+bitbox.observe = observe
 bitbox.create = create
-bitbox.resolve = resolve
 bitbox.operators = operators
 
 /* ... */

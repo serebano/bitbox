@@ -28,25 +28,23 @@ function createObserver(observer, args) {
         changes: [],
         changed: 0,
         run(...args) {
-            return runObserver(o, args, true)
+            return o.keys ? runObserver(o, args, true) : o.observer(...args)
         },
         skip() {
             return queue.delete(o)
         },
         on() {
-            o.observer = observer
-            o.args = args
             o.keys = []
             o.paths = []
             runObserver(o)
             return o
         },
         off() {
-            if (o.observer) {
+            if (o.keys) {
                 o.keys.forEach(observers => {
                     observers.delete(o)
                 })
-                o.observer = o.paths = o.args = o.keys = undefined
+                delete o.keys
                 queue.delete(o)
             }
         }
