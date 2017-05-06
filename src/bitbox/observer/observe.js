@@ -9,65 +9,66 @@ import { is } from "../../utils"
  * @return {Object}
  */
 
-export default function observe(observer, ...args) {
-    if (!is.func(observer))
-        throw new TypeError(`[bitbox.observe] First argument must be a function`)
+export default function observe(fn, context, ...args) {
+    if (!is.func(fn)) throw new TypeError(`[observe] Target argument must be a function`)
 
-    const o = createObserver(observer, args)
-    runObserver(o)
+    const observer = create(fn, context, args)
+    runObserver(observer)
 
-    return o
+    return observer
 }
 
-function createObserver(observer, args) {
-    const o = {
-        observer,
-        args,
+function create(fn, context, args) {
+    const observer = {
         keys: [],
         paths: [],
         changes: [],
         changed: 0,
-        run(...args) {
-            return o.keys ? runObserver(o, args, true) : o.observer(...args)
+        run() {
+            const result = fn.apply(context, args)
+
+            observer.changed++
+            observer.changes = []
+
+            return result
         },
         skip() {
-            return queue.delete(o)
+            return queue.delete(observer)
         },
         on() {
-            o.keys = []
-            o.paths = []
-            runObserver(o)
-            return o
+            observer.keys = []
+            observer.paths = []
+            runObserver(observer)
+
+            return observer
         },
         off() {
-            if (o.keys) {
-                o.keys.forEach(observers => {
-                    observers.delete(o)
+            if (observer.keys) {
+                observer.keys.forEach(observers => {
+                    observers.delete(observer)
                 })
-                delete o.keys
-                queue.delete(o)
+                delete observer.keys
+                queue.delete(observer)
             }
+
+            return observer
         }
     }
 
-    return o
+    return observer
 }
 
-export function runObserver(o, args, isRun) {
-    let result
+export function runObserver(observer) {
     try {
-        state.currentObserver = o
-        result = o.observer.apply(undefined, args ? o.args.concat(args) : o.args)
+        state.currentObserver = observer
+        observer.run()
     } finally {
         state.currentObserver = undefined
-        if (!isRun) o.changes = []
-        if (!isRun) o.changed++
     }
-    return result
 }
 
 export function runObservers() {
-    queue.forEach(o => runObserver(o))
+    queue.forEach(runObserver)
     queue.clear()
     state.queued = false
 }

@@ -8,14 +8,14 @@ import { is, toPrimitive } from "../utils"
  * @param {Function} context
  */
 
-function proxy(context, strict) {
-    return new Proxy(context || {}, {
+function proxy(target) {
+    return new Proxy(target, {
         get(target, key) {
             if (key === symbol.map) return target
             if (key === "toString") return () => toPrimitive([target])
             if (Reflect.has(target, key)) return create(Reflect.get(target, key))
 
-            if (!strict) return create([key])
+            return create([key])
         },
         set(target, key, value) {
             if (is.box(value)) {
@@ -29,6 +29,8 @@ function proxy(context, strict) {
 }
 
 function map(mapping, context) {
+    if (!(this instanceof map)) return new map(...arguments)
+
     if (is.map(mapping)) return mapping
     if (is.func(mapping)) return new map(mapping(new map(context), operators), context)
 
@@ -47,4 +49,4 @@ function map(mapping, context) {
     return proxy(this, context)
 }
 
-export default (...args) => new map(...args)
+export default map

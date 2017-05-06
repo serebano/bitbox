@@ -3,6 +3,9 @@ import resolve from "./bitbox/resolve"
 import map from "./bitbox/map"
 import observable from "./bitbox/observer/observable"
 import observe from "./bitbox/observer/observe"
+import construct from "./bitbox/construct"
+import mapping from "./bitbox/mapping"
+
 import * as operators from "./operators"
 export * from "./operators"
 
@@ -21,17 +24,19 @@ function bitbox(...keys) {
  * operators
  */
 
-bitbox.map = map
+bitbox.create = create
 bitbox.resolve = resolve
 bitbox.observe = observe
 bitbox.observable = observable
 bitbox.operators = operators
+bitbox.mapping = mapping
 bitbox.version = ["bitbox", 1, 2, 32, "@may4"]
 
 function dev(box, operators) {
     typeof window !== "undefined" &&
         Object.assign(window, operators, { box, operators, bitbox }) &&
         console.dir(bitbox)
+
     const { keys, join } = operators
 
     return {
@@ -44,7 +49,7 @@ function dev(box, operators) {
     }
 }
 
-bitbox(map(dev)).version(Object.assign({}, bitbox))
+bitbox(dev).version(Object.assign({}, bitbox))
 
 export default bitbox
 /* ... */

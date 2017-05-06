@@ -1,4 +1,4 @@
-export default function print(json) {
+export default function print(json = "") {
     if (typeof json !== "string") json = JSON.stringify(json, undefined, "\t")
 
     let arr = [],

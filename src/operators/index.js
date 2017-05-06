@@ -1,30 +1,26 @@
+import is from "./is"
 import resolve from "../bitbox/resolve"
-import { is } from "../utils"
 
-export { default as delay } from "./delay"
-export { default as print } from "./print"
+export { is }
+export { default as box } from "../bitbox/box"
+export { default as map } from "../bitbox/map"
+export { default as create } from "../bitbox/create"
+export { default as resolve } from "../bitbox/resolve"
 export { default as observe } from "../bitbox/observer/observe"
 export { default as observable } from "../bitbox/observer/observable"
-export { default as map } from "../bitbox/map"
-export { default as resolve } from "../bitbox/resolve"
-
-function $(fn, factory, ...args) {
-    fn.displayName = `${factory.name}(${args
-        .map(arg => (!is.box(arg) && is.func(arg) ? arg.name : arg))
-        .join(", ")})`
-    return fn
-}
+export { default as delay } from "./delay"
+export { default as print } from "./print"
 
 export function action(box) {
-    return $(target => (...args) => box(Object.assign({ args }, target)), action, ...arguments)
+    return target => (...args) => box(target, ...args)
 }
 
 export function set(box, value) {
-    return $(target => (...args) => box(Object.assign({ args }, target), value), set, ...arguments)
+    return target => box(target, value)
 }
 
 export function proxy(handler) {
-    return target => new Proxy(handler)
+    return target => new Proxy(target, handler)
 }
 
 export function compute(...args) {
@@ -76,7 +72,7 @@ export function splice(...args) {
 }
 
 export function stringify(tab = 4) {
-    return target => JSON.stringify(null, tab)
+    return target => JSON.stringify(target, null, tab)
 }
 
 export function split(sep) {
