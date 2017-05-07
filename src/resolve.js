@@ -1,5 +1,5 @@
-import { is } from "../utils"
-import map from "./map"
+import { is } from "./utils"
+//import map from "./map"
 
 /**
  * bitbox.resolve

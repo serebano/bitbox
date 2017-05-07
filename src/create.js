@@ -1,8 +1,9 @@
 import resolve from "./resolve"
 import mapping from "./mapping"
+import map from "./map"
 import box from "./box"
-import * as operators from "../operators"
-import { is, toPrimitive, toJSON, toArray } from "../utils"
+import * as operators from "./operators"
+import { is, toPrimitive, toJSON, toArray } from "./utils"
 
 export const symbol = {
     path: Symbol("bitbox.path"),
@@ -12,7 +13,7 @@ export const symbol = {
 let __keys, __key
 const primitive = keys => {
     __keys = keys
-    return () => __key = toPrimitive(keys)
+    return () => (__key = toPrimitive(keys))
 }
 const identity = () => "bitbox"
 const keyTypes = ["string", "number", "function", "symbol", "object"]
@@ -22,47 +23,35 @@ const validate = key => {
     throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
 }
 
-function create(arg, isMap) {
-    if (is.object(arg) || is.func(arg)) return create.box(arg)
+function create(arg, ...args) {
+    if (is.object(arg) || is.func(arg)) return map.box(arg, ...args)
+    if (is.object(arg[0]) || is.func(arg[0])) return map.box(...arg)
 
     return create.proxy(
         arg.map(key => {
-            if (is.object(key) || is.func(key)) return create.box(key)
+            if (is.object(key) || is.func(key)) return create.map(key)
             if (keyTypes.includes(typeof key)) return key
             throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
-        }),
-        true,
-        isMap
+        })
     )
 }
 
-create.box = input => box(input)
-
-create.proxy = function(keys, isRoot = true, isMap = false) {
-    let map
-
-    if (is.object(keys)) {
-        map = keys
-        keys = [map]
-    }
-
+create.proxy = function(keys, isRoot = true) {
+    console.log(`create.proxy`, keys)
     const box = () => {}
     const root = keys
-
     const proxy = new Proxy(box, {
         apply(target, thisArg, args) {
-            if (isRoot) keys = root.slice(0)
-
-            if (isMap) {
-                if (is.object(args[0]) || (is.func(args[0]) && !is.box(args[0]))) {
-                    console.log(keys, args)
-                    return create.box(args[0])
-                }
+            if (is.map(keys)) {
+                const [target, ...rest] = args
+                return map(target, keys, ...rest)
             }
+
+            if (isRoot) keys = root.slice(0)
 
             if (args.length && is.complexObject(args[0])) {
                 const [target, ...rest] = args
-                return map ? resolve(target, map, ...rest) : resolve(target, keys, ...rest)
+                return resolve(target, keys, ...rest)
             }
 
             if (args.length > 1 && is.func(args[0])) {
@@ -75,10 +64,12 @@ create.proxy = function(keys, isRoot = true, isMap = false) {
             return create.proxy(keys)
         },
         get(box, key) {
+            if (is.map(keys)) return Reflect.get(keys, key)
+
             if (isRoot) keys = root.slice(0)
-            if (map && Reflect.has(map, key)) return Reflect.get(map, key)
 
             if (key === "$") return keys
+            if (key === symbol.path) return keys
             if (key === "apply") return Reflect.get(box, key)
             if (key === "toArray") return () => toArray(keys)
             if (key === "toJSON") return () => toJSON(keys)

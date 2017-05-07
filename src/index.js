@@ -1,12 +1,12 @@
-import create from "./bitbox/create"
-import resolve from "./bitbox/resolve"
-import map from "./bitbox/map"
-import observable from "./bitbox/observer/observable"
-import observe from "./bitbox/observer/observe"
-import construct from "./bitbox/construct"
-import mapping from "./bitbox/mapping"
-
+import create from "./create"
+import resolve from "./resolve"
+import observable from "./observer/observable"
+import observe from "./observer/observe"
+import mapping from "./mapping"
+import map from "./map"
+import box from "./box"
 import * as operators from "./operators"
+import is from "./utils/is"
 export * from "./operators"
 
 /**
@@ -23,6 +23,8 @@ function bitbox(...keys) {
 /**
  * operators
  */
+bitbox.map = map
+bitbox.box = box
 
 bitbox.create = create
 bitbox.resolve = resolve
@@ -32,7 +34,7 @@ bitbox.operators = operators
 bitbox.mapping = mapping
 bitbox.version = ["bitbox", 1, 2, 32, "@may4"]
 
-function dev(box, operators) {
+function dev(box) {
     typeof window !== "undefined" &&
         Object.assign(window, operators, { box, operators, bitbox }) &&
         console.dir(bitbox)

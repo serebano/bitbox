@@ -1,10 +1,10 @@
-import { isObservable } from "../bitbox/observer"
-import { symbol } from "../bitbox/create"
-import map from "../bitbox/map"
+import { isObservable } from "../observer"
+import { symbol } from "../create"
+import mapping from "../mapping"
 
 const is = {
     box: arg => is.func(arg) && Reflect.has(arg, symbol.path),
-    map: arg => arg instanceof map, //is.object(arg) && Reflect.has(arg, symbol.map),
+    map: arg => mapping.has(arg), //is.object(arg) && Reflect.has(arg, symbol.map),
     observable: arg => isObservable(arg),
     func: arg => typeof arg === "function",
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),

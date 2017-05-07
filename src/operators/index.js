@@ -1,15 +1,15 @@
 import is from "./is"
-import resolve from "../bitbox/resolve"
+import resolve from "../resolve"
 
 export { is }
-export { default as box } from "../bitbox/box"
-export { default as map } from "../bitbox/map"
-export { default as create } from "../bitbox/create"
-export { default as resolve } from "../bitbox/resolve"
-export { default as observe } from "../bitbox/observer/observe"
-export { default as observable } from "../bitbox/observer/observable"
+export { default as box } from "../box"
+export { default as create } from "../create"
+export { default as resolve } from "../resolve"
+export { default as observe } from "../observer/observe"
+export { default as observable } from "../observer/observable"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
+//export { default as map } from "./map"
 
 export function action(box) {
     return target => (...args) => box(target, ...args)
