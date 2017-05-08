@@ -4,28 +4,17 @@ import observable from "./observer/observable"
 import observe from "./observer/observe"
 import mapping from "./mapping"
 import map from "./map"
-import box from "./box"
+import bitbox from "./bitbox"
 import * as operators from "./operators"
 import is from "./utils/is"
-export * from "./operators"
+import * as api from "./api/map.2"
 
-/**
- * bitbox(...)
- * Constructor
- * @param  {Array}
- * @return {Function}
- */
-
-function bitbox(...keys) {
-    return create(keys)
-}
+//export * from "./operators"
 
 /**
  * operators
  */
 bitbox.map = map
-bitbox.box = box
-
 bitbox.create = create
 bitbox.resolve = resolve
 bitbox.observe = observe
@@ -36,7 +25,7 @@ bitbox.version = ["bitbox", 1, 2, 32, "@may4"]
 
 function dev(box) {
     typeof window !== "undefined" &&
-        Object.assign(window, operators, { box, operators, bitbox }) &&
+        Object.assign(window, operators, api, { box, operators, bitbox }) &&
         console.dir(bitbox)
 
     const { keys, join } = operators

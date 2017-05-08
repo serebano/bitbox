@@ -14,7 +14,7 @@ function map(target, mapping, ...args) {
                     ? value(target)
                     : Reflect.has(target, key) ? Reflect.get(target, key) : value
             }
-            return !mapping && Reflect.get(target, key)
+            return Reflect.get(target, key)
         },
         set(mapping, key, value) {
             if (Reflect.has(mapping, key)) {
@@ -35,6 +35,9 @@ function box(input, ...args) {
         {
             get(box, key) {
                 return Reflect.get(mapping, key)
+            },
+            set(box, key, value) {
+                return Reflect.set(mapping, key, value)
             }
         }
     )
@@ -49,7 +52,7 @@ function resolve(target, mapping) {
                     ? value(target)
                     : Reflect.has(target, key) ? Reflect.get(target, key) : value
             }
-            return !mapping && Reflect.get(target, key)
+            return Reflect.get(target, key)
         },
         set(mapping, key, value) {
             if (Reflect.has(mapping, key)) {

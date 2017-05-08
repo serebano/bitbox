@@ -1,3 +1,6 @@
+import bitbox, { observable, observe } from "../bitbox"
+import { print } from "../operators"
+
 function Counter(box, observer) {
     return {
         count: box.count,
@@ -7,17 +10,17 @@ function Counter(box, observer) {
         dec() {
             return this.count--
         },
-        run(int) {
+        run(max = 10, int = 100) {
             this.count = 0
-            const o = observe(() => {
-                observer(`conter() -> ${this.count}`)
-                setTimeout(() => (this.count > 10 ? o.off() : this.inc()), int || 100)
+            this.observer = observe(() => {
+                observer(`conter(${this.count}/${max}) ${int}`)
+                setTimeout(() => (this.count > max ? this.observer.off() : this.inc()), int)
             })
-
-            return o
+            return this
         }
     }
 }
 
-counter = bitbox(Counter, print)
-counter(observable()).run()
+export const counter = bitbox(Counter, print)
+
+export const counterbox = counter(observable({ count: 0 })).run(3)
