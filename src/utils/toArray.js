@@ -1,5 +1,4 @@
 import { is } from "."
-import mapping from "../mapping"
 
 function toArray(keys) {
     return keys.map(key => {

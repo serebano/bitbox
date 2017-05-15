@@ -1,7 +1,7 @@
 import { is } from "."
 
 function toJSON(keys) {
-    return (keys || []).map(
+    return [].concat(keys).map(
         key =>
             (is.array(key)
                 ? toJSON(key.filter(k => !is.object(k)))

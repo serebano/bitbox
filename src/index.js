@@ -2,11 +2,13 @@ import create from "./create"
 import resolve from "./resolve"
 import observable from "./observer/observable"
 import observe from "./observer/observe"
+import construct from "./construct"
+
 import mapping from "./mapping"
 import map from "./map"
 import bitbox from "./bitbox"
 import * as operators from "./operators"
-import is from "./utils/is"
+
 import * as api from "./api/map.2"
 
 //export * from "./operators"
@@ -16,6 +18,7 @@ import * as api from "./api/map.2"
  */
 bitbox.map = map
 bitbox.create = create
+bitbox.construct = construct
 bitbox.resolve = resolve
 bitbox.observe = observe
 bitbox.observable = observable
@@ -40,7 +43,7 @@ function dev(box) {
     }
 }
 
-bitbox(dev).version(Object.assign({}, bitbox))
+bitbox(map(dev)).version(Object.assign({}, bitbox))
 
 export default bitbox
 /* ... */

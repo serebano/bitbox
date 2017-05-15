@@ -32,6 +32,22 @@ function create(fn, context, args) {
 
             return result
         },
+        exec(fn, ...args) {
+            observer.off()
+            observer.keys = []
+            observer.paths = []
+            observer.changed = 0
+            observer.changes = []
+            const run = observer.run
+            observer.run = () => fn.apply(undefined, args)
+            runObserver(observer)
+            observer.run = run
+
+            return {
+                paths: observer.paths.map(p => p.join(".")),
+                changes: observer.changes.map(p => p.join("."))
+            }
+        },
         skip() {
             return queue.delete(observer)
         },
@@ -52,6 +68,10 @@ function create(fn, context, args) {
             }
 
             return observer
+        },
+        reload() {
+            observer.off()
+            return observer.on()
         }
     }
 

@@ -1,5 +1,6 @@
 import is from "./is"
 import resolve from "../resolve"
+import observe from "../observer/observe"
 
 export { is }
 export { default as box } from "../box"
@@ -10,6 +11,22 @@ export { default as observable } from "../observer/observable"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 //export { default as map } from "./map"
+
+export function log(target) {
+    const o = observe(() => {
+        console.info(stringify(4)(target))
+        o &&
+            console.log(
+                stringify(0)({
+                    changes: o.changes,
+                    object: o.changes.reduce((obj, path) => {
+                        resolve(obj, path, resolve(obj, path))
+                        return obj
+                    }, {})
+                })
+            )
+    })
+}
 
 export function action(box) {
     return target => (...args) => box(target, ...args)
