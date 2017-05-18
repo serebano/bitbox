@@ -1,4 +1,5 @@
 import { is } from "./utils"
+import create from "./create"
 
 /**
  * bitbox.resolve
@@ -52,13 +53,21 @@ function proxy(target, mapping) {
     return proxyObj
 }
 
+function construct(target, args) {
+    const instance = Reflect.construct(target, [create.proxy([], true, true), ...args])
+
+    return instance
+}
+
 function resolve(target, box, ...args) {
     if (is.object(box)) return proxy(target, box)
+    if (is.box(box)) return resolve(target, Array.from(box), ...args)
+    if (is.func(box)) return resolve(target, construct(box, args))
 
     const [method, ...rest] = args
     const isSet = !is.func(method) || is.box(method)
 
-    return Array.from(box).reduce((value, key, index, path) => {
+    return box.reduce((value, key, index, path) => {
         if (is.box(key)) return resolve(value, key)
         if (is.func(key)) return key(value)
         if (is.array(key)) key = resolve(target, key)

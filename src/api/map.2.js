@@ -13,17 +13,21 @@ export const obj = observable({
     demo: {}
 })
 
-export function Name(box) {
-    return `box(${String(box)})`
-}
+export const ticker = observable({
+    value: 1,
+    increment() {
+        this.value++
+    },
+    toggle() {
+        this.id = this.id ? clearInterval(this.id) : setInterval(() => this.increment(), 1)
 
-export const box = bitbox()
-export const demo = box.demo(observable)
+        return this
+    }
+})
 
-export function Log(box) {
-    this.name = `Log(${box})`
-    return Object.assign(this, box)
-}
+observe(() => document.body.innerHTML = ticker.value)
+
+ticker.toggle()
 
 export class One {
     constructor(box) {
@@ -73,42 +77,75 @@ obj.dev = { deep: { one: { count: 0 }, xxx: {} } }
 // one.observe()
 // one.run(1)
 
-export function oCount(box, fn) {
-    const obj = observable({
-        path: [...box].join("."),
-        count: box,
+export function oCount(box) {
+    return {
+        value: box.count,
         inc() {
-            return this.count++
+            return this.value++
         },
         dec() {
-            return this.count--
+            return this.value--
         }
-    })
-    return fn ? fn(obj) : obj
-}
-export const ocount = new box(oCount)
-
-export const fooO = resolve(obj.counters, new box.foo(oCount))
-export const barO = resolve(obj.counters, new box.bar(oCount))
-export const bazO = resolve(obj.counters, new box.baz(oCount))
-
-export const xxxO = bitbox("counters", function xxx(box) {
-    return {
-        foo: oCount(box.foo),
-        bar: oCount(box.bar),
-        baz: oCount(box.baz)
     }
-})
+}
+
+function run(max = 10, int = 100) {
+    this.value = 0
+    clearInterval(this.id)
+    this.id = setInterval(() => {
+        this.value < max ? this.inc() : clearInterval(this.id)
+    }, int)
+}
+
+export function B1(box) {
+    return box.xxx(observable, function B1(obj) {
+        return Object.assign(obj, {
+            value: 0,
+            inc() {
+                return this.value++
+            },
+            dec() {
+                return this.value--
+            },
+            run
+        })
+    })
+}
+export function B2(box) {
+    return box(observable, {
+        value: 0,
+        inc() {
+            return this.value++
+        },
+        dec() {
+            return this.value--
+        },
+        run
+    })
+}
+
+export const xxx = bitbox(B1)
+
+export const xxxbox = xxx({ value: 1 })
+
+observe(() => console.log(`b1`, xxxbox.value))
+
+xxxbox.run()
+
+export const b2 = bitbox(B2)
+export const b2box = b2({ value: 1 })
+
+observe(() => console.log(`b2`, b2box.value))
+
+b2box.run()
+
+//({ count: 1 })
 
 export class Count {
-    constructor(box, obj) {
-        console.info(`Count - box, obj`, { box, obj })
-
-        this.name = `Count(${box})`
-        this.value = resolve(obj, box) //(obj)
-    }
-    init(target, proxy) {
-        observe(() => print({ target, proxy }))
+    constructor(value = 0) {
+        this.value = value
+        observe(() => console.log(`counter: ${this}`, this.value))
+        this.run()
     }
     inc() {
         return this.value++
@@ -117,6 +154,7 @@ export class Count {
         return this.value--
     }
     run(max = 10, int = 100) {
+        this.value = 0
         clearInterval(this.id)
         this.id = setInterval(() => {
             this.value < max ? this.inc() : clearInterval(this.id)
@@ -124,59 +162,15 @@ export class Count {
     }
 }
 
-export const ticker = observable({
-    tick: 1,
-    increment() {
-        return this.tick++
-    },
-    start() {
-        this.id = setInterval(() => this.increment(), 1)
-    }
-})
-
-export class Counters {
-    constructor(box, obj) {
-        console.log(`Counters - box, obj`, { box, obj })
-
-        this.name = `Counters(${box})`
-        this.path = box.toArray()
-        this.items = new box(function Items(box, obj) {
-            console.log(`ITEMS - box, obj`, { box, obj, res: box(obj) })
-            this.foo = new box.foo(Count, box(obj))
-            this.bar = new box.bar(Count, box(obj))
-            this.baz = new box.baz(Count, box(obj))
-        }, box(obj))
-        //return bitbox(...box, this)(obj)
-        //this.r = resolve(obj, this)
-        //
-        //return this
-    }
-    init(target, proxy) {
-        return target
-    }
-    get(key) {
-        return key ? this.items[key] : this.items
-    }
-    values() {
-        return Object.keys(this.items).map(key => this.items[key].value)
-    }
-    get size() {
-        return Object.keys(this.items).length
-    }
-}
-
-export const counters = new box.counters(Counters, obj)
+export const count = new Count(0)
+// export const count2 = new Count(3)
 
 export const app = bitbox({
     items: [],
     ticker,
-    counters2: box.b2(counters),
-    counters: new box.cxx(Counters, { cxx: obj }),
     get itemsString() {
         return this.items.map(i => i.name + " = " + i.value)
     },
-    deep: { fooO, barO, bazO },
-    keys: box(Object.keys),
     print() {
         print(this)
     }

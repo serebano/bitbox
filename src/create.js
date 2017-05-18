@@ -22,9 +22,10 @@ const validate = key => {
 }
 
 function create(arg, isBox) {
+    if (is.func(arg[0])) return arg[0](create(arg.slice(1)))
     return create.proxy(
         arg.map((key, idx) => {
-            if (is.func(key)) return construct(key, create(arg.slice(0, idx)))
+            //if (is.func(key)) return construct(key, create(arg.slice(0, idx)))
             if (keyTypes.includes(typeof key)) return key
             throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
         }),
