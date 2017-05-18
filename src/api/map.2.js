@@ -1,5 +1,5 @@
 import bitbox, { observable, observe, map, resolve, construct, create } from "../bitbox"
-import { print } from "../operators"
+import { print, assign } from "../operators"
 import { is } from "../utils"
 
 export const obj = observable({
@@ -93,41 +93,56 @@ function run(max = 10, int = 100) {
     this.value = 0
     clearInterval(this.id)
     this.id = setInterval(() => {
-        this.value < max ? this.inc() : clearInterval(this.id)
+        this.value < max ? this.value++ : clearInterval(this.id)
     }, int)
 }
 
-export function B1(box) {
-    return box.b1(observable, function Foo(obj) {
-        obj.inc = () => obj.value++
+function inc() {
+    return this.value++
+}
+
+export function Foo(box) {
+    return box.foo(observable, function Foo(obj) {
+        obj.inc = inc
         obj.run = run
         return obj
     })
 }
 
-export function B2(box) {
-    return box.b2(observable, function Bar(obj) {
-        return Object.assign(obj, {
-            inc() {
-                return this.value++
-            },
-            run
-        })
+export function Bar(box) {
+    return box.bar(observable, assign({ inc, run }))
+}
+
+export function App(box) {
+    return bitbox({
+        barr: bitbox(Bar),
+        fooo: bitbox(Foo),
+        get sum() {
+            return this.barr.value + this.fooo.value
+        }
     })
 }
 
 export const bxobj = {}
-export const b1box = bitbox(B1)
-export const b1obj = b1box(bxobj)
 
-observe(() => console.log(`${b1box}`, b1obj.value))
-b1obj.run()
+export const appbox = bitbox(App)
+export const appobj = appbox(bxobj)
 
-export const b2box = bitbox(B2)
-export const b2obj = b2box(bxobj)
+export const foobox = bitbox(Foo)
+export const fooobj = foobox(bxobj)
 
-observe(() => console.log(`${b2box}`, b2obj.value))
-b2obj.run()
+export const barbox = bitbox(Bar)
+export const barobj = barbox(bxobj)
+
+observe(() => {
+    console.log(`${appbox}`)
+    print(appobj)
+})
+observe(() => console.log(`${foobox}`, fooobj.value))
+observe(() => console.log(`${barbox}`, barobj.value))
+
+fooobj.run()
+barobj.run()
 
 export class Count {
     constructor(value = 0) {

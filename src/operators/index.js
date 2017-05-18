@@ -11,6 +11,7 @@ export { default as observable } from "../observer/observable"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 //export { default as map } from "./map"
+import { toPrimitive } from "../utils"
 
 export function log(target) {
     const o = observe(() => {
@@ -53,7 +54,9 @@ export function compute(...args) {
 }
 
 export function assign(...args) {
-    return target => Object.assign(...args)
+    const op = target => Object.assign(target, ...args)
+    op.displayName = `assign(${args.map(String)})`
+    return op
 }
 
 export function join(separator) {
