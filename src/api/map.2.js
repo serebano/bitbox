@@ -98,48 +98,36 @@ function run(max = 10, int = 100) {
 }
 
 export function B1(box) {
-    return box.xxx(observable, function B1(obj) {
+    return box.b1(observable, function Foo(obj) {
+        obj.inc = () => obj.value++
+        obj.run = run
+        return obj
+    })
+}
+
+export function B2(box) {
+    return box.b2(observable, function Bar(obj) {
         return Object.assign(obj, {
-            value: 0,
             inc() {
                 return this.value++
-            },
-            dec() {
-                return this.value--
             },
             run
         })
     })
 }
-export function B2(box) {
-    return box(observable, {
-        value: 0,
-        inc() {
-            return this.value++
-        },
-        dec() {
-            return this.value--
-        },
-        run
-    })
-}
 
-export const xxx = bitbox(B1)
+export const bxobj = {}
+export const b1box = bitbox(B1)
+export const b1obj = b1box(bxobj)
 
-export const xxxbox = xxx({ value: 1 })
+observe(() => console.log(`${b1box}`, b1obj.value))
+b1obj.run()
 
-observe(() => console.log(`b1`, xxxbox.value))
+export const b2box = bitbox(B2)
+export const b2obj = b2box(bxobj)
 
-xxxbox.run()
-
-export const b2 = bitbox(B2)
-export const b2box = b2({ value: 1 })
-
-observe(() => console.log(`b2`, b2box.value))
-
-b2box.run()
-
-//({ count: 1 })
+observe(() => console.log(`${b2box}`, b2obj.value))
+b2obj.run()
 
 export class Count {
     constructor(value = 0) {
