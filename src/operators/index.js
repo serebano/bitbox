@@ -1,17 +1,9 @@
-import is from "./is"
+import is from "../is"
 import resolve from "../resolve"
-import observe from "../observer/observe"
+import observe from "../observe"
 
-export { is }
-export { default as box } from "../box"
-export { default as create } from "../create"
-export { default as resolve } from "../resolve"
-export { default as observe } from "../observer/observe"
-export { default as observable } from "../observer/observable"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
-//export { default as map } from "./map"
-import { toPrimitive } from "../utils"
 
 export function log(target) {
     const o = observe(() => {
@@ -27,10 +19,6 @@ export function log(target) {
                 })
             )
     })
-}
-
-export function action(box) {
-    return target => (...args) => box(target, ...args)
 }
 
 export function set(box, value) {
@@ -90,8 +78,10 @@ export function slice(...args) {
 export function splice(...args) {
     return target => target.splice(...args)
 }
-
-export function stringify(tab = 4) {
+export function toString(tab = 4) {
+    return JSON.stringify(this, null, tab)
+}
+export function stringify(box, tab = 4) {
     return target => JSON.stringify(target, null, tab)
 }
 

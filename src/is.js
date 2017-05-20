@@ -1,11 +1,10 @@
-import { isObservable } from "../observer"
-import { symbol } from "../create"
-import mapping from "../mapping"
+import { proxies } from "./observer/store"
 
 const is = {
-    box: arg => is.func(arg) && Reflect.has(arg, symbol.path),
-    map: arg => mapping.has(arg), //is.object(arg) && Reflect.has(arg, symbol.map),
-    observable: arg => isObservable(arg),
+    box: arg => is.func(arg) && Reflect.has(arg, Symbol.for("box/path")),
+    observable(object) {
+        return is.complexObject(object) && proxies.get(object) === object
+    },
     func: arg => typeof arg === "function",
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
     complexObject: arg => typeof arg === "object" && arg !== null,

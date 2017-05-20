@@ -1,21 +1,24 @@
+import is from "./is"
 import create from "./create"
-
-export { default as observable } from "./observer/observable"
-export { default as observe } from "./observer/observe"
-export { default as construct } from "./construct"
-export { default as resolve } from "./resolve"
-export { default as create } from "./create"
-export { default as map } from "./map"
+import resolve from "./resolve"
 
 /**
- * bitbox(...)
- * Constructor
+ * bitbox(...) -> box()
+ *
  * @param  {Array}
  * @return {Function}
  */
 
-function bitbox(...keys) {
-    return create(keys)
+function bitbox(box, ...args) {
+    return create(box, args)
 }
 
 export default bitbox
+
+export const box = create(function box(path, target, ...args) {
+    if (is.func(target)) {
+        return create(box, path.concat(target, ...args))
+    }
+
+    return resolve(target, path, ...args)
+})

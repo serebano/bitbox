@@ -1,4 +1,4 @@
-import { is } from "."
+import is from "../is"
 
 export default function toPrimitive(keys, sep = ".", isKey) {
     const result = keys
@@ -20,7 +20,7 @@ export default function toPrimitive(keys, sep = ".", isKey) {
                 return (
                     (idx > 0 && !is.func(keys[idx - 1]) ? "(" : "") +
                     (key.displayName || key.name || String(key)) +
-                    (idx > 0 ? !is.func(keys[idx + 1]) ? ")" : ", " : "")
+                    (idx > 0 ? (!is.func(keys[idx + 1]) ? ")" : ", ") : "")
                 )
             }
             return is.array(key)

@@ -1,111 +1,54 @@
+import is from "./is"
 import resolve from "./resolve"
-import construct from "./construct"
+import { toPrimitive, toArray } from "./utils"
 
-import { is, toPrimitive, toJSON, toArray } from "./utils"
+function primitive(keys) {
+    primitive.__keys = keys
+    return () => (primitive.__key = toPrimitive(keys))
+}
 
-export const symbol = {
-    path: Symbol("bitbox.path"),
-    map: Symbol("bitbox.map")
-}
-/** primitive key transfer */
-let __keys, __key
-const primitive = keys => {
-    __keys = keys
-    return () => __key = toPrimitive(keys)
-}
-const identity = () => "bitbox"
-const keyTypes = ["string", "number", "function", "symbol", "object"]
+const identity = () => `bitbox`
 const iterator = keys => Array.prototype[Symbol.iterator].bind(keys)
-const validate = key => {
-    if (keyTypes.includes(typeof key)) return key
-    throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
-}
 
-function create(arg, isBox) {
-    if (is.func(arg[0])) return arg[0](create(arg.slice(1)))
-    return create.proxy(
-        arg.map((key, idx) => {
-            //if (is.func(key)) return construct(key, create(arg.slice(0, idx)))
-            if (keyTypes.includes(typeof key)) return key
-            throw new Error(`Invalid key "${String(key)}" type "${typeof key}"`)
-        }),
-        true,
-        isBox
-    )
-}
+function create(box, keys = [], isRoot = true) {
+    const root = [...keys]
 
-create.proxy = function(keys, isRoot = true, isBox = false) {
-    function box() {}
+    return new Proxy(box, {
+        apply(target, context, args) {
+            if (isRoot) keys = [...root]
 
-    const root = keys
-    const proxy = new Proxy(box, {
-        construct(_, [target, ...args]) {
-            const targetArgs = [create.proxy(keys, true, true), ...args]
-            const instance = Reflect.construct(target, targetArgs)
-            if (is.undefined(instance))
-                throw new Error(
-                    `box#construct 'construct' on box: ${target.name} returned non-object (${instance})`
-                )
-
-            console.log(`args`, args, instance)
-            // if (is.box(instance)) return resolve(args[0], instance, ...args.slice(1))
-            //
-            // if (args.length && is.complexObject(args[0])) {
-            //     const [target, ...rest] = args
-            //
-            //     return resolve(target, instance, ...rest)
-            // }
-
-            return instance
-        },
-        apply(target, thisArg, args) {
-            if (isRoot) keys = root.slice(0)
-            if (!isBox && args.length && is.complexObject(args[0])) {
-                const [target, ...rest] = args
-                return resolve(target, keys, ...rest)
-            }
-
-            if (args.length) keys.push(...args.map(validate))
-
-            return create.proxy(keys, true, isBox)
+            return Reflect.apply(box, context, [keys, ...args])
         },
         get(box, key, receiver) {
-            if (isRoot) keys = root.slice(0)
+            if (isRoot) keys = [...root]
 
-            if (key === "$") return keys
-            if (key === symbol.path) return keys
-            if (key === "apply") return Reflect.get(box, key)
+            if (key === "$") return { box, keys, root, isRoot }
+            if (key === "apply" || key === "call") return Reflect.get(box, key, receiver)
+            if (key === "resolve") return (target, ...rest) => resolve(target, keys, ...rest)
             if (key === "toArray") return () => toArray(keys)
-            if (key === "toJSON") return () => toJSON(keys)
+            if (key === "toJSON") return () => toArray(keys)
             if (key === "displayName") return toPrimitive(keys)
             if (key === Symbol.isConcatSpreadable) return false
             if (key === Symbol.iterator) return iterator(keys)
             if (key === Symbol.toPrimitive) return primitive(keys)
             if (key === Symbol.toStringTag) return identity
-            if (Reflect.has(box, key, receiver)) return Reflect.get(box, key, receiver)
+            if (key === Symbol.for("box/path")) return [...keys]
 
-            keys.push(!is.undefined(__keys) && key === __key ? __keys : key)
+            const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
+                ? primitive.__keys
+                : key
 
-            __keys = undefined
-            __key = undefined
+            keys = [...keys, nextKey]
 
-            return isRoot ? create.proxy(keys, false, isBox) : proxy
-        },
-        set(box, key, value, receiver) {
-            const map = keys.slice().pop()
-            console.log(`box.set(${key})`, value, receiver, map)
+            delete primitive.__key
+            delete primitive.__keys
 
-            if (is.object(map)) return Reflect.set(map, key, value)
-            return Reflect.set(box, key, value, receiver)
+            return isRoot ? create(box, keys) : receiver
         },
         has(box, key) {
             return true
         }
     })
-
-    box.toString = () => `function ${proxy}(object) {}`
-
-    return proxy
 }
 
 export default create
