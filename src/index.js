@@ -10,7 +10,7 @@ import resolve from "./resolve"
 
 import * as operators from "./operators"
 
-import * as api from "./api/map.2"
+import * as api from "./api/box"
 
 Object.assign(bitbox, {
     create,

@@ -18,7 +18,7 @@ function project(target, mapping) {
                     mapping,
                     isObservable: { target: is.observable(target), mapping: is.observable(mapping) }
                 }
-                print($)
+                //print($)
                 return $
             }
 
