@@ -1,5 +1,6 @@
 import is from "./is"
 import observe from "./observe"
+
 /**
  * bitbox.resolve
  *
@@ -8,6 +9,24 @@ import observe from "./observe"
  * @param  {Function} method
  * @return {Any}
  */
+
+function resolve(target, args, value) {
+    return Array.from(args).reduce((object, key, index, path) => {
+        if (is.array(key)) key = resolve(target, key)
+        if (is.object(key)) return proxy(object, key, path.slice(0, index))
+        if (is.box(key)) return resolve(object, key)
+        if (is.func(key)) return key(object)
+
+        if (arguments.length === 3 && index === path.length - 1)
+            return Reflect.set(object, key, value)
+
+        if (!Reflect.has(object, key) && index < path.length - 1) Reflect.set(object, key, {})
+
+        return Reflect.get(object, key)
+    }, target)
+}
+
+export default resolve
 
 function proxy(target = {}, mapping, path) {
     return new Proxy(mapping, {
@@ -48,21 +67,3 @@ function proxy(target = {}, mapping, path) {
         }
     })
 }
-
-function resolve(target, args, value) {
-    return Array.from(args).reduce((object, key, index, path) => {
-        if (is.array(key)) key = resolve(target, key)
-        if (is.object(key)) return proxy(object, key, path.slice(0, index))
-        if (is.box(key)) return resolve(object, key)
-        if (is.func(key)) return key(object)
-
-        if (arguments.length === 3 && index === path.length - 1)
-            return Reflect.set(object, key, value)
-
-        if (!Reflect.has(object, key) && index < path.length - 1) Reflect.set(object, key, {})
-
-        return Reflect.get(object, key)
-    }, target)
-}
-
-export default resolve

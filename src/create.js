@@ -1,14 +1,21 @@
 import is from "./is"
-import resolve from "./resolve"
 import { toPrimitive, toArray } from "./utils"
+
+const identity = () => `bitbox`
+const iterator = keys => Array.prototype[Symbol.iterator].bind(keys)
 
 function primitive(keys) {
     primitive.__keys = keys
     return () => (primitive.__key = toPrimitive(keys))
 }
 
-const identity = () => `bitbox`
-const iterator = keys => Array.prototype[Symbol.iterator].bind(keys)
+/**
+ * Create box
+ * @param  {Function}   box
+ * @param  {Array}      [keys=[]]
+ * @param  {Boolean}    [isRoot=true]
+ * @return {Function}   box
+ */
 
 function create(box, keys = [], isRoot = true) {
     const root = [...keys]
@@ -24,9 +31,8 @@ function create(box, keys = [], isRoot = true) {
 
             if (key === "$") return { box, keys, root, isRoot }
             if (key === "apply" || key === "call") return Reflect.get(box, key, receiver)
-            if (key === "resolve") return (target, ...rest) => resolve(target, keys, ...rest)
             if (key === "toArray") return () => toArray(keys)
-            if (key === "toJSON") return () => toArray(keys)
+            if (key === "toJS") return () => toArray(keys)
             if (key === "displayName") return toPrimitive(keys)
             if (key === Symbol.isConcatSpreadable) return false
             if (key === Symbol.iterator) return iterator(keys)

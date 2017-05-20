@@ -12,17 +12,35 @@ const React = {
     }
 }
 
+export function inc() {
+    return ++this.count
+}
+
+export function obs(fn) {
+    return observe(fn, this)
+}
+
 export const obj = {}
 export const pro = project(
     obj,
     observable({
         count: 0,
         status: "idle",
-        inc() {
-            return ++this.count
-        }
+        inc
     })
 )
+
+export const abox = box.a(
+    observable,
+    project({
+        count: 0,
+        inc,
+        obs
+    })
+)(obj)
+
+abox.obs(box.count(print))
+abox.inc()
 
 observe(() => {
     if (pro.count > 100) {

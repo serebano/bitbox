@@ -3,6 +3,13 @@ import resolve from "./resolve"
 import { print } from "./operators"
 
 function project(target, mapping) {
+    if (arguments.length === 1) {
+        mapping = target
+        return function projectBox(target) {
+            return project(target, mapping)
+        }
+    }
+
     return new Proxy(mapping, {
         get(map, key, receiver) {
             if (key === "$") {
