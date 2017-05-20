@@ -1,6 +1,4 @@
-import is from "./is"
 import create from "./create"
-import resolve from "./resolve"
 
 /**
  * bitbox(...) -> box()
@@ -14,11 +12,3 @@ function bitbox(box, ...args) {
 }
 
 export default bitbox
-
-export const box = create(function box(path, target, ...args) {
-    if (is.func(target)) {
-        return create(box, path.concat(target, ...args))
-    }
-
-    return resolve(target, path, ...args)
-})

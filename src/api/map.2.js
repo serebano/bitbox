@@ -1,4 +1,4 @@
-import bitbox, { box } from "../bitbox"
+import box from "../box"
 import project from "../project"
 import resolve from "../resolve"
 import observable from "../observable"
