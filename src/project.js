@@ -13,13 +13,11 @@ function project(target, mapping) {
     return new Proxy(mapping, {
         get(map, key, receiver) {
             if (key === "$") {
-                const $ = {
+                return {
                     target,
                     mapping,
                     isObservable: { target: is.observable(target), mapping: is.observable(mapping) }
                 }
-                //print($)
-                return $
             }
 
             const targetValue = Reflect.get(target, key)

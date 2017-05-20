@@ -1,8 +1,31 @@
 import box from "../box"
+import factory from "../factory"
 import project from "../project"
+import resolve from "../resolve"
 import observe from "../observe"
 import observable from "../observable"
-import { stringify } from "../operators"
+import { print, stringify } from "../operators"
+
+export const state = box.default(observable)(require("./state"))
+
+export function Pages(box) {
+    return box(pages => {
+        const keys = Object.keys(pages)
+        const values = Object.values(pages)
+
+        return {
+            pages,
+            keys,
+            values
+        }
+    })
+}
+
+export const pages = Pages(box)(box.app.pages(state))
+
+box.keys(print)(pages)
+
+box.app.pages(print)(state)
 
 export const obj = {
     count: 0,
@@ -25,17 +48,15 @@ export function on(fn) {
     return observe(fn, this)
 }
 
-const run = {
-    start(ms = 10) {
-        clearInterval(this.id)
-        this.id = setInterval(() => this.inc(), ms)
-        this.status = `Running(${ms})`
-    },
-    stop() {
-        clearInterval(this.id)
-        this.id = 0
-        this.status = `Stopped`
-    }
+export function start(ms = 10) {
+    clearInterval(this.id)
+    this.id = setInterval(() => this.inc(), ms)
+    this.status = `Running(${ms})`
+}
+export function stop() {
+    clearInterval(this.id)
+    this.id = 0
+    this.status = `Stopped`
 }
 
 export const pro = project(
@@ -53,7 +74,8 @@ export const one = box.one(
         count: 0,
         inc,
         on,
-        ...run
+        start,
+        stop
     })
 )(obj)
 
@@ -63,3 +85,6 @@ one.on(
     })
 )
 one.start()
+
+// getTemplate("bar")
+// getTemplate("baz")

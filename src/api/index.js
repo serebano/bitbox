@@ -1,5 +1,0 @@
-export { default as get } from "./get"
-export { default as set } from "./set"
-export { default as map } from "./map"
-export { default as proxy } from "./proxy"
-export { default as observe } from "./observe"

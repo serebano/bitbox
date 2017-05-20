@@ -1,5 +1,6 @@
-import bitbox, { proxy } from "../bitbox"
-import { is } from "../utils"
+import bitbox from "../bitbox"
+import { proxy } from "../operators"
+import is from "../is"
 
 const obj = {}
 

@@ -5,15 +5,13 @@ import observable from "./observable"
 import project from "./project"
 import run, { action } from "./run"
 import bitbox from "./bitbox"
-import create from "./create"
+import factory from "./factory"
 import resolve from "./resolve"
-
 import * as operators from "./operators"
-
-import * as api from "./api/box"
+//import * as api from "./api/box"
 
 Object.assign(bitbox, {
-    create,
+    factory,
     project,
     resolve,
     observable,
@@ -25,17 +23,20 @@ Object.assign(bitbox, {
     operators
 })
 
-Object.assign(window, operators, api, {
+Object.assign(window, operators, {
     bitbox,
-    create,
+    factory,
     project,
     resolve,
     observable,
     observe,
     box,
     run,
+    is,
     action
 })
+
+export { is, box, observe, observable, project, run, action, factory, resolve, operators }
 
 export default bitbox
 /* ... */

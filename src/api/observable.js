@@ -1,4 +1,7 @@
-import { observable, observe, action } from "../bitbox"
+import bitbox from "../bitbox"
+import run, { action } from "../run"
+import observe from "../observe"
+import observable from "../observable"
 
 const box = bitbox()
 const obj = observable({

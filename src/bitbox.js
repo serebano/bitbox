@@ -1,4 +1,4 @@
-import create from "./create"
+import factory from "./factory"
 
 /**
  * bitbox(...) -> box()
@@ -8,7 +8,7 @@ import create from "./create"
  */
 
 function bitbox(box, ...args) {
-    return create(box, args)
+    return factory(box, args)
 }
 
 export default bitbox

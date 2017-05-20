@@ -1,5 +1,5 @@
 import is from "./is"
-import create from "./create"
+import factory from "./factory"
 import resolve from "./resolve"
 
 /**
@@ -13,11 +13,10 @@ import resolve from "./resolve"
  */
 
 function box(path, target, ...args) {
-    if (is.func(target)) {
-        return create(box, path.concat(target, ...args))
-    }
+    if (is.func(target)) return factory(box, path.concat(target, ...args))
+    if (is.promise(target)) return target.then(target => resolve(target, path, ...args))
 
     return resolve(target, path, ...args)
 }
 
-export default create(box)
+export default factory(box)
