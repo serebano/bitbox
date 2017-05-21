@@ -13,59 +13,53 @@ export { default as project } from "./project"
 export { default as observe } from "./observe"
 export { default as observable } from "./observable"
 
-function bitbox(bit, box) {
-    if (arguments.length === 2) {
-        const obj = observable(bit)
-        const obs = observe(() => box(obj))
+export default factory(bitbox)
 
-        return { obj, obs }
-    }
-
-    if (arguments.length === 1) {
-        if (is.func(bit)) {
-            const obj = observable()
-            const obs = observe(() => bit(obj))
-
-            return { obj, obs }
-        }
-    }
-
-    if (is.object(bit)) {
-        return observable(bit)
-    }
-
-    return observable()
-}
-
-export default factory(function bb(path, ...args) {
-    if (!path.length) return bitbox(...args)
-
+function bitbox(path, ...args) {
     const [bit, box] = args
 
+    if (!path.length) {
+        if (is.func(bit)) {
+            return observe(obj => bit(obj, ...[arguments].slice(1)), observable())
+        }
+
+        const obj = observable(bit)
+
+        if (is.func(box)) observe(box, obj)
+
+        return obj
+    }
+
     if (is.object(bit)) {
         const obj = observable(bit)
+
         if (is.func(box)) {
-            const obs = observe(() => box(resolve(obj, path)))
-            return { obj, obs }
+            observe(box, resolve(obj, path))
+            return obj
         }
-        return { obj }
+        if (is.object(box)) return project(obj, box)
+        return obj
     }
 
     if (is.undefined(bit)) {
         const obj = resolve(observable(), path)
+
         if (is.func(box)) {
-            const obs = observe(() => box(obj))
-            return { obj, obs }
+            observe(box, obj)
+
+            return obj
         }
-        return { obj }
+
+        return observable()
     }
 
     if (is.func(bit)) {
         const obj = resolve(observable(), path)
-        const obs = observe(() => bit(obj))
 
-        return { obj, obs }
+        observe(bit, obj)
+
+        return obj
     }
 
     return resolve(observable(), path)
-})
+}

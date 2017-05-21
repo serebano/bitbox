@@ -26,7 +26,7 @@ function create(fn, args) {
         changes: [],
         changed: 0,
         run() {
-            const result = fn.apply(undefined, args)
+            const result = fn.apply(observer, args)
             observer.changed++
             observer.changes = []
             return result

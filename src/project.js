@@ -20,7 +20,7 @@ function project(target, mapping) {
                 }
             }
 
-            const targetValue = Reflect.get(target, key)
+            const targetValue = target && Reflect.get(target, key)
 
             if (is.undefined(targetValue)) {
                 const mapValue = Reflect.get(map, key, receiver)
