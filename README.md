@@ -3,12 +3,9 @@
 ```js
 bitbox( bit: target, box: observer )
 
-const app = bitbox ({
-    count: 0
-}, app => console.log(app.count))
-
-app.count++
-app.id = setInterval(() => app.count++, 1000)
+const app = bitbox.count(0, console.log)
+app.inc = () => app.count++
+app.run = () => app.id = setInterval(app.inc, 1000)
 
 bitbox(app => {
     if (app.count >= 10) 
