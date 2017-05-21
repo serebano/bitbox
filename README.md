@@ -1,16 +1,20 @@
 # bitbox
 
 ```js
-bitbox( bit: target, box: observer )
+bitbox( value: mixed, observer: function, ... )
+bitbox( observer: function, ...)
 
 const app = bitbox.count(0, console.log)
+
 app.inc = () => app.count++
 app.run = () => app.id = setInterval(app.inc, 1000)
 
+app.run()
+
 bitbox(app => {
     if (app.count >= 10) 
-        clearInterval(app.id)
-})
+        clearInterval(app.id)	
+	})
 
 
 // create observable app box
