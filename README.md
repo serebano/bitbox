@@ -1,6 +1,15 @@
 # bitbox
 
 ```js
+bitbox ( bit: target, box: observer )
+
+const app = bitbox ({
+    count: 0
+}, app => {
+    console.log(app.count)
+    setInterval(() => app.count++, 1000)
+)
+
 // create observable app box
 const app = bitbox(observable)
 
