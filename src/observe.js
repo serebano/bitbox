@@ -21,6 +21,7 @@ export default observe
 
 function create(fn, args) {
     const observer = {
+        name: fn.displayName || fn.name,
         keys: [],
         paths: [],
         changes: [],

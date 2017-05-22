@@ -12,6 +12,7 @@ const is = {
     promise: arg => arg instanceof Promise,
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",
+    numeric: arg => !isNaN(arg),
     symbol: arg => typeof arg === "symbol",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null

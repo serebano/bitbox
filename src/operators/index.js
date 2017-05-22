@@ -5,20 +5,8 @@ import observe from "../observe"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 
-export function log(target) {
-    const o = observe(() => {
-        console.info(stringify(4)(target))
-        o &&
-            console.log(
-                stringify(0)({
-                    changes: o.changes,
-                    object: o.changes.reduce((obj, path) => {
-                        resolve(obj, path, resolve(obj, path))
-                        return obj
-                    }, {})
-                })
-            )
-    })
+export function log(...args) {
+    print({ context: this, args })
 }
 
 export function set(box, value) {
@@ -103,12 +91,18 @@ export function keys(target) {
     return Object.keys(target)
 }
 
-export function inc(target) {
-    return target + 1
+export function inc(key = "value", value = 0) {
+    return function inc() {
+        this[key] = !(key in this) ? value + 1 : this[key] + 1
+        return this[key]
+    }
 }
 
-export function dec(target) {
-    return target - 1
+export function dec(key = "value", value = 0) {
+    return function dec() {
+        this[key] = !(key in this) ? value - 1 : this[key] - 1
+        return this[key]
+    }
 }
 
 export function toggle(target) {

@@ -35,7 +35,7 @@ function factory(box, keys = [], isRoot = true) {
 
             const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
                 ? primitive.__keys
-                : key
+                : is.numeric(key) ? parseInt(key) : key
 
             keys = [...keys, nextKey]
 
