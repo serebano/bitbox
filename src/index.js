@@ -15,7 +15,45 @@ export { default as observable } from "./observable"
 
 export default factory(bitbox)
 
+const get = (object, path) => path.reduce((obj, key) => Reflect.get(obj, key), object)
+
+const create = (object = {}, path = [], value) => {
+    path.reduce((obj, key, index) => {
+        if (index === path.length - 1) Reflect.set(obj, key, value)
+        else if (!Reflect.has(obj, key)) Reflect.set(obj, key, {})
+
+        return Reflect.get(obj, key)
+    }, object)
+    return object
+}
+
 function bitbox(path, ...args) {
+    let target = {}
+
+    if (!is.object(args[0]) && !is.func(args[0])) {
+        const value = args.shift()
+        if (!path.length) path.push("value")
+
+        target = observable(create({}, path, value))
+    } else if (is.object(args[0])) {
+        const object = args.shift()
+        target = observable(object)
+    }
+
+    if (is.func(args[0])) {
+        const observer = args.shift()
+        observe(() => observer(get(target, path), ...args))
+    }
+
+    return target
+
+    args = args.reduce((arr, key, idx) => {
+        if (is.func(key))
+            return arr.concat(key(get(target, path.slice(1)), ...args.splice(idx + 1)))
+
+        return arr.concat(key)
+    }, [])
+
     const [bit, box] = args
 
     if (!path.length) {
