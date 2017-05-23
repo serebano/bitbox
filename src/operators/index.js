@@ -1,6 +1,7 @@
 import is from "../is"
 import resolve from "../resolve"
 import observe from "../observe"
+import print from "./print"
 
 export { default as delay } from "./delay"
 export { default as print } from "./print"

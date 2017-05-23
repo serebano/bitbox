@@ -88,24 +88,25 @@ function create(target, path = []) {
 function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
-            if (key === "$")
+            if (key === "$") return target
+            if (key === "$observers")
                 return {
                     target,
                     path,
                     get observers() {
                         return observers.get(target)
-                        //     const res = {}
-                        //     for (const [key, o] of observers.get(target).entries()) {
-                        //         res[key] = [...o].map(o => {
-                        //             return {
-                        //                 name: o.name,
-                        //                 paths: o.paths.map(p => p.join(".")),
-                        //                 changes: o.changes.map(p => p.join(".")),
-                        //                 runs: o.changed
-                        //             }
-                        //         })
-                        //     }
-                        //     return res
+                        const res = {}
+                        for (const [key, o] of observers.get(target).entries()) {
+                            res[key] = [...o].map(o => {
+                                return {
+                                    name: o.name,
+                                    paths: o.paths.map(p => p.join(".")),
+                                    changes: o.changes.map(p => p.join(".")),
+                                    runs: o.changed
+                                }
+                            })
+                        }
+                        return res
                     }
                 }
 

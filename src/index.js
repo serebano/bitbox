@@ -20,35 +20,9 @@ export default factory(bitbox)
 
 function get(object, path) {
     return path.reduce((obj, key, index) => {
-        // if (index === path.length - 1) {
-        //     return new Proxy(obj, {
-        //         get(target, key) {
-        //             return Reflect.get(target, key)
-        //         }
-        //     })
-        // }
         return Reflect.get(obj, key)
     }, object)
 }
-
-// function proxy(target, mapping) {
-//     return new Proxy(target, {
-//         get(target, key, receiver) {
-//             const value = Reflect.get(target, key, receiver)
-//             if (!Reflect.has(target, key, receiver) && Reflect.has(mapping, key)) {
-//                 return Reflect.get(mapping, key)
-//             }
-//
-//             return value
-//         },
-//         set(target, key, value, receiver) {
-//             return Reflect.set(target, key, value, receiver)
-//         }
-//         // has(target, key, receiver) {
-//         //     return Reflect.has(target, key, receiver) || Reflect.has(mapping, key)
-//         // }
-//     })
-// }
 
 function create(object = {}, path = [], value) {
     path.reduce((obj, key, index) => {
@@ -65,19 +39,28 @@ function create(object = {}, path = [], value) {
     return object
 }
 
-/**
- * bitbox
- *
- * bitbox() -> observable { }
- * bitbox.count(0) -> observable { count: 0 }
- *
- * bitbox(console.log) -> observable { }
- *
- * @return {Object}
- */
+export function bitbox(path, target, observer, ...args) {
+    if (!path.length) {
+        const $observable = observable(target)
 
-function bitbox(path, ...args) {
-    let target = {}
+        let result
+        const $observer = observe(function box() {
+            if (is.func(observer)) {
+                const changes = $observer ? $observer.changes : []
+                !$observer &&
+                    console.log(
+                        "REGISTER",
+                        observer.name,
+                        $observer && $observer.changed,
+                        ...changes
+                    )
+                result = observer.apply(this, [$observable, ...args])
+            }
+        })
+        $observer.name = observer && observer.name
+        //operators.print({ path, target, observer, args, $observable, $observer, context: this })
+        return is.func(result) ? result : $observable
+    }
 
     if (!is.object(args[0]) && !is.func(args[0])) {
         const value = args.shift()
@@ -106,8 +89,6 @@ function bitbox(path, ...args) {
         o.displayName = observer.displayName || observer.name || String(observer)
 
         observe(o)
-
-        //observe(observer, get(target, path), ...args)
     }
 
     return target

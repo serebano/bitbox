@@ -27,9 +27,11 @@ function create(fn, args) {
         changes: [],
         changed: 0,
         run() {
+            const start = Date.now()
             const result = fn.apply(observer, args)
             observer.changed++
             observer.changes = []
+            observer.took = Date.now() - start
             return result
         },
         skip() {
@@ -48,8 +50,13 @@ function create(fn, args) {
             observer.paths = []
             queue.delete(observer)
         },
-        reload() {
+        dispose() {
+            this.off()
+        },
+        reload(_fn, _args) {
             observer.off()
+            fn = _fn
+            args = _args
             observer.on()
         }
     }

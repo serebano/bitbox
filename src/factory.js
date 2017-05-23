@@ -14,7 +14,12 @@ function factory(box, keys = [], isRoot = true) {
 
     const root = [...keys]
 
-    return new Proxy(box, {
+    const proxy = new Proxy(box, {
+        construct(box, [ctor, ...args]) {
+            if (isRoot) keys = [...root]
+
+            return Reflect.construct(ctor, [proxy, ...args])
+        },
         apply(box, context, args) {
             if (isRoot) keys = [...root]
 
@@ -23,9 +28,10 @@ function factory(box, keys = [], isRoot = true) {
         get(box, key, receiver) {
             if (isRoot) keys = [...root]
             if (key === "$") return { box, keys, root, isRoot }
-            if (key === "apply" || key === "call") return Reflect.get(box, key, receiver)
+            if (key === "apply" || key === "call" || key === "bind")
+                return Reflect.get(box, key, receiver)
             if (key === "toArray") return () => toArray(keys)
-            if (key === "toJS") return () => toArray(keys)
+            if (key === "toJSON") return () => toArray(keys)
             if (key === "displayName") return toPrimitive(keys)
             if (key === Symbol.isConcatSpreadable) return false
             if (key === Symbol.iterator) return keys => Array.prototype[Symbol.iterator].bind(keys)
@@ -42,12 +48,14 @@ function factory(box, keys = [], isRoot = true) {
             delete primitive.__key
             delete primitive.__keys
 
-            return isRoot ? factory(box, keys, false) : receiver
+            return isRoot ? factory(box, keys, true) : receiver
         },
         has(box, key) {
             return true
         }
     })
+
+    return proxy
 }
 
 function primitive(keys) {
