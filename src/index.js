@@ -47,13 +47,7 @@ export function bitbox(path, target, observer, ...args) {
         const $observer = observe(function box() {
             if (is.func(observer)) {
                 const changes = $observer ? $observer.changes : []
-                !$observer &&
-                    console.log(
-                        "REGISTER",
-                        observer.name,
-                        $observer && $observer.changed,
-                        ...changes
-                    )
+                !$observer && console.log("REGISTER", observer.displayName || observer.name, args)
                 result = observer.apply(this, [$observable, ...args])
             }
         })
