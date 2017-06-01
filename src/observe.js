@@ -21,14 +21,18 @@ export default observe
 
 function create(fn, args) {
     const observer = {
+        fn,
+        args,
         name: fn.displayName || fn.name,
         keys: [],
         paths: [],
         changes: [],
         changed: 0,
+        map: [],
+        result: undefined,
         run() {
             const start = Date.now()
-            const result = fn.apply(observer, args)
+            const result = (observer.result = fn.apply(observer, args))
             observer.changed++
             observer.changes = []
             observer.took = Date.now() - start

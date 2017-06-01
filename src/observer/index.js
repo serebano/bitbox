@@ -1,6 +1,2 @@
-import { proxies } from "./store"
-import { is } from "../utils"
-
-export function isObservable(object) {
-    return is.complexObject(object) && proxies.get(object) === object
-}
+export { observable, isObservable, observe, unobserve, unqueue, exec } from "./observer"
+export * from "./store"

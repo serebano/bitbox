@@ -1,89 +1,50 @@
-import is from "./is"
-import factory from "./factory"
-import resolve from "./resolve"
-import project from "./project"
-import observe from "./observe"
-import observable from "./observable"
-import * as operators from "./operators"
+import * as bitbox from "./bitbox"
+import { is, box, pipe, compose, observe, observable, curry, curryN, __ } from "./bitbox"
+import r from "ramda"
 
-export { default as is } from "./is"
-export { default as box } from "./box"
-export { default as factory } from "./factory"
-export { default as resolve } from "./resolve"
-export { default as project } from "./project"
-export { default as observe } from "./observe"
-export { default as observable } from "./observable"
-export { observers } from "./observer/store"
-export { operators }
+const assoc = box((path, value, object) => {
+    return r.assocPath(path, value, object || {})
+})
 
-export default factory(bitbox)
+const log = r.pipe(
+    (path, ...args) => ({ path, args }),
+    curry(JSON.stringify)(__, null, 4),
+    console.log
+)
 
-function get(object, path) {
-    return path.reduce((obj, key, index) => {
-        return Reflect.get(obj, key)
-    }, object)
-}
+const obj = observable(assoc.a.b.c.items[0]({ id: 0, count: 0 }, {}))
 
-function create(object = {}, path = [], value) {
-    path.reduce((obj, key, index) => {
-        if (index === path.length - 1) {
-            Reflect.set(obj, key, value)
-        } else if (!Reflect.has(obj, key)) {
-            const nextKey = path[index + 1]
-            Reflect.set(obj, key, is.number(nextKey) ? [] : {})
+const app = box(function App(path, ...args) {
+    console.log(`[APPLY] ${path.join(".")}`, args)
+
+    if (args.length && is.complexObject(args[args.length - 1])) {
+        const obj = args.pop()
+
+        if (Reflect.has(r, path[path.length - 1])) {
+            const ext = Reflect.get(r, path.pop())
+
+            return ext(...args, r.path(path, obj))
         }
 
-        return Reflect.get(obj, key)
-    }, object)
+        //const target = r.path(path, obj)
 
-    return object
+        return [r.path(path)].concat(args).reduce((f, g) => (...args) => f(g(...args)))(obj)
+    }
+
+    return [r.path(path)].concat(args).reduce((f, g) => (...args) => f(g(...args)))
+})
+
+app.get = (target, keys, receiver) => {
+    console.log(`[GET] ${keys.join(".")}`)
+    return box(target, keys, false)
 }
 
-export function bitbox(path, target, observer, ...args) {
-    if (!path.length) {
-        const $observable = observable(target)
+const obs = curry((observer, target) => observe(() => observer(target)))
 
-        let result
-        const $observer = observe(function box() {
-            if (is.func(observer)) {
-                const changes = $observer ? $observer.changes : []
-                !$observer && console.log("REGISTER", observer.displayName || observer.name, args)
-                result = observer.apply(this, [$observable, ...args])
-            }
-        })
-        $observer.name = observer && observer.name
-        //operators.print({ path, target, observer, args, $observable, $observer, context: this })
-        return is.func(result) ? result : $observable
-    }
+app.a.b.c.items[0](obj).count = 0
+app.a.b.c(obj).items = r.times(id => ({ id, count: 0 }), 10)
 
-    if (!is.object(args[0]) && !is.func(args[0])) {
-        const value = args.shift()
-        if (!path.length) path = ["value"]
+app.a.b.c.items.map(obs(r.pipe(JSON.stringify, console.log)))(obj)
+app.a.b.c.items(r.keys, r.tap(console.log))(obj)
 
-        target = create(target, path, value)
-    } else if (is.object(args[0])) {
-        const object = args.shift()
-
-        target = is.func(args[0]) ? object : create(object, path, args.shift())
-    }
-
-    if (is.object(args[0])) {
-        const mapping = args.shift()
-
-        target = Object.assign(target, mapping)
-    }
-
-    target = observable(target)
-
-    if (is.func(args[0])) {
-        const observer = args.shift()
-        function o() {
-            observer.call(this, get(target, path), ...args)
-        }
-        o.displayName = observer.displayName || observer.name || String(observer)
-
-        observe(o)
-    }
-
-    return target
-}
+Object.assign(window, bitbox, { r, bitbox, obj, app, log })

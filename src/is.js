@@ -1,9 +1,9 @@
-import { proxies } from "./observer/store"
+import { isObservable } from "./observer"
 
 const is = {
     box: arg => is.func(arg) && Reflect.has(arg, Symbol.for("box/path")),
     observable(object) {
-        return is.complexObject(object) && proxies.get(object) === object
+        return isObservable(object)
     },
     func: arg => typeof arg === "function",
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),

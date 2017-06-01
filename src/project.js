@@ -12,7 +12,7 @@ function project(target, mapping) {
 
     return new Proxy(mapping, {
         get(map, key, receiver) {
-            if (key === "$") {
+            if (key === "$m") {
                 return {
                     target,
                     mapping,
@@ -20,12 +20,17 @@ function project(target, mapping) {
                 }
             }
 
+            if (Reflect.has(mapping, key)) {
+                const mapValue = Reflect.get(mapping, key)
+                if (is.box(mapValue)) return mapValue(target)
+            }
+
             const targetValue = target && Reflect.get(target, key)
 
             if (is.undefined(targetValue)) {
                 const mapValue = Reflect.get(map, key, receiver)
 
-                if (is.box(mapValue)) return resolve(target, mapValue)
+                if (is.box(mapValue)) return mapValue(target)
                 if (is.object(mapValue)) return project(target, mapValue)
 
                 return mapValue
@@ -36,7 +41,8 @@ function project(target, mapping) {
         set(mapping, key, value) {
             if (Reflect.has(mapping, key)) {
                 const mapValue = Reflect.get(mapping, key)
-                if (is.box(mapValue)) return resolve(target, mapValue, value)
+                if (is.box(mapValue))
+                    return resolve(target, mapValue[Symbol.for("box/path")], value)
             }
 
             Reflect.set(target, key, value)

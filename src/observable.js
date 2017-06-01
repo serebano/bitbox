@@ -13,8 +13,8 @@ import observe, { runObservers } from "./observe"
  */
 
 function observable(target) {
-    if (arguments.length >= 2) return observable.key(...arguments)
-    if (is.string(target) || is.number(target)) return observable.value(target)
+    //if (arguments.length >= 2) return observable.key(...arguments)
+    //if (is.string(target) || is.number(target)) return observable.value(target)
 
     target = target || {}
 
@@ -89,7 +89,8 @@ function createProxy(obj, path = []) {
     return new Proxy(obj, {
         get(target, key, receiver) {
             if (key === "$") return target
-            if (key === "$observers")
+            if (key === "$observers") {
+                return observers.get(target)
                 return {
                     target,
                     path,
@@ -109,6 +110,7 @@ function createProxy(obj, path = []) {
                         return res
                     }
                 }
+            }
 
             const result = Reflect.get(target, key, receiver)
             if (is.symbol(key) && wellKnownSymbols.has(key)) return result
@@ -161,7 +163,7 @@ function registerObserver(target, key, path) {
 
         if (!keyObservers.has(state.currentObserver)) {
             keyObservers.add(state.currentObserver)
-
+            state.currentObserver.map.push([String(key), target])
             state.currentObserver.target = { target, key }
             state.currentObserver.keys.push(keyObservers)
             state.currentObserver.paths.push(path.concat(String(key)))

@@ -1,123 +1,113 @@
 import is from "../is"
 import resolve from "../resolve"
-import observe from "../observe"
+import { observe } from "../observer"
 import print from "./print"
+import _curry2 from "../internal/curry2"
 
 export { default as delay } from "./delay"
 export { default as print } from "./print"
+export { default as add } from "./add"
+export { default as inc } from "./inc"
+export { default as dec } from "./dec"
+export { default as prop } from "./prop"
+export { default as props } from "./props"
 
-export function log(...args) {
-    print({ context: this, args })
-}
+export const o = _curry2((o, t) => observe(() => o(t)) && t)
 
-export function set(box, value) {
-    return target => box(target, value)
-}
+export const eq = _curry2(function eq(a, b) {
+    return a === b
+})
 
-export function proxy(handler) {
-    return target => new Proxy(target, handler)
-}
+export const lt = _curry2(function lt(a, b) {
+    return a < b
+})
+export const gt = _curry2(function gt(a, b) {
+    return a > b
+})
 
-export function compute(...args) {
-    return target =>
-        args.reduce((result, arg, idx) => {
-            if (idx === args.length - 1)
-                return is.box(arg) ? resolve(arg) : is.func(arg) ? arg(result) : arg
+export const tap = _curry2(function tap(fn, x) {
+    fn(x)
+    return x
+})
 
-            return is.box(arg)
-                ? [...result, resolve(arg)]
-                : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
-        }, [])
-}
-
-export function assign(...args) {
-    const op = target => Object.assign(target, ...args)
-    op.displayName = `assign(${args.map(String)})`
-    return op
-}
-
-export function join(separator) {
-    return target => target.join(separator)
-}
-
-export function concat(...args) {
-    return target => target.concat(...args)
-}
-
-export function push(...args) {
-    return target => target.push(...args)
-}
-
-export function pop(target) {
-    return target => target.pop()
-}
-
-export function unshift(...args) {
-    return target => target.unshift(...args)
-}
-
-export function shift(target) {
-    return target => target.shift()
-}
-
-export function slice(...args) {
-    return target => target.slice(...args)
-}
-
-export function splice(...args) {
-    return target => target.splice(...args)
-}
-export function toString(tab = 4) {
-    return JSON.stringify(this, null, tab)
-}
-export function stringify(box, tab = 4) {
-    return target => JSON.stringify(target, null, tab)
-}
-
-export function split(sep) {
-    return target => target.split(sep)
-}
+export const proxy = _curry2(function proxy(handler, target) {
+    return new Proxy(target, handler)
+})
+//
+// export function compute(...args) {
+//     return target =>
+//         args.reduce((result, arg, idx) => {
+//             if (idx === args.length - 1)
+//                 return is.box(arg) ? resolve(arg) : is.func(arg) ? arg(result) : arg
+//
+//             return is.box(arg)
+//                 ? [...result, resolve(arg)]
+//                 : is.func(arg) ? [...result, arg(...result)] : [...result, arg]
+//         }, [])
+// }
+//
+// export function assign(...args) {
+//     const op = target => Object.assign(target, ...args)
+//     op.displayName = `assign(${args.map(String)})`
+//     return op
+// }
+//
+// export function join(separator) {
+//     return target => target.join(separator)
+// }
+//
+// export function concat(...args) {
+//     return target => target.concat(...args)
+// }
+//
+// export function push(...args) {
+//     return target => target.push(...args)
+// }
+//
+// export function pop(target) {
+//     return target => target.pop()
+// }
+//
+// export function unshift(...args) {
+//     return target => target.unshift(...args)
+// }
+//
+// export function shift(target) {
+//     return target => target.shift()
+// }
+//
+// export function slice(...args) {
+//     return target => target.slice(...args)
+// }
+//
+// export function splice(...args) {
+//     return target => target.splice(...args)
+// }
+// export function toString(tab = 4) {
+//     return JSON.stringify(this, null, tab)
+// }
+// export function stringify(box, tab = 4) {
+//     return target => JSON.stringify(target, null, tab)
+// }
+//
+// export function split(sep) {
+//     return target => target.split(sep)
+// }
 
 /** ... */
 
-export function toUpper(target) {
-    return target.toUpperCase()
-}
-
-export function toLower(target) {
-    return target.toLowerCase()
-}
-
-export function keys(target) {
-    return Object.keys(target)
-}
-
-export function inc(key = "value", value = 0) {
-    return function inc() {
-        this[key] = !(key in this) ? value + 1 : this[key] + 1
-        return this[key]
-    }
-}
-
-export function dec(key = "value", value = 0) {
-    return function dec() {
-        this[key] = !(key in this) ? value - 1 : this[key] - 1
-        return this[key]
-    }
-}
-
-export function toggle(target) {
-    return !target
-}
-
-export function eq(value) {
-    return target => target === value
-}
-
-export function gt(value) {
-    return target => target > value
-}
-
-export function lt(value) {
-    return target => target < value
-}
+// export function toUpper(target) {
+//     return target.toUpperCase()
+// }
+//
+// export function toLower(target) {
+//     return target.toLowerCase()
+// }
+//
+// export function keys(target) {
+//     return Object.keys(target)
+// }
+//
+// export function toggle(target) {
+//     return !target
+// }
