@@ -6,16 +6,12 @@ const assoc = box((path, value, object) => {
     return r.assocPath(path, value, object || {})
 })
 
-const log = r.pipe(
-    (path, ...args) => ({ path, args }),
-    curry(JSON.stringify)(__, null, 4),
-    console.log
-)
+const log = r.pipe((path, ...args) => ({ path, args }), curry(JSON.stringify)(__, null, 4), console.log)
 
 const obj = observable(assoc.a.b.c.items[0]({ id: 0, count: 0 }, {}))
 
-const app = box(function App(path, ...args) {
-    console.log(`[APPLY] ${path.join(".")}`, args)
+const app = box(function App(path, args) {
+    console.log(`[APPLY] ${path.join(".")}`, path, args)
 
     if (args.length && is.complexObject(args[args.length - 1])) {
         const obj = args.pop()

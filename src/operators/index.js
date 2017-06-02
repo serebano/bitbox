@@ -2,17 +2,44 @@ import is from "../is"
 import resolve from "../resolve"
 import { observe } from "../observer"
 import print from "./print"
+import _curry1 from "../internal/curry1"
 import _curry2 from "../internal/curry2"
+import invoke from "./invoke"
 
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 export { default as add } from "./add"
 export { default as inc } from "./inc"
 export { default as dec } from "./dec"
+export { default as pipe } from "./pipe"
+export { default as compose } from "./compose"
 export { default as prop } from "./prop"
-export { default as props } from "./props"
+export { default as asProp } from "./asProp"
+export { default as ife } from "./ifElse"
+export { default as map } from "./map"
+export { default as o } from "./o"
+export { default as bx } from "./bx"
 
-export const o = _curry2((o, t) => observe(() => o(t)) && t)
+export { default as path } from "./path"
+export { default as invoke } from "./invoke"
+export { default as props } from "./props"
+export { default as pluck } from "./pluck"
+export { default as toString } from "./toString"
+
+export const id = _curry1(function _id(arg) {
+    return arg
+})
+
+export const obs = _curry2(function(func, target) {
+    const o = () => func(target, o)
+    o.toString = () => `function ${func.displayName || func.name} (target) {}`
+
+    return observe(o)
+})
+export const join = invoke(1, "join")
+export const or = _curry2(function or(a, b) {
+    return a || b
+})
 
 export const eq = _curry2(function eq(a, b) {
     return a === b

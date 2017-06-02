@@ -9,8 +9,9 @@ import _isPlaceholder from "./isPlaceholder"
  * @param {Function} fn The function to curry.
  * @return {Function} The curried function.
  */
+
 export default function _curry2(fn) {
-    return function f2(a, b) {
+    function f2(a, b) {
         switch (arguments.length) {
             case 0:
                 return f2
@@ -34,4 +35,8 @@ export default function _curry2(fn) {
                                 : fn(a, b)
         }
     }
+
+    f2.displayName = fn.displayName || fn.name
+
+    return f2
 }

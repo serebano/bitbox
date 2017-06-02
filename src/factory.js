@@ -1,9 +1,8 @@
 import is from "./is"
 import { toPrimitive, toArray } from "./utils"
-import map from "./map"
 import curry from "./curry"
 import resolve from "./resolve"
-import compose from "./compose"
+import compose from "./operators/compose"
 import * as operators from "./operators"
 
 /**
@@ -33,15 +32,7 @@ function factory(box, keys = [], isRoot = true) {
         get(box, key, receiver) {
             if (isRoot) keys = [...root]
             if (key === "$") return { box, keys, root, isRoot }
-            if (key === "apply" || key === "call" || key === "bind")
-                return Reflect.get(box, key, receiver)
-
-            if (key === "map")
-                return factory(function $map(keys, fn, functor) {
-                    if (arguments.length === 3) return map(fn, resolve(functor, keys))
-                    return factory((keys, functor) => map(fn, resolve(functor, keys)), keys)
-                }, keys)
-
+            if (key === "apply" || key === "call" || key === "bind") return Reflect.get(box, key, receiver)
             if (key === "toArray") return () => toArray(keys)
             if (key === "toJSON") return () => toArray(keys)
             if (key === "displayName") return toPrimitive(keys)

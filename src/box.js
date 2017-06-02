@@ -1,38 +1,21 @@
 import is from "./is"
 import { toPrimitive } from "./utils"
-import pipe from "./pipe"
+import pipe from "./operators/pipe"
 import curry from "./curry"
-import compose from "./compose"
+import compose from "./operators/compose"
 
-// const box = functions.reduce((f, g) => (...args) => {
-//     return f(g.apply(null, args))
-// })
-//
-// box.keys = functions.map((fn, idx) => fn.displayName || fn.name || idx)
-// let keys = []
-
-export const boxSymbol = Symbol(`box()`)
+export const isBox = Symbol(`isBox`)
 
 function box(handler, path = [], isRoot = true) {
-    if (!Reflect.has(handler, boxSymbol)) {
-        Object.defineProperty(handler, boxSymbol, {
-            value: Object.assign({}, handler, { path })
-        })
-    }
-
     return new Proxy(handler, {
         apply(target, context, args) {
-            const keys = [...path]
-            path = []
-
-            return Reflect.apply(target, context, [keys, ...args])
+            return Reflect.apply(target, context, [path, args])
         },
         get(target, key, receiver) {
             if (isRoot) path = []
-            if (key === boxSymbol) return target
-            if (key === "apply") return (...args) => console.log(args)
+            if (key === isBox) return true
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
-            if (key === Symbol.toPrimitive) return primitive(path.slice())
+            if (key === Symbol.toPrimitive) return primitive(path)
 
             const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
                 ? primitive.__keys
@@ -43,9 +26,9 @@ function box(handler, path = [], isRoot = true) {
 
             path.push(nextKey)
 
-            if (handler.get) return handler.get(target, [...path], receiver)
+            if (handler.get) return handler.get(target, path, receiver)
 
-            return box(target, [...path], false)
+            return box(target, path, false)
         },
         has(target, key, receiver) {
             return path.includes(key)

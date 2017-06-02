@@ -1,4 +1,4 @@
-import _curry2 from "./internal/curry2"
+import _curry2 from "../internal/curry2"
 
 export default _curry2(function map(fn, functor) {
     switch (Object.prototype.toString.call(functor)) {
