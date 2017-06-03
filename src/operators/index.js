@@ -25,6 +25,7 @@ export { default as has } from "./has"
 export { default as use } from "./use"
 export { default as times } from "./times"
 export { default as view } from "./view"
+export { default as scan } from "./scan"
 
 export { default as path } from "./path"
 export { default as invoke } from "./invoke"
@@ -32,8 +33,8 @@ export { default as props } from "./props"
 export { default as pluck } from "./pluck"
 export { default as toString } from "./toString"
 
-const { bind, assoc, apply, assocPath, project } = R
-export { bind, assoc, apply, assocPath, project }
+const { bind, assoc, apply, assocPath, project, sort, of, objOf, replace, defaultTo } = R
+export { bind, assoc, apply, assocPath, project, sort, of, objOf, replace, defaultTo }
 
 export const log = (...args) => {
     print(args)
@@ -43,6 +44,9 @@ export const log = (...args) => {
 export const id = _curry1(function _id(arg) {
     return arg
 })
+export const as = _curry2((key, value) => ({
+    [key]: value
+}))
 
 export const obs = _curry2(function(func, target) {
     const obj = observable(target)
@@ -54,7 +58,7 @@ export const join = invoke(1, "join")
 export const push = invoke(1, "push")
 export const concat = invoke(1, "concat")
 export const filter = invoke(1, "filter")
-export const sort = invoke(1, "sort")
+//export const sort = invoke(1, "sort")
 export const reduce = invoke(2, "reduce")
 
 export const or = _curry2(function or(a, b) {

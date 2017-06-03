@@ -2,7 +2,6 @@ import * as operators from "./operators"
 import * as observer from "./observer"
 
 export { default as is } from "./is"
-export { default as bx } from "./bx"
 export { default as box } from "./box"
 export { default as curry } from "./curry"
 export { default as curryN } from "./curryN"
