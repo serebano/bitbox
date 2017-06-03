@@ -1,4 +1,4 @@
-import _curry2 from "./internal/curry2"
+import _curry2 from "../internal/curry2"
 
 /**
  * Calls an input function `n` times, returning an array containing the results

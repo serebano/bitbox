@@ -1,6 +1,6 @@
-import is from "./is"
-import _curry2 from "./internal/curry2"
-import resolve from "./resolve"
+import is from "../is"
+import _curry2 from "../internal/curry2"
+import resolve from "../resolve"
 
 function view(mapping, target) {
     return new Proxy(mapping, {

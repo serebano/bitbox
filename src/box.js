@@ -1,8 +1,8 @@
 import is from "./is"
 import { toPrimitive } from "./utils"
-import pipe from "./operators/pipe"
-import curry from "./curry"
-import compose from "./operators/compose"
+// import pipe from "./operators/pipe"
+// import curry from "./curry"
+// import compose from "./operators/compose"
 
 export const isBox = Symbol(`isBox`)
 

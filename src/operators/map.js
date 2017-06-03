@@ -8,7 +8,7 @@ export default _curry2(function map(fn, functor) {
             }
         case "[object Object]":
             return Object.keys(functor).reduce(function(acc, key) {
-                acc[key] = fn(functor[key])
+                acc[key] = fn(functor[key], key)
                 return acc
             }, {})
         default:

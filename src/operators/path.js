@@ -1,35 +1,33 @@
-import _curry2 from "../internal/curry2"
+import resolve from "../resolve"
+import R from "ramda"
+import get from "./get"
+import set from "./set"
 
-/**
- * Retrieve the value at a given path.
- *
- * @func
- * @memberOf R
- * @since v0.2.0
- * @category Object
- * @typedefn Idx = String | Int
- * @sig [Idx] -> {a} -> a | Undefined
- * @param {Array} path The path to use.
- * @param {Object} obj The object to retrieve the nested property from.
- * @return {*} The data at `path`.
- * @see R.prop
- * @example
- *
- *      R.path(['a', 'b'], {a: {b: 2}}); //=> 2
- *      R.path(['a', 'b'], {c: {b: 2}}); //=> undefined
- */
-export default _curry2(function path(paths, obj) {
-    let val = obj
-    let idx = 0
-    while (idx < paths.length) {
-        if (val == null) {
-            return
+function path(keys = [], obj = {}) {
+    return new Proxy(keys, {
+        get(target, key, receiver) {
+            if (key === "$") return keys
+            if (key === "get")
+                return function get(target) {
+                    return resolve(keys, target)
+                }
+            if (key === "set")
+                return function set(value, target) {
+                    const key = keys.pop()
+                    return set(key, value, resolve(keys, target))
+                }
+            if (key === "apply")
+                return function apply(fn, ...args) {
+                    return fn(keys, ...args)
+                }
+            if (key === Symbol.toPrimitive) return () => keys.join(".")
+            //if (Reflect.has(obj, key)) return Reflect.get(obj, key)
+
+            //if (Reflect.has(target, key, receiver)) return Reflect.get(target, key, receiver)
+
+            return path(keys.concat(key))
         }
-        let key = paths[idx]
-        if (Array.isArray(key)) key = path(key, obj)
-        else if (typeof key === "function") val = key(val)
-        else val = val[key]
-        idx += 1
-    }
-    return val
-})
+    })
+}
+
+export default path([], R)

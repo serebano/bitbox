@@ -1,5 +1,5 @@
-import _curry2 from "./internal/curry2"
-import curryN from "./curryN"
+import _curry2 from "../internal/curry2"
+import curryN from "../curryN"
 
 /**
  * Accepts a function `fn` and a list of transformer functions and returns a
@@ -38,9 +38,6 @@ export default _curry2(function useWith(fn, transformers) {
             args.push(transformers[idx].call(this, arguments[idx]))
             idx += 1
         }
-        return fn.apply(
-            this,
-            args.concat(Array.prototype.slice.call(arguments, transformers.length))
-        )
+        return fn.apply(this, args.concat(Array.prototype.slice.call(arguments, transformers.length)))
     })
 })

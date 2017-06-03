@@ -1,10 +1,10 @@
-import curry3 from "./internal/curry3"
-import is from "./is"
+import curry3 from "../internal/curry3"
+import is from "../is"
 
 function set(key, value, target) {
     target[key] = is.func(value) ? value(target[key]) : value
 
-    return target
+    return target[key]
 }
 
 export default curry3(set)

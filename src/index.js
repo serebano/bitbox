@@ -1,46 +1,45 @@
 import * as bitbox from "./bitbox"
-import { is, box, pipe, compose, observe, observable, curry, curryN, __ } from "./bitbox"
+import { is, box, times, map, set, apply, observe, toUpper, observable, curry, obs, bx, tap, log, __ } from "./bitbox"
 import r from "ramda"
 
-const assoc = box((path, value, object) => {
-    return r.assocPath(path, value, object || {})
-})
+const path = bx(r.path)
+const obj = observable()
 
-const log = r.pipe((path, ...args) => ({ path, args }), curry(JSON.stringify)(__, null, 4), console.log)
-
-const obj = observable(assoc.a.b.c.items[0]({ id: 0, count: 0 }, {}))
-
-const app = box(function App(path, args) {
-    console.log(`[APPLY] ${path.join(".")}`, path, args)
-
-    if (args.length && is.complexObject(args[args.length - 1])) {
-        const obj = args.pop()
-
-        if (Reflect.has(r, path[path.length - 1])) {
-            const ext = Reflect.get(r, path.pop())
-
-            return ext(...args, r.path(path, obj))
-        }
-
-        //const target = r.path(path, obj)
-
-        return [r.path(path)].concat(args).reduce((f, g) => (...args) => f(g(...args)))(obj)
+obj.foo = { x: 1, y: 2 }
+obj.name = "my app"
+obj.count = 0
+obj.todos = [
+    {
+        text: "dev bitbox",
+        done: true
+    },
+    {
+        text: "write simple code",
+        done: false
     }
+]
+obj.items = times(value => ({ value }), 10)
+obj.numbers = times(i => i, 10)
 
-    return [r.path(path)].concat(args).reduce((f, g) => (...args) => f(g(...args)))
+const render = curry((elm, val) => set("innerHTML", val, document.querySelector(elm)))
+const start = tap(x => (x.id = setInterval(() => x.count++)))
+const stop = tap(x => clearInterval(x.id))
+const app = obs(bx.count(render("#root")))
+
+const addTodo = curry(function addTodo(text, target) {
+    target.push({ text, done: false, id: target.length })
+    return target
 })
+const listItem = bx(v => `<li><b>${v.done}</b> | ${v.text}</li>`)
+const completed = bx.done.eq(false)
 
-app.get = (target, keys, receiver) => {
-    console.log(`[GET] ${keys.join(".")}`)
-    return box(target, keys, false)
-}
+bx.todos(addTodo(Date())).map(listItem).join("\n")(render("#dev"))(obj)
 
-const obs = curry((observer, target) => observe(() => observer(target)))
+//bx.todos(addTodo("do it")).map(bx.text(v => `<li>${v}</li>`)).join("")(render("#dev"))(obj)
 
-app.a.b.c.items[0](obj).count = 0
-app.a.b.c(obj).items = r.times(id => ({ id, count: 0 }), 10)
+obj.foo = { count: 0 }
 
-app.a.b.c.items.map(obs(r.pipe(JSON.stringify, console.log)))(obj)
-app.a.b.c.items(r.keys, r.tap(console.log))(obj)
+app(obj.foo)
+start(obj.foo)
 
-Object.assign(window, bitbox, { r, bitbox, obj, app, log })
+Object.assign(window, bitbox, { r, listItem, completed, bitbox, addTodo, obj, log, start, stop, render })
