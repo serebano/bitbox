@@ -1,6 +1,6 @@
-import _curry1 from "../internal/curry1"
+import curry from "../curry"
 import _toString from "../internal/toString"
 
-export default _curry1(function toString(val) {
+export default curry(function toString(val) {
     return _toString(val, [])
 })

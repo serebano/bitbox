@@ -1,4 +1,4 @@
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 /**
  * Adds two values.
  *
@@ -17,6 +17,6 @@ import _curry2 from "../internal/curry2"
  *      R.add(7)(10);      //=> 17
  */
 
-export default _curry2(function add(a, b) {
+export default curry(function add(a, b) {
     return Number(a) + Number(b)
 })

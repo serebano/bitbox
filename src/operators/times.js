@@ -1,4 +1,4 @@
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 
 /**
  * Calls an input function `n` times, returning an array containing the results
@@ -23,7 +23,7 @@ import _curry2 from "../internal/curry2"
  * @symb R.times(f, 1) = [f(0)]
  * @symb R.times(f, 2) = [f(0), f(1)]
  */
-export default _curry2(function times(fn, n) {
+export default curry(function times(fn, n) {
     var len = Number(n)
     var idx = 0
     var list

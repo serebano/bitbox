@@ -1,6 +1,6 @@
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 
-export default _curry2(function map(fn, functor) {
+export default curry(function map(fn, functor) {
     switch (Object.prototype.toString.call(functor)) {
         case "[object Function]":
             return function mapFn() {

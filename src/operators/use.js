@@ -1,5 +1,4 @@
-import _curry2 from "../internal/curry2"
-import curryN from "../curryN"
+import curry from "../curry"
 
 /**
  * Accepts a function `fn` and a list of transformer functions and returns a
@@ -30,10 +29,10 @@ import curryN from "../curryN"
  *      R.useWith(Math.pow, [R.dec, R.inc])(3)(4); //=> 32
  * @symb R.useWith(f, [g, h])(a, b) = f(g(a), h(b))
  */
-export default _curry2(function useWith(fn, transformers) {
-    return curryN(transformers.length, function() {
-        var args = []
-        var idx = 0
+export default curry(function use(fn, transformers) {
+    return curry.to(transformers.length, function() {
+        let args = []
+        let idx = 0
         while (idx < transformers.length) {
             args.push(transformers[idx].call(this, arguments[idx]))
             idx += 1

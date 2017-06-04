@@ -1,6 +1,5 @@
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 import _isFunction from "../internal/isFunction"
-import curryN from "../curryN"
 import toString from "./toString"
 
 /**
@@ -30,8 +29,8 @@ import toString from "./toString"
  * @symb R.invoker(1, 'method')(a, o) = o['method'](a)
  * @symb R.invoker(2, 'method')(a, b, o) = o['method'](a, b)
  */
-export default _curry2(function invoke(arity, method) {
-    return curryN(arity + 1, function() {
+export default curry(function invoke(arity, method) {
+    return curry.to(arity + 1, function() {
         var target = arguments[arity]
         if (target != null && _isFunction(target[method])) {
             return target[method].apply(target, Array.prototype.slice.call(arguments, 0, arity))

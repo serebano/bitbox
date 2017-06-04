@@ -1,5 +1,5 @@
 import is from "../is"
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 import resolve from "../resolve"
 
 function view(mapping, target) {
@@ -17,7 +17,9 @@ function view(mapping, target) {
                 }
 
                 if (is.func(value)) {
-                    return (...args) => value.apply(receiver, args)
+                    return (...args) => value.apply(target, args)
+
+                    //return (...args) => value.apply(receiver, args)
                 }
 
                 return Reflect.get(target, key)
@@ -36,4 +38,4 @@ function view(mapping, target) {
     })
 }
 
-export default _curry2(view)
+export default curry(view)

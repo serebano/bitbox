@@ -1,3 +1,3 @@
-import curry2 from "../internal/curry2"
+import curry from "../curry"
 
-export default curry2((key, target) => target[key])
+export default curry((key, target) => target[key])

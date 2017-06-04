@@ -1,6 +1,7 @@
 import { observe, observable } from "../observer"
-import _curry1 from "../internal/curry1"
-import _curry2 from "../internal/curry2"
+// import _curry1 from "../internal/curry1"
+// import _curry2 from "../internal/curry2"
+import curry from "../curry"
 import invoke from "./invoke"
 import print from "./print"
 import R from "ramda"
@@ -26,34 +27,38 @@ export { default as use } from "./use"
 export { default as times } from "./times"
 export { default as view } from "./view"
 export { default as scan } from "./scan"
-
+export { default as nth } from "./nth"
+export { default as is } from "./is"
+export { default as last } from "./last"
 export { default as path } from "./path"
 export { default as invoke } from "./invoke"
 export { default as props } from "./props"
 export { default as pluck } from "./pluck"
+export { default as apply } from "./apply"
 export { default as toString } from "./toString"
 
-const { bind, assoc, apply, assocPath, project, sort, of, objOf, replace, defaultTo } = R
-export { bind, assoc, apply, assocPath, project, sort, of, objOf, replace, defaultTo }
+const { assoc, assocPath, project, sort, of, objOf, replace, defaultTo } = R
+export { assoc, assocPath, project, sort, of, objOf, replace, defaultTo }
 
 export const log = (...args) => {
     print(args)
     return args[0]
 }
 
-export const id = _curry1(function _id(arg) {
+export const id = curry(function _id(arg) {
     return arg
 })
-export const as = _curry2((key, value) => ({
+export const as = curry((key, value) => ({
     [key]: value
 }))
 
-export const obs = _curry2(function(func, target) {
+export const obs = curry(function(func, target) {
     const obj = observable(target)
     const o = () => func(obj)
     observe(o)
     return obj
 })
+
 export const join = invoke(1, "join")
 export const push = invoke(1, "push")
 export const concat = invoke(1, "concat")
@@ -61,39 +66,39 @@ export const filter = invoke(1, "filter")
 //export const sort = invoke(1, "sort")
 export const reduce = invoke(2, "reduce")
 
-export const or = _curry2(function or(a, b) {
+export const or = curry(function or(a, b) {
     return a || b
 })
 
-export const eq = _curry2(function eq(a, b) {
+export const eq = curry(function eq(a, b) {
     return a === b
 })
 
-export const lt = _curry2(function lt(a, b) {
+export const lt = curry(function lt(a, b) {
     return a > b
 })
-export const gt = _curry2(function gt(a, b) {
+export const gt = curry(function gt(a, b) {
     return a < b
 })
 
-export const tap = _curry2(function tap(fn, x) {
+export const tap = curry(function tap(fn, x) {
     fn(x)
     return x
 })
 
-export const proxy = _curry2(function proxy(handler, target) {
+export const proxy = curry(function proxy(handler, target) {
     return new Proxy(target, handler)
 })
 export function _toUpper(target) {
     return target.toUpperCase()
 }
-export const toUpper = _curry1(_toUpper)
+export const toUpper = curry(_toUpper)
 
 export function _toLower(target) {
     return target.toLowerCase()
 }
-export const toLower = _curry1(_toLower)
-export const assign = _curry2((object, target) => Object.assign(target, object))
+export const toLower = curry(_toLower)
+export const assign = curry((object, target) => Object.assign(target, object))
 
 //
 // export function compute(...args) {

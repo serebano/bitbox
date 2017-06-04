@@ -1,6 +1,6 @@
-import _curry2 from "../internal/curry2"
+import curry from "../curry"
 
-export default _curry2(function props(ps, obj) {
+export default curry(function props(ps, obj) {
     var len = ps.length
     var out = []
     var idx = 0

@@ -1,4 +1,4 @@
-import curry3 from "../internal/curry3"
+import curry from "../curry"
 import is from "../is"
 
 function set(key, value, target) {
@@ -7,4 +7,4 @@ function set(key, value, target) {
     return target[key]
 }
 
-export default curry3(set)
+export default curry(set)
