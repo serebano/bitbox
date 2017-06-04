@@ -1,10 +1,10 @@
 import * as bitbox from "./bitbox"
 import {
+    __,
     is,
     box,
     times,
     map,
-    proxy,
     set,
     apply,
     observe,
@@ -17,18 +17,40 @@ import {
     inc,
     dec,
     replace,
-    __
+    proxy,
+    view,
+    resolve
 } from "./bitbox"
 import r from "ramda"
 
 const greet = replace("{name}", __, "Hello, {name}!")
+const api = {
+    ...bitbox,
+    sayHi: curry((name, obj) => (obj.hi = greet(name))),
+    test(...args) {
+        console.log(`rtest`, args)
+    }
+}
 
-const app = box([], {
-    ...r,
-    map,
-    set,
-    sayHi: curry((name, obj) => (obj.hi = greet(name)))
+function App(path, target) {
+    if (is.func(target)) {
+        return box(function next($path, $target) {
+            return App(path.concat(target, $path), $target)
+        }, api)
+    }
+
+    return resolve(path, target)
+}
+
+App.set = curry((path, value, target) => resolve(path.concat(set(path.pop(), value)), target))
+App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
+App.observe = curry((path, observer, object) => {
+    observe(() => observer(resolve(path, object)))
+
+    return { observer }
 })
+
+const app = box(App, api)
 
 const obj = observable()
 
@@ -40,12 +62,15 @@ obj.items = times(value => ({ value }), 10)
 obj.numbers = times(i => i, 10)
 obj.counter = { value: 0 }
 
-const counter = {
-    value: app.counter.value,
-    inc: app.counter(set("value", inc)),
-    dec: app.counter(set("value", dec)),
-    view: app.counter.value(replace("{count}", __, `<h1>Count({count})</h1>`))
-}
+const counter = view(
+    {
+        value: app.counter.value,
+        inc: app.counter.set("value", inc),
+        dec: app.counter.set("value", dec),
+        view: app.counter.value(replace("{count}", __, `<h1>Count({count})</h1>`))
+    },
+    obj
+)
 
 const listItem = app.replace("{text}", __, `<li><b>{text}</b></li>`)
 

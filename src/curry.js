@@ -42,12 +42,22 @@ export function createFn(fn, args, length) {
             },
             get(target, key) {
                 if (key === "length") return target._length
-                if (key === "$") return argNames.map((arg, idx) => [idx, arg, _combined[idx]])
+                if (key === "args") return target._args
+                if (target._args.indexOf(key) > -1)
+                    return value => {
+                        const idx = target._args.indexOf(key)
+                        received[idx] = value
+                        return createProxy(received)
+                    }
+                if (key === "$") return argNames.map((arg, idx) => [arg, received[idx]])
                 if (key === Symbol.toPrimitive) return () => `${target.name}(${argNames.join(", ")})`
                 if (key === "toJSON")
                     return () => `${target.name}(${argNames.map((arg, idx) => `${arg}: ${_combined[idx]}`).join(", ")})`
 
                 if (Reflect.has(target, key)) return Reflect.get(target, key)
+            },
+            has(target, key) {
+                return target._args.indexOf(key) > -1
             }
         })
 
@@ -149,8 +159,7 @@ function createEvalFn(fn, args, arity) {
 
 function makeArgList(len) {
     var a = []
-    for (var i = 0; i < len; i += 1)
-        a.push("a" + i.toString())
+    for (var i = 0; i < len; i += 1) a.push("a" + i.toString())
     return a.join(",")
 }
 
