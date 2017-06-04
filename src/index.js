@@ -17,6 +17,9 @@ import {
     inc,
     dec,
     replace,
+    pipe,
+    as,
+    add,
     proxy,
     view,
     resolve
@@ -46,14 +49,11 @@ App.set = curry((path, value, target) => resolve(path.concat(set(path.pop(), val
 App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
 App.observe = curry((path, observer, object) => {
     observe(() => observer(resolve(path, object)))
-
     return { observer }
 })
 
 const app = box(App, api)
-
 const obj = observable()
-
 obj.foo = { x: 1, y: 2 }
 obj.name = "my app"
 obj.count = 0
@@ -61,6 +61,8 @@ obj.todos = []
 obj.items = times(value => ({ value }), 10)
 obj.numbers = times(i => i, 10)
 obj.counter = { value: 0 }
+
+app.count.observe(pipe(add(100), String, as("xxx"), log), obj)
 
 const counter = view(
     {
