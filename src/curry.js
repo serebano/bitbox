@@ -16,6 +16,7 @@ export function createFn(fn, args, length) {
     fn._length = length
 
     function createProxy(received) {
+        let _combined = received
         const proxy = new Proxy(fn, {
             apply(target, context, args) {
                 let left = length
@@ -35,17 +36,16 @@ export function createFn(fn, args, length) {
                     resIdx += 1
                 }
                 target._length = left
+                _combined = combined
                 if (left <= 0) return target.apply(context, combined)
                 return createProxy(combined)
             },
             get(target, key) {
                 if (key === "length") return target._length
-                if (key === "$") return argNames.map((arg, idx) => [idx, arg, received[idx]])
+                if (key === "$") return argNames.map((arg, idx) => [idx, arg, _combined[idx]])
                 if (key === Symbol.toPrimitive) return () => `${target.name}(${argNames.join(", ")})`
                 if (key === "toJSON")
-                    return `${target.name}(${argNames
-                        .map((arg, idx) => `[${idx}] ${arg}=${received[idx]}`)
-                        .join(", ")})`
+                    return () => `${target.name}(${argNames.map((arg, idx) => `${arg}: ${_combined[idx]}`).join(", ")})`
 
                 if (Reflect.has(target, key)) return Reflect.get(target, key)
             }

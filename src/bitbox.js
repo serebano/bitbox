@@ -1,17 +1,14 @@
 import * as operators from "./operators"
 import * as observer from "./observer"
 
+export * from "./operators"
 export { default as is } from "./is"
 export { default as box } from "./box"
 export { default as curry } from "./curry"
 export { default as resolve } from "./resolve"
-export * from "./operators"
-//export * from "./functions"
-// export { default as project } from "./project"
-
+export { observer, operators }
 export { observable, isObservable, observe, unobserve, unqueue, exec } from "./observer/observer"
 
-export { observer, operators }
 export function Demo(key, value, object) {
     return { key, value, object }
 }

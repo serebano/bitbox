@@ -1,6 +1,4 @@
 import { observe, observable } from "../observer"
-// import _curry1 from "../internal/curry1"
-// import _curry2 from "../internal/curry2"
 import curry from "../curry"
 import invoke from "./invoke"
 import print from "./print"
@@ -19,7 +17,6 @@ export { default as asProp } from "./asProp"
 export { default as ife } from "./ifElse"
 export { default as map } from "./map"
 export { default as o } from "./o"
-
 export { default as get } from "./get"
 export { default as set } from "./set"
 export { default as has } from "./has"
@@ -48,9 +45,11 @@ export const log = (...args) => {
 export const id = curry(function _id(arg) {
     return arg
 })
-export const as = curry((key, value) => ({
-    [key]: value
-}))
+export const as = curry(function as(key, value) {
+    return {
+        [key]: value
+    }
+})
 
 export const obs = curry(function(func, target) {
     const obj = observable(target)
@@ -89,14 +88,17 @@ export const tap = curry(function tap(fn, x) {
 export const proxy = curry(function proxy(handler, target) {
     return new Proxy(target, handler)
 })
+
 export function _toUpper(target) {
     return target.toUpperCase()
 }
+
 export const toUpper = curry(_toUpper)
 
 export function _toLower(target) {
     return target.toLowerCase()
 }
+
 export const toLower = curry(_toLower)
 export const assign = curry((object, target) => Object.assign(target, object))
 

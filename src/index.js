@@ -44,7 +44,7 @@ const counter = {
     value: app.counter.value,
     inc: app.counter(set("value", inc)),
     dec: app.counter(set("value", dec)),
-    view: app.counter.value.replace("{count}", __, `<h1>Count({count})</h1>`)
+    view: app.counter.value(replace("{count}", __, `<h1>Count({count})</h1>`))
 }
 
 const listItem = app.replace("{text}", __, `<li><b>{text}</b></li>`)

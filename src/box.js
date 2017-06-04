@@ -4,7 +4,6 @@ import { toPrimitive } from "./utils"
 import resolve from "./resolve"
 import * as api from "./operators"
 import { get, has, apply, last, log } from "./operators"
-import { functionLength, functionName } from "./fantasy-helpers"
 
 export function create(path = [], handler, api) {
     const proxy = new Proxy(function box() {}, {
