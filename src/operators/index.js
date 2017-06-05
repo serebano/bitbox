@@ -25,7 +25,7 @@ export { default as times } from "./times"
 export { default as view } from "./view"
 export { default as scan } from "./scan"
 export { default as nth } from "./nth"
-export { default as is } from "./is"
+export { default as iis } from "./is"
 export { default as last } from "./last"
 export { default as path } from "./path"
 export { default as invoke } from "./invoke"
@@ -36,6 +36,44 @@ export { default as toString } from "./toString"
 
 const { assoc, assocPath, project, sort, of, objOf, replace, defaultTo } = R
 export { assoc, assocPath, project, sort, of, objOf, replace, defaultTo }
+
+export const compose2 = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+
+export function curry4(fn) {
+    const length = fn.length
+    function next(...args) {
+        if (args.length >= length) {
+            return fn.call(this, ...args)
+        }
+
+        const f = (...rest) => next.call(this, ...args, ...rest)
+
+        f._name = fn.name
+        f._args = args
+        f._length = args.length
+        f._expectedLength = length
+
+        return f
+    }
+
+    return next
+}
+
+export function curry2(fn) {
+    return function curried(...args) {
+        return args.length >= fn.length
+            ? fn.call(this, ...args)
+            : (...rest) => {
+                  return curried.call(this, ...args, ...rest)
+              }
+    }
+}
+
+export function curry3(fn, ...args) {
+    const _curry = args => (args.length < fn.length ? (..._args) => _curry([...args, ..._args]) : fn(...args))
+
+    return _curry(args)
+}
 
 export const log = (...args) => {
     print(args)

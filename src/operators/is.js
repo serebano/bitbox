@@ -24,5 +24,5 @@ import curry from "../curry"
  *      R.is(Number, {}); //=> false
  */
 export default curry(function is(Ctor, val) {
-    return (val != null && val.constructor === Ctor) || val instanceof Ctor
+    return (val != null && val.constructor === Ctor) || (Ctor && val instanceof Ctor)
 })

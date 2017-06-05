@@ -1,7 +1,7 @@
+import is from "./is"
 import * as bitbox from "./bitbox"
 import {
     __,
-    is,
     box,
     times,
     map,
@@ -24,7 +24,8 @@ import {
     add,
     proxy,
     view,
-    resolve
+    resolve,
+    ife
 } from "./bitbox"
 import r from "ramda"
 
@@ -39,7 +40,7 @@ const api = {
 
 const handler = {
     get(path, key) {
-        if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
+        //if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
         if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
         if (has(key, api)) {
             return App(path, get(key, api))
@@ -69,7 +70,7 @@ App.r = function ramda(path, ...args) {
     return r.path(path, ...args)
 }
 App.set = curry((path, value, target) => {
-    log({ path, value, target: String(target) })
+    log({ path, value, target })
 
     return resolve(path.concat(set(path.pop(), value)), target)
 })
@@ -101,6 +102,12 @@ const counter = view(
 )
 
 const listItem = app.replace("{text}", __, `<li><b>{text}</b></li>`)
+
+box((p, ...a) => resolve(p.concat(a))).counter(
+    set("value", inc),
+    ife(has("count"), set("count", add(10)), set("count", 1)),
+    tap(log)
+)(obj)
 
 // const render = curry((elm, val) => set("innerHTML", val, document.querySelector(elm)))
 // const start = tap(x => (x.id = setInterval(() => x.count++)))

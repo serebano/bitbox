@@ -2,62 +2,95 @@ import is from "./is"
 import { getArgNames } from "./utils"
 import isPlaceholder from "./internal/isPlaceholder"
 import __ from "./operators/__"
-import has from "./operators/has"
 
 const slice = Array.prototype.slice
-const isCurried = fn => fn && has("$", fn)
+const has = (key, target) => target && key in target
+const isCurried = fn => has("$", fn)
+const toArray = a => slice.call(a)
+const tail = a => slice.call(a, 1)
 
-const toArray a => slice.call(a)
-tail(a)  => slice.call(a, 1))
+function getNextArgs(args, received, length) {
+    let left = length
+    let combined = []
+    let argsIdx = 0
+    let resIdx = 0
+    while (resIdx < received.length || argsIdx < args.length) {
+        let result
+        if (resIdx < received.length && (!isPlaceholder(received[resIdx]) || argsIdx >= args.length)) {
+            result = received[resIdx]
+        } else {
+            result = args[argsIdx]
+            argsIdx += 1
+        }
+        combined[resIdx] = result
+        if (!isPlaceholder(result)) left -= 1
+        resIdx += 1
+    }
+    return { args, received, combined, done: left <= 0, left, length }
+}
+
+function camelize(str) {
+    return str
+        .replace(/(?:^\w|[A-Z]|\b\w)/g, function(letter, index) {
+            return index == 0 ? letter.toLowerCase() : letter.toUpperCase()
+        })
+        .replace(/\s+/g, "")
+}
+
+const fnName = (arr, argNames, sep = "_") =>
+    arr
+        .map(
+            (arg, idx) =>
+                isPlaceholder(arg)
+                    ? `__${argNames[idx]}__`
+                    : is.func(arg) ? arg.name : !is.complexObject(arg) ? arg : argNames[idx]
+        )
+        .join(sep)
 
 export function createFn(fn, args, length, descMap = {}) {
+    const argNames = fn.argNames
+
     function createProxy(received) {
-        const proxy = new Proxy(fn, {
+        const next = getNextArgs([], received, length)
+
+        function f() {}
+        f.next = next
+        f.argNames = fn.argNames
+        f.expectedLen = length - received.length
+        f.received = received
+        f.map = fn.map
+
+        f.toString = () => {
+            const name = camelize(`${fn.name} ${fnName(next.combined, argNames, " ")}`)
+            const lArgs = argNames.slice(length - received.length + 1).join(", ") //argNames.slice(received.filter(a => !isPlaceholder(a)).length).join(", ")
+            return `function ${name}(${lArgs}) {}`
+        }
+
+        const proxy = new Proxy(f, {
             apply(target, context, args) {
-                let left = length
-                let combined = []
-                let argsIdx = 0
-                let resIdx = 0
-                while (resIdx < received.length || argsIdx < args.length) {
-                    let result
-                    if (resIdx < received.length && (!isPlaceholder(received[resIdx]) || argsIdx >= args.length)) {
-                        result = received[resIdx]
-                    } else {
-                        result = args[argsIdx]
-                        argsIdx += 1
-                    }
-                    combined[resIdx] = result
-                    if (!isPlaceholder(result)) left -= 1
-                    resIdx += 1
-                }
+                const next = getNextArgs(args, received, length)
 
-                //combined.map((arg, index) => (argsMap[index] = arg))
-
-                if (left <= 0) return target.apply(context, combined)
-                return createProxy(combined)
+                if (next.done) return fn.apply(context, next.combined)
+                return createProxy(next.combined)
             },
             get(target, key) {
-                if (key === "desc") {
-                    return descMap
-                }
+                if (key === "desc") return descMap
                 if (key === "args") return received
-                // if (key === "extend")
-                //     return desc => {
-                //         const o = Object.assign({}, argsMap, desc)
-                //         console.log(`extend`, o, received)
-                //         return createFn(fn, received, length, o)
-                //     }
                 if (key === "length") return length - received.length
-                // if (argNames.indexOf(key) > -1) {
-                //     return arg => {
-                //         argsMap[key] = arg
-                //         return createProxy(received)
-                //     }
-                // }
-                if (key === "$") return { target, length, descMap, argNames: Object.keys(descMap), received }
-                if (key === Symbol.toPrimitive) return () => `${target.name}(${Object.keys(descMap).join(", ")})`
-                if (is.numeric(key)) return received[key]
+                if (key === "$") return target
+                if (key === "name") return camelize(`${fn.name} ${fnName(received, argNames, " ")}`)
+                //if (key === Symbol.toPrimitive || key === "toString") return f.toString
 
+                // if (key === Symbol.toPrimitive)
+                //     return () => {
+                //         const next = getNextArgs(args, received, length)
+                //         const rArgs = received
+                //             .map((arg, idx) => (isPlaceholder(arg) ? `__${argNames[idx]}` : String(arg)))
+                //             .join(", ")
+                //         const lArgs = argNames.slice(received.filter(a => !isPlaceholder(a)).length).join(", ")
+                //         return `curry(function ${target.name}(${argNames.join(", ")}) [${length}])(${rArgs})(${lArgs})`
+                //     }
+                if (is.numeric(key)) return received[key]
                 //if (key === "toJSON")
                 //    return () => `${target.name}(${argNames.map((arg, idx) => `${arg}: ${received[idx]}`).join(", ")})`
                 if (Reflect.has(target, key)) return Reflect.get(target, key)
@@ -70,62 +103,34 @@ export function createFn(fn, args, length, descMap = {}) {
         return proxy
     }
 
-    return createProxy(args)
+    return createProxy(args, args)
 }
 
-// [value], arguments -> [value]
-//-- concat new arguments onto old arguments array
-function concatArgs(args1, args2) {
-    return args1.concat(toArray(args2))
-}
+function curry(fn, ...args) {
+    // if (isCurried(fn)) {
+    //     const { target, argNames, descMap, length } = fn.$
+    //     const xDesc = Object.assign({}, descMap, desc)
+    //     const args = Object.values(xDesc)
+    //
+    //     return createFn(target, args, length - args.length, xDesc)
+    // }
 
-// fn, [value], int -> fn
-//-- create a function of the correct arity by the use of eval,
-//-- so that curry can handle functions of any arity
-function createEvalFn(fn, args, arity) {
-    var argList = makeArgList(arity)
-    //-- hack for IE's faulty eval parsing -- http://stackoverflow.com/a/6807726
-    var fnStr = "false||" + "function(" + argList + "){ return processInvocation(fn, concatArgs(args, arguments)); }"
-    return eval(fnStr)
-}
-
-function makeArgList(len) {
-    var a = []
-    for (var i = 0; i < len; i += 1)
-        a.push("a" + i.toString())
-    return a.join(",")
-}
-
-function trimArrLength(arr, length) {
-    if (arr.length > length) return arr.slice(0, length)
-    else return arr
-}
-
-function processInvocation(fn, argsArr, totalArity) {
-    argsArr = trimArrLength(argsArr, totalArity)
-
-    if (argsArr.length === totalArity) return fn.apply(null, argsArr)
-    return createFn(fn, argsArr, totalArity)
-}
-
-function curry(fn, desc) {
-    if (isCurried(fn)) {
-        const { target, argNames, descMap, length } = fn.$
-        const xDesc = Object.assign({}, descMap, desc)
-        const args = Object.values(xDesc)
-
-        return createFn(target, args, length - args.length, xDesc)
-    }
-
-    const argNames = getArgNames(fn)
-    const descMap = argNames.reduce((obj, key, idx) => {
-        if (has(key, desc)) obj[key] = desc[key]
+    fn.argNames = fn.argNames || getArgNames(fn)
+    fn.args = new Array(fn.length).fill(__)
+    fn.map = fn.argNames.reduce((obj, key, idx) => {
+        if (args[idx]) fn.args[idx] = args[idx]
+        obj[key] = value => c(...fn.args.slice().splice(idx, 1, value))
         return obj
     }, {})
+    const c = createFn(fn, args, fn.length, {})
 
-    const args = argNames.map(name => descMap[name]) //Object.values(descMap)
+    return c
+    // const map = argNames.reduce((obj, key, idx) => {
+    //     if (args[idx]) obj[key] = args[idx]
+    //     return obj
+    // }, {})
 
-    return createFn(fn, args, fn.length, descMap)
+    //const args = argNames.map(name => descMap[name]) //Object.values(descMap)
 }
 
 /*
@@ -148,7 +153,6 @@ function curry(fn, desc) {
 
 */
 
-
 curry.to = curry(function(arity, fn) {
     return createFn(fn, [], arity)
 })
@@ -164,7 +168,6 @@ curry.adaptTo = curry(function(num, fn) {
 curry.adapt = function(fn) {
     return curry.adaptTo(fn.length, fn)
 }
-
 
 export function _createFn(fn, args, totalArity) {
     const remainingArity = totalArity - args.length
@@ -238,6 +241,40 @@ export function _createFn(fn, args, totalArity) {
         default:
             return createEvalFn(fn, args, remainingArity)
     }
+}
+
+// [value], arguments -> [value]
+//-- concat new arguments onto old arguments array
+function concatArgs(args1, args2) {
+    return args1.concat(toArray(args2))
+}
+
+// fn, [value], int -> fn
+//-- create a function of the correct arity by the use of eval,
+//-- so that curry can handle functions of any arity
+function createEvalFn(fn, args, arity) {
+    var argList = makeArgList(arity)
+    //-- hack for IE's faulty eval parsing -- http://stackoverflow.com/a/6807726
+    var fnStr = "false||" + "function(" + argList + "){ return processInvocation(fn, concatArgs(args, arguments)); }"
+    return eval(fnStr)
+}
+
+function makeArgList(len) {
+    var a = []
+    for (var i = 0; i < len; i += 1) a.push("a" + i.toString())
+    return a.join(",")
+}
+
+function trimArrLength(arr, length) {
+    if (arr.length > length) return arr.slice(0, length)
+    else return arr
+}
+
+function processInvocation(fn, argsArr, totalArity) {
+    argsArr = trimArrLength(argsArr, totalArity)
+
+    if (argsArr.length === totalArity) return fn.apply(null, argsArr)
+    return createFn(fn, argsArr, totalArity)
 }
 
 export default curry
