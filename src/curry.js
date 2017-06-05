@@ -1,5 +1,7 @@
+import is from "./is"
 import { getArgNames } from "./utils"
-import _isPlaceholder from "./internal/isPlaceholder"
+import isPlaceholder from "./internal/isPlaceholder"
+import __ from "./operators/__"
 
 const slice = Array.prototype.slice
 
@@ -10,13 +12,8 @@ function tail(a) {
     return slice.call(a, 1)
 }
 
-export function createFn(fn, args, length) {
-    const argNames = getArgNames(fn)
-    fn._args = argNames
-    fn._length = length
-
+export function createFn(fn, args, length, descMap = {}) {
     function createProxy(received) {
-        let _combined = received
         const proxy = new Proxy(fn, {
             apply(target, context, args) {
                 let left = length
@@ -25,39 +22,50 @@ export function createFn(fn, args, length) {
                 let resIdx = 0
                 while (resIdx < received.length || argsIdx < args.length) {
                     let result
-                    if (resIdx < received.length && (!_isPlaceholder(received[resIdx]) || argsIdx >= args.length)) {
+                    if (resIdx < received.length && (!isPlaceholder(received[resIdx]) || argsIdx >= args.length)) {
                         result = received[resIdx]
                     } else {
                         result = args[argsIdx]
                         argsIdx += 1
                     }
                     combined[resIdx] = result
-                    if (!_isPlaceholder(result)) left -= 1
+                    if (!isPlaceholder(result)) left -= 1
                     resIdx += 1
                 }
-                target._length = left
-                _combined = combined
+
+                //combined.map((arg, index) => (argsMap[index] = arg))
+
                 if (left <= 0) return target.apply(context, combined)
                 return createProxy(combined)
             },
             get(target, key) {
-                if (key === "length") return target._length
-                if (key === "args") return target._args
-                if (target._args.indexOf(key) > -1)
-                    return value => {
-                        const idx = target._args.indexOf(key)
-                        received[idx] = value
-                        return createProxy(received)
-                    }
-                if (key === "$") return argNames.map((arg, idx) => [arg, received[idx]])
-                if (key === Symbol.toPrimitive) return () => `${target.name}(${argNames.join(", ")})`
-                if (key === "toJSON")
-                    return () => `${target.name}(${argNames.map((arg, idx) => `${arg}: ${_combined[idx]}`).join(", ")})`
+                if (key === "desc") {
+                    return descMap
+                }
+                if (key === "args") return received
+                // if (key === "extend")
+                //     return desc => {
+                //         const o = Object.assign({}, argsMap, desc)
+                //         console.log(`extend`, o, received)
+                //         return createFn(fn, received, length, o)
+                //     }
+                if (key === "length") return length - received.length
+                // if (argNames.indexOf(key) > -1) {
+                //     return arg => {
+                //         argsMap[key] = arg
+                //         return createProxy(received)
+                //     }
+                // }
+                if (key === "$") return { target, length, descMap, argNames: Object.keys(descMap), received }
+                if (key === Symbol.toPrimitive) return () => `${target.name}(${Object.keys(descMap).join(", ")})`
+                if (is.numeric(key)) return received[key]
 
+                //if (key === "toJSON")
+                //    return () => `${target.name}(${argNames.map((arg, idx) => `${arg}: ${received[idx]}`).join(", ")})`
                 if (Reflect.has(target, key)) return Reflect.get(target, key)
             },
             has(target, key) {
-                return target._args.indexOf(key) > -1
+                return Object.keys(descMap).indexOf(key) > -1
             }
         })
 
@@ -159,7 +167,8 @@ function createEvalFn(fn, args, arity) {
 
 function makeArgList(len) {
     var a = []
-    for (var i = 0; i < len; i += 1) a.push("a" + i.toString())
+    for (var i = 0; i < len; i += 1)
+        a.push("a" + i.toString())
     return a.join(",")
 }
 
@@ -180,10 +189,58 @@ function processInvocation(fn, argsArr, totalArity) {
 }
 
 // fn -> fn
-//-- curries a function! <3
-function curry(fn) {
-    return createFn(fn, [], fn.length)
+//-- curries a function! <3\
+
+const isCurried = fn => fn && "$" in fn
+
+function curry(fn, desc) {
+    if (isCurried(fn)) {
+        const { target, argNames, descMap, length } = fn.$
+        const xDesc = Object.assign({}, descMap, desc)
+        const args = Object.values(xDesc)
+
+        return createFn(target, args, length - args.length, xDesc)
+    }
+
+    const argNames = getArgNames(fn)
+    const descMap = argNames.reduce((obj, key, idx) => {
+        if (key in desc) obj[key] = desc[key]
+        return obj
+    }, {})
+
+    const args = argNames.map(name => descMap[name]) //Object.values(descMap)
+
+    return createFn(fn, args, fn.length, descMap)
 }
+
+/**
+
+
+    byKey = curry(
+        (key, val, obj) => obj[key] = val(obj[key]),
+        [__, add(100), __]
+        {
+            val: add(100),
+            obj: __
+        }
+    )
+
+    byKeyX = curry(
+        byKey,
+        {
+            key: 'xxx',
+            val: arg('xValue', is.string(or(eroor)), toUpper)
+        }
+    )
+
+*/
+
+//    if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].bind(keys)
+
+// return Object.defineProperty(obj, idx, {
+//     get: () => [idx, key, obj[key]],
+//     set: arg => (obj[key] = arg)
+// })
 //curry.proxy = (fn, args = []) => createProxy(fn, args, fn.length)
 // num, fn -> fn
 //-- curries a function to a certain arity! <33

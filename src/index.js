@@ -6,6 +6,8 @@ import {
     times,
     map,
     set,
+    has,
+    get,
     apply,
     observe,
     toUpper,
@@ -35,25 +37,49 @@ const api = {
     }
 }
 
+const handler = {
+    get(path, key) {
+        if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
+        if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
+        if (has(key, api)) {
+            return App(path, get(key, api))
+        }
+
+        return App(path, a => a)
+    },
+    has(path, key) {
+        return has(key, api)
+    }
+}
+
 function App(path, target) {
     if (is.func(target)) {
         return box(function next($path, $target) {
-            return App(path.concat(target, $path), $target)
-        }, api)
+            return App(path.concat($path, target), $target)
+        }, handler)
     }
 
     return resolve(path, target)
 }
 
-App.set = curry((path, value, target) => resolve(path.concat(set(path.pop(), value)), target))
-App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
-App.observe = curry((path, observer, object) => {
-    observe(() => observer(resolve(path, object)))
-    return { observer }
-})
+App.r = function ramda(path, ...args) {
+    const lastKey = path[path.length - 1]
+    const fn = is.func(r[lastKey]) && path.pop()
+    if (fn) return fn(path, ...args)
+    return r.path(path, ...args)
+}
+App.set = curry((path, value, target) => {
+    log({ path, value, target: String(target) })
 
-const app = box(App, api)
+    return resolve(path.concat(set(path.pop(), value)), target)
+})
+App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
+App.observe = curry((path, observer, object) => observe(() => observer(resolve(path, object))))
+
+const app = box(App, handler)
+
 const obj = observable()
+
 obj.foo = { x: 1, y: 2 }
 obj.name = "my app"
 obj.count = 0
@@ -108,4 +134,4 @@ obj.foo = { count: 0 }
 // app(obj.foo)
 // start(obj.foo)
 
-Object.assign(window, bitbox, { r, app, counter, greet, bitbox, obj })
+Object.assign(window, bitbox, { r, App, app, counter, greet, bitbox, obj })

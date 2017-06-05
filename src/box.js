@@ -8,6 +8,9 @@ import { get, has, apply, last, log } from "./operators"
 export function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
         apply(target, thisArg, args) {
+            if (handler && handler.apply) {
+                return handler.apply(target, [path, args])
+            }
             return Reflect.apply(target, thisArg, [path].concat(args))
         },
         get(target, key, receiver) {
@@ -15,10 +18,10 @@ export function create(box, path = [], handler) {
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
             if (key === Symbol.toPrimitive) return primitive(path)
             if (key === "toJSON") return () => toJSON(path)
-            if (key === Symbol.for("box/path")) return true
+            if (key === Symbol.for("box/path")) return [box, path]
             if (target && Reflect.has(target, key)) {
                 const f = Reflect.get(target, key)
-                if (is.func(f)) return create(f, path, handler)
+                if (is.func(f)) return create(f, path.slice(), handler)
             }
             const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
                 ? primitive.__keys
@@ -40,15 +43,18 @@ export function create(box, path = [], handler) {
                 return handler.has(path, key, receiver)
             }
             return true
+        },
+        set(target, key, value, receiver) {
+            if (handler && handler.set) {
+                return handler.set(path, key, value, receiver)
+            }
         }
     })
 
     return proxy
 }
 
-export default (box, api = {}) => {
-    box.api = api
-
+export default (box, handler = {}) => {
     function _box(path, args) {
         path = path.slice()
         args = args.slice()
@@ -91,20 +97,20 @@ export default (box, api = {}) => {
         return create(box, path.concat(args), handler)
     }
 
-    const handler = {
-        get(path, key, proxy) {
-            if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
-            if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
-            if (has(key, api)) {
-                return create(box, path.concat(get(key, api)), handler)
-            }
-
-            return create(box, path.concat(key), handler, api)
-        },
-        has(path, key) {
-            return has(key, api)
-        }
-    }
+    // const handler = {
+    //     get(path, key, proxy) {
+    //         if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
+    //         if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
+    //         if (has(key, api)) {
+    //             return create(box, path.concat(get(key, api)), handler)
+    //         }
+    //
+    //         return create(box, path.concat(key), handler, api)
+    //     },
+    //     has(path, key) {
+    //         return has(key, api)
+    //     }
+    // }
 
     return create(box, [], handler)
 }
