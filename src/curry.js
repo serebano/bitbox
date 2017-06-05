@@ -2,15 +2,13 @@ import is from "./is"
 import { getArgNames } from "./utils"
 import isPlaceholder from "./internal/isPlaceholder"
 import __ from "./operators/__"
+import has from "./operators/has"
 
 const slice = Array.prototype.slice
+const isCurried = fn => fn && has("$", fn)
 
-function toArray(a) {
-    return slice.call(a)
-}
-function tail(a) {
-    return slice.call(a, 1)
-}
+const toArray a => slice.call(a)
+tail(a)  => slice.call(a, 1))
 
 export function createFn(fn, args, length, descMap = {}) {
     function createProxy(received) {
@@ -74,6 +72,99 @@ export function createFn(fn, args, length, descMap = {}) {
 
     return createProxy(args)
 }
+
+// [value], arguments -> [value]
+//-- concat new arguments onto old arguments array
+function concatArgs(args1, args2) {
+    return args1.concat(toArray(args2))
+}
+
+// fn, [value], int -> fn
+//-- create a function of the correct arity by the use of eval,
+//-- so that curry can handle functions of any arity
+function createEvalFn(fn, args, arity) {
+    var argList = makeArgList(arity)
+    //-- hack for IE's faulty eval parsing -- http://stackoverflow.com/a/6807726
+    var fnStr = "false||" + "function(" + argList + "){ return processInvocation(fn, concatArgs(args, arguments)); }"
+    return eval(fnStr)
+}
+
+function makeArgList(len) {
+    var a = []
+    for (var i = 0; i < len; i += 1)
+        a.push("a" + i.toString())
+    return a.join(",")
+}
+
+function trimArrLength(arr, length) {
+    if (arr.length > length) return arr.slice(0, length)
+    else return arr
+}
+
+function processInvocation(fn, argsArr, totalArity) {
+    argsArr = trimArrLength(argsArr, totalArity)
+
+    if (argsArr.length === totalArity) return fn.apply(null, argsArr)
+    return createFn(fn, argsArr, totalArity)
+}
+
+function curry(fn, desc) {
+    if (isCurried(fn)) {
+        const { target, argNames, descMap, length } = fn.$
+        const xDesc = Object.assign({}, descMap, desc)
+        const args = Object.values(xDesc)
+
+        return createFn(target, args, length - args.length, xDesc)
+    }
+
+    const argNames = getArgNames(fn)
+    const descMap = argNames.reduce((obj, key, idx) => {
+        if (has(key, desc)) obj[key] = desc[key]
+        return obj
+    }, {})
+
+    const args = argNames.map(name => descMap[name]) //Object.values(descMap)
+
+    return createFn(fn, args, fn.length, descMap)
+}
+
+/*
+    byKey = curry(
+        (key, val, obj) => obj[key] = val(obj[key]),
+        [__, add(100), __]
+        {
+            val: add(100),
+            obj: __
+        }
+    )
+
+    byKeyX = curry(
+        byKey,
+        {
+            key: 'xxx',
+            val: arg('xValue', is.string(or(eroor)), toUpper)
+        }
+    )
+
+*/
+
+
+curry.to = curry(function(arity, fn) {
+    return createFn(fn, [], arity)
+})
+
+curry.adaptTo = curry(function(num, fn) {
+    return curry.to(num, function(context) {
+        const args = tail(arguments).concat(context)
+        return fn.apply(this, args)
+    })
+})
+
+//-- adapts a function in the context-first style to
+curry.adapt = function(fn) {
+    return curry.adaptTo(fn.length, fn)
+}
+
 
 export function _createFn(fn, args, totalArity) {
     const remainingArity = totalArity - args.length
@@ -147,122 +238,6 @@ export function _createFn(fn, args, totalArity) {
         default:
             return createEvalFn(fn, args, remainingArity)
     }
-}
-
-// [value], arguments -> [value]
-//-- concat new arguments onto old arguments array
-function concatArgs(args1, args2) {
-    return args1.concat(toArray(args2))
-}
-
-// fn, [value], int -> fn
-//-- create a function of the correct arity by the use of eval,
-//-- so that curry can handle functions of any arity
-function createEvalFn(fn, args, arity) {
-    var argList = makeArgList(arity)
-    //-- hack for IE's faulty eval parsing -- http://stackoverflow.com/a/6807726
-    var fnStr = "false||" + "function(" + argList + "){ return processInvocation(fn, concatArgs(args, arguments)); }"
-    return eval(fnStr)
-}
-
-function makeArgList(len) {
-    var a = []
-    for (var i = 0; i < len; i += 1)
-        a.push("a" + i.toString())
-    return a.join(",")
-}
-
-function trimArrLength(arr, length) {
-    if (arr.length > length) return arr.slice(0, length)
-    else return arr
-}
-
-// fn, [value] -> value
-//-- handle a function being invoked.
-//-- if the arg list is long enough, the function will be called
-//-- otherwise, a new curried version is created.
-function processInvocation(fn, argsArr, totalArity) {
-    argsArr = trimArrLength(argsArr, totalArity)
-
-    if (argsArr.length === totalArity) return fn.apply(null, argsArr)
-    return createFn(fn, argsArr, totalArity)
-}
-
-// fn -> fn
-//-- curries a function! <3\
-
-const isCurried = fn => fn && "$" in fn
-
-function curry(fn, desc) {
-    if (isCurried(fn)) {
-        const { target, argNames, descMap, length } = fn.$
-        const xDesc = Object.assign({}, descMap, desc)
-        const args = Object.values(xDesc)
-
-        return createFn(target, args, length - args.length, xDesc)
-    }
-
-    const argNames = getArgNames(fn)
-    const descMap = argNames.reduce((obj, key, idx) => {
-        if (key in desc) obj[key] = desc[key]
-        return obj
-    }, {})
-
-    const args = argNames.map(name => descMap[name]) //Object.values(descMap)
-
-    return createFn(fn, args, fn.length, descMap)
-}
-
-/**
-
-
-    byKey = curry(
-        (key, val, obj) => obj[key] = val(obj[key]),
-        [__, add(100), __]
-        {
-            val: add(100),
-            obj: __
-        }
-    )
-
-    byKeyX = curry(
-        byKey,
-        {
-            key: 'xxx',
-            val: arg('xValue', is.string(or(eroor)), toUpper)
-        }
-    )
-
-*/
-
-//    if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].bind(keys)
-
-// return Object.defineProperty(obj, idx, {
-//     get: () => [idx, key, obj[key]],
-//     set: arg => (obj[key] = arg)
-// })
-//curry.proxy = (fn, args = []) => createProxy(fn, args, fn.length)
-// num, fn -> fn
-//-- curries a function to a certain arity! <33
-curry.to = curry(function(arity, fn) {
-    return createFn(fn, [], arity)
-})
-
-// num, fn -> fn
-//-- adapts a function in the context-first style
-//-- to a curried version. <3333
-curry.adaptTo = curry(function(num, fn) {
-    return curry.to(num, function(context) {
-        const args = tail(arguments).concat(context)
-        return fn.apply(this, args)
-    })
-})
-
-// fn -> fn
-//-- adapts a function in the context-first style to
-//-- a curried version. <333
-curry.adapt = function(fn) {
-    return curry.adaptTo(fn.length, fn)
 }
 
 export default curry
