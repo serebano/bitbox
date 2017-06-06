@@ -1,5 +1,6 @@
 import * as operators from "./operators"
 import * as observer from "./observer"
+import curry from "./curry"
 
 export * from "./operators"
 export { default as is } from "./is"
@@ -16,3 +17,5 @@ export function Demo(key, value, object) {
 export function g(a, b, c) {
     return { a, b, c }
 }
+
+export const x = curry(g)

@@ -5,6 +5,7 @@ import print from "./print"
 import R from "ramda"
 
 export { default as __ } from "./__"
+export { default as arg } from "../curry/arg"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 export { default as add } from "./add"
@@ -32,15 +33,17 @@ export { default as pluck } from "./pluck"
 export { default as slice } from "./slice"
 export { default as apply } from "./apply"
 export { default as toString } from "./toString"
+export { default as type } from "./type"
 
 const { assoc, assocPath, project, sort, of, objOf, replace, defaultTo } = R
 export { assoc, assocPath, project, sort, of, objOf, replace, defaultTo }
 
-export const log = (...args) => {
-    print(args)
-    return args[0]
-}
+export const tap = curry(function tap(fn, x) {
+    fn(x)
+    return x
+})
 
+export const log = tap(print)
 export const id = curry(function _id(arg) {
     return arg
 })
@@ -64,6 +67,14 @@ export const filter = invoke(1, "filter")
 //export const sort = invoke(1, "sort")
 export const reduce = invoke(2, "reduce")
 
+const toArray = curry(function toArray(arg) {
+    return Array.prototype.slice.call(arg)
+})
+
+export const tail = curry(function tail(arg) {
+    return Array.prototype.slice.call(arg, 1)
+})
+
 export const or = curry(function or(a, b) {
     return a || b
 })
@@ -77,11 +88,6 @@ export const lt = curry(function lt(a, b) {
 })
 export const gt = curry(function gt(a, b) {
     return a < b
-})
-
-export const tap = curry(function tap(fn, x) {
-    fn(x)
-    return x
 })
 
 export const proxy = curry(function proxy(handler, target) {

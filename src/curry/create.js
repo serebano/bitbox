@@ -1,3 +1,5 @@
+import desc from "./desc"
+
 function createFunction(length, fn) {
     switch (length) {
         case 0:
@@ -49,4 +51,4 @@ function createFunction(length, fn) {
     }
 }
 
-export default createFunction
+export default createFunction //(n, fn) => desc(fn, createFunction(n, fn), [], n)

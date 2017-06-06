@@ -10,7 +10,7 @@ function curry1(fn) {
         }
     }
 
-    return f1 //desc(fn, f1, 1)
+    return desc(fn, f1)
 }
 
 export default curry1

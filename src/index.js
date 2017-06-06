@@ -2,6 +2,7 @@ import is from "./is"
 import * as bitbox from "./bitbox"
 import {
     __,
+    id,
     box,
     use,
     times,
@@ -9,6 +10,7 @@ import {
     set,
     has,
     get,
+    arg,
     apply,
     observe,
     toUpper,
@@ -32,7 +34,6 @@ import {
 } from "./bitbox"
 import r from "ramda"
 
-const greet = replace("{name}", __, "Hello, {name}!")
 const api = {
     ...bitbox,
     sayHi: curry((name, obj) => (obj.hi = greet(name))),
@@ -41,37 +42,21 @@ const api = {
     }
 }
 
-const handler = {
-    get(path, key) {
-        //if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
-        if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
-        if (has(key, api)) {
-            return App(path, get(key, api))
-        }
-
-        return App(path, a => a)
-    },
-    has(path, key) {
-        return has(key, api)
-    }
-}
-
 function App(path, args) {
     const key = last(path)
 
-    if (has(key, api)) {
-        const method = get(key, api)
+    //if (has(key, api)) return apply(get(key, api), args)
 
-        return apply(method, args)
-    }
     return resolve(path.concat(args))
 }
 
-App.set = curry((path, value, target) => {
-    return resolve(path.concat(set(path.pop(), value)), target)
-})
-App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
-App.observe = curry((path, observer, object) => observe(() => observer(resolve(path, object))))
+const greet = replace("{name}", __, "Hello, {name}!")
+
+// App.set = curry((path, value, target) => {
+//     return resolve(path.concat(set(path.pop(), value)), target)
+// })
+// App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
+// App.observe = curry((path, observer, object) => observe(() => observer(resolve(path, object))))
 
 const app = box(App)
 const obj = observable()
@@ -118,6 +103,21 @@ box(pipe(r.union, resolve)).counter(
     log
 )(obj).demo
 
+const cnt = set(
+    "count",
+    arg((value, index, args) => {
+        log(args)
+        if (!is.number(value)) {
+            console.error(`nnumber required`, { value })
+            return id
+        }
+        if (value >= 10) {
+            return add(-10)
+        }
+        return add(value)
+    })
+)
+
 //b1.counter(set("value", inc), ife(has("count"), set("count", add(10)), set("count", 1)), tap(log))
 
 // const render = curry((elm, val) => set("innerHTML", val, document.querySelector(elm)))
@@ -152,4 +152,4 @@ obj.foo = { count: 0 }
 // app(obj.foo)
 // start(obj.foo)
 
-Object.assign(window, bitbox, { r, b1, App, app, counter, greet, bitbox, obj })
+Object.assign(window, bitbox, { cnt, r, b1, App, app, counter, greet, bitbox, obj })

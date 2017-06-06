@@ -1,4 +1,5 @@
-export default function print(json = "") {
+print.displayName = `print`
+function print(json = "") {
     if (typeof json !== "string") json = JSON.stringify(json, undefined, "\t")
 
     let arr = [],
@@ -33,3 +34,5 @@ export default function print(json = "") {
 
     console.log.apply(console, arr)
 }
+
+export default print
