@@ -1,5 +1,5 @@
 import { isObservable } from "./observer"
-import isPlaceholder from "./internal/isPlaceholder"
+import isPlaceholder from "./curry/isPlaceholder"
 
 function _is(Ctor, val) {
     return (val != null && val.constructor === Ctor) || val instanceof Ctor

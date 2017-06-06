@@ -1,6 +1,5 @@
 import is from "./is"
 import curry from "./curry"
-import isFunction from "./internal/isFunction"
 import * as api from "./operators"
 /**
  * resolve()

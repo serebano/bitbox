@@ -1,8 +1,5 @@
-import desc from "./desc"
-
-function __arity(n, fn) {
-    /* eslint-disable no-unused-vars */
-    switch (n) {
+function createFunction(length, fn) {
+    switch (length) {
         case 0:
             return function f0() {
                 return fn.apply(this, arguments)
@@ -52,9 +49,4 @@ function __arity(n, fn) {
     }
 }
 
-function __(n, fn) {
-    const f = __arity(n, fn)
-    return f //desc(fn, f, n)
-}
-
-export default __
+export default createFunction

@@ -1,8 +1,8 @@
 import is from "./is"
 import curry from "./curry"
-import { toPrimitive, toJSON } from "./utils"
 import resolve from "./resolve"
 import * as api from "./operators"
+import { toPrimitive, toJSON } from "./utils"
 import { get, has, apply, last, log } from "./operators"
 
 export default function create(box, path = [], handler) {

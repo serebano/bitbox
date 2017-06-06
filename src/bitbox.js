@@ -12,3 +12,7 @@ export { observable, isObservable, observe, unobserve, unqueue, exec } from "./o
 export function Demo(key, value, object) {
     return { key, value, object }
 }
+
+export function g(a, b, c) {
+    return { a, b, c }
+}

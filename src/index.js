@@ -94,6 +94,11 @@ const counter = view(
     },
     obj
 )
+const setCount = set("count")
+setCount(10, obj)
+
+const setCount2 = curry.adapt(setCount)
+setCount2(obj, inc)
 
 const b1 = box(concat)
 

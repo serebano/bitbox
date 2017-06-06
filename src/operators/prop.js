@@ -1,5 +1,5 @@
-import _curry2 from "../internal/curry2"
+import curry2 from "../curry/curry.2"
 
-export default _curry2(function prop(key, target) {
+export default curry2(function prop(key, target) {
     return target[key]
 })

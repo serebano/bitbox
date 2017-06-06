@@ -1,5 +1,5 @@
 import curry from "../curry"
-import _isFunction from "../internal/isFunction"
+import _isFunction from "../curry/isFunction"
 import toString from "./toString"
 
 /**

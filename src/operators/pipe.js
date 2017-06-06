@@ -1,7 +1,8 @@
+import apply from "./apply"
 import compose from "./compose"
 
 function pipe(...fns) {
-    return compose.apply(null, fns.reverse())
+    return apply(compose, fns.reverse())
 }
 
 export default pipe

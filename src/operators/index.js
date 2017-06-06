@@ -13,7 +13,6 @@ export { default as dec } from "./dec"
 export { default as pipe } from "./pipe"
 export { default as compose } from "./compose"
 export { default as prop } from "./prop"
-export { default as asProp } from "./asProp"
 export { default as ife } from "./ifElse"
 export { default as map } from "./map"
 export { default as o } from "./o"
@@ -27,12 +26,10 @@ export { default as scan } from "./scan"
 export { default as nth } from "./nth"
 export { default as iis } from "./is"
 export { default as last } from "./last"
-export { default as path } from "./path"
 export { default as invoke } from "./invoke"
 export { default as props } from "./props"
 export { default as pluck } from "./pluck"
 export { default as slice } from "./slice"
-
 export { default as apply } from "./apply"
 export { default as toString } from "./toString"
 
@@ -53,7 +50,7 @@ export const as = curry(function as(key, value) {
     }
 })
 
-export const obs = curry(function(func, target) {
+export const obs = curry(function Observer(func, target) {
     const obj = observable(target)
     const o = () => func(obj)
     observe(o)
