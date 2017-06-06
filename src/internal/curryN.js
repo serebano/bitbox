@@ -1,22 +1,30 @@
 import _arity from "./arity"
 import _isPlaceholder from "./isPlaceholder"
+import desc, { store } from "./desc"
+import { getArgNames } from "../utils"
 
-/**
- * Internal curryN function.
- *
- * @private
- * @category Function
- * @param {Number} length The arity of the curried function.
- * @param {Array} received An array of arguments received thus far.
- * @param {Function} fn The function to curry.
- * @return {Function} The curried function.
- */
 export default function _curryN(length, received, fn) {
-    return function() {
-        var combined = []
-        var argsIdx = 0
-        var left = length
-        var combinedIdx = 0
+    if (!store.has(fn)) {
+        store.set(fn, new Set())
+        fn.curried = []
+    }
+    fn.curried.push(fn)
+    nFn.fn = fn
+    nFn.displayName = fn.displayName || fn.name
+    nFn.argsNames = getArgNames(fn)
+    nFn.argsReceived = received
+    nFn.argsLength = length
+    nFn.argsMap = new Array(length).fill({})
+    //nFn.toString = () => nFn.displayName + length + "( " + nFn.argsNames.join(", ") + " )"
+
+    store.get(fn).add(nFn)
+
+    function nFn() {
+        let combined = []
+        let argsIdx = 0
+        let left = length
+        let combinedIdx = 0
+
         while (combinedIdx < received.length || argsIdx < arguments.length) {
             var result
             if (
@@ -29,11 +37,25 @@ export default function _curryN(length, received, fn) {
                 argsIdx += 1
             }
             combined[combinedIdx] = result
+            if (!nFn.argsMap[combinedIdx]) {
+                nFn.argsMap[combinedIdx] = {
+                    index: combinedIdx,
+                    value: result,
+                    name: nFn.argsNames[combinedIdx]
+                }
+            }
+            //nFn.argsMap[combinedIdx].value = result
+
             if (!_isPlaceholder(result)) {
                 left -= 1
             }
             combinedIdx += 1
         }
-        return left <= 0 ? fn.apply(this, combined) : _arity(left, _curryN(length, combined, fn))
+
+        if (left <= 0) return fn.apply(this, combined)
+
+        return _arity(left, _curryN(length, combined, fn))
     }
+
+    return nFn //desc(fn, nFn, length)
 }

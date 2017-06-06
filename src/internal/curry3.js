@@ -1,6 +1,7 @@
 import _curry1 from "./curry1"
 import _curry2 from "./curry2"
 import _isPlaceholder from "./isPlaceholder"
+import desc from "./desc"
 
 /**
  * Optimized internal three-arity curry function.
@@ -66,7 +67,7 @@ export default function _curry3(fn) {
         }
     }
 
-    f3.displayName = fn.displayName || fn.name
+    //f3.displayName = fn.displayName || fn.name
 
-    return f3
+    return desc(fn, f3, 3)
 }

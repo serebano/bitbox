@@ -22,4 +22,4 @@ const is = {
     null: arg => arg === null
 }
 
-export default is
+export default Object.assign(_is, is)

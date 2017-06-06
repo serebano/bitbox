@@ -3,6 +3,7 @@ import * as bitbox from "./bitbox"
 import {
     __,
     box,
+    use,
     times,
     map,
     set,
@@ -25,6 +26,8 @@ import {
     proxy,
     view,
     resolve,
+    last,
+    concat,
     ife
 } from "./bitbox"
 import r from "ramda"
@@ -53,32 +56,24 @@ const handler = {
     }
 }
 
-function App(path, target) {
-    if (is.func(target)) {
-        return box(function next($path, $target) {
-            return App(path.concat($path, target), $target)
-        }, handler)
+function App(path, args) {
+    const key = last(path)
+
+    if (has(key, api)) {
+        const method = get(key, api)
+
+        return apply(method, args)
     }
-
-    return resolve(path, target)
+    return resolve(path.concat(args))
 }
 
-App.r = function ramda(path, ...args) {
-    const lastKey = path[path.length - 1]
-    const fn = is.func(r[lastKey]) && path.pop()
-    if (fn) return fn(path, ...args)
-    return r.path(path, ...args)
-}
 App.set = curry((path, value, target) => {
-    log({ path, value, target })
-
     return resolve(path.concat(set(path.pop(), value)), target)
 })
 App.assign = curry((path, value, target) => (target[path.shift()] = r.assocPath(path, value, {})))
 App.observe = curry((path, observer, object) => observe(() => observer(resolve(path, object))))
 
-const app = box(App, handler)
-
+const app = box(App)
 const obj = observable()
 
 obj.foo = { x: 1, y: 2 }
@@ -95,19 +90,30 @@ const counter = view(
     {
         value: app.counter.value,
         inc: app.counter.set("value", inc),
-        dec: app.counter.set("value", dec),
-        view: app.counter.value(replace("{count}", __, `<h1>Count({count})</h1>`))
+        dec: app.counter.set("value", dec)
     },
     obj
 )
 
-const listItem = app.replace("{text}", __, `<li><b>{text}</b></li>`)
+const b1 = box(concat)
 
-box((p, ...a) => resolve(p.concat(a))).counter(
+box(resolve(__, new Date())).getTime()
+
+box(use(pipe, [resolve, resolve])).counter(set("value", inc), log, add(20))(obj)
+
+box(r.assocPath, [0]).a.b.c.d.e.f.g.h(10, log)(obj)
+
+box(pipe(r.union, resolve)).counter(
     set("value", inc),
-    ife(has("count"), set("count", add(10)), set("count", 1)),
-    tap(log)
-)(obj)
+    tap(log),
+    "value",
+    add(3),
+    as("demo"),
+    set("demo", add(-100)),
+    log
+)(obj).demo
+
+//b1.counter(set("value", inc), ife(has("count"), set("count", add(10)), set("count", 1)), tap(log))
 
 // const render = curry((elm, val) => set("innerHTML", val, document.querySelector(elm)))
 // const start = tap(x => (x.id = setInterval(() => x.count++)))
@@ -141,4 +147,4 @@ obj.foo = { count: 0 }
 // app(obj.foo)
 // start(obj.foo)
 
-Object.assign(window, bitbox, { r, App, app, counter, greet, bitbox, obj })
+Object.assign(window, bitbox, { r, b1, App, app, counter, greet, bitbox, obj })

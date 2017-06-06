@@ -5,13 +5,13 @@ import resolve from "./resolve"
 import * as api from "./operators"
 import { get, has, apply, last, log } from "./operators"
 
-export function create(box, path = [], handler) {
+export default function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
         apply(target, thisArg, args) {
-            if (handler && handler.apply) {
-                return handler.apply(target, [path, args])
-            }
-            return Reflect.apply(target, thisArg, [path].concat(args))
+            // if (handler && handler.apply) {
+            //     return handler.apply(target, [path, args])
+            // }
+            return Reflect.apply(target, thisArg, [path, args])
         },
         get(target, key, receiver) {
             if (key === "$") return path
@@ -31,7 +31,7 @@ export function create(box, path = [], handler) {
             delete primitive.__keys
 
             if (handler && handler.get) {
-                return handler.get(path, nextKey, proxy)
+                return handler.get(path, nextKey, target)
             }
 
             return create(box, path.concat(nextKey), handler)
@@ -54,7 +54,7 @@ export function create(box, path = [], handler) {
     return proxy
 }
 
-export default (box, handler = {}) => {
+export const x = (box, handler = {}) => {
     function _box(path, args) {
         path = path.slice()
         args = args.slice()

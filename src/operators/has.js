@@ -1,3 +1,5 @@
 import curry from "../curry"
 
-export default curry((key, target) => target && key in target)
+export default curry(function has(key, target) {
+    return target && key in target
+})
