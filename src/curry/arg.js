@@ -4,32 +4,38 @@ import * as operators from "../operators"
 import has from "../operators/has"
 import get from "../operators/get"
 import apply from "../operators/apply"
-
 import curry from "."
 
-function arg(handler, ...rest) {
+function arg(handler, ...args) {
     if (is.func(handler)) {
-        function $(value, index, args, receiver) {
-            console.log(`$ ->`, handler, value, rest)
-            return apply(handler, [value].concat(rest))
+        function $(value) {
+            const result = apply(handler, args.concat(value))
+            console.log(`$ ->`, handler, value, result)
+            return result
         }
 
         $["@@functional/placeholder"] = true
+        $.isHandler = true
+        $.displayName = handler.displayName
         $.toString = () => `${handler.displayName || handler}`
 
         return $
     }
 
-    return arg.default(handler)
+    return arg(defaulTo(handler))
 }
-
+arg.toString = () => "arg"
 arg["@@functional/placeholder"] = true
 
 const defaulTo = curry(function defaultTo(d, v) {
     return v == null || v !== v ? d : v
 })
 
-arg.default = value => arg(defaulTo(value))
+arg.default = defaulTo
+// d =>
+//     function defaultTo(v) {
+//         return v == null || v !== v ? d : v
+//     }, d)
 
 arg.$ = new Proxy(arg, {
     get(target, key, receiver) {

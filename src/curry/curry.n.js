@@ -19,7 +19,7 @@ function curryN(length, received, fn) {
             } else {
                 if (is.placeholder(received[combinedIdx])) {
                     const $arg = received[combinedIdx]
-                    if (is.func($arg)) {
+                    if (is.func($arg) && $arg.isHandler) {
                         result = $arg(arguments[argsIdx])
                     } else {
                         result = arguments[argsIdx]

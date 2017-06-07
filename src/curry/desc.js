@@ -7,10 +7,11 @@ export const getReceivedNames = (_argNames, received) =>
     received.filter((arg, idx) => !is.placeholder(received[idx])).map((arg, idx) => _argNames[idx])
 
 export const getExpectedNames = (_argNames, received) =>
-    _argNames.filter((arg, idx) => is.placeholder(received[idx]) || idx >= received.length)
+    _argNames.filter((arg, idx) => !is.placeholder(received[idx]) || idx >= received.length)
 
 const _toString = (_name, _receivedArgs, _expectedArgs) =>
-    `function ${_name}${_receivedArgs ? "(" + _receivedArgs + ")" : ""}(${_expectedArgs.join(", ")}) {...}`
+    `function ${_name}(${_expectedArgs.join(", ")}) => ${_receivedArgs ? +_receivedArgs + ")" : "{}"}`
+
 export const toString = (_name, _argNames, received) => () =>
     _toString(_name, toDisplayName(_argNames, received), getExpectedNames(_argNames, received))
 
@@ -25,15 +26,25 @@ function desc(fn, fx, received = []) {
     if (!store.has(fn)) store.set(fn, new Set())
 
     const argNames = getArgNames(fn)
+    const receivedNames = getReceivedNames(argNames, received)
+    const expectedNames = getExpectedNames(argNames, received)
+    fx.receivedNames = receivedNames
+    fx.expectedNames = expectedNames
 
-    fx.displayName =
-        fn.name + (received.length ? `(${toDisplayName(argNames, received)})` : toDisplayName(argNames, argNames))
-    fx.toString = toString(fn.name, argNames, received)
-
-    fx.args = {
-        received: getReceivedNames(argNames, received),
-        expected: getExpectedNames(argNames, received)
-    }
+    fx.displayName = fn.name + `(${received.length ? toDisplayName(argNames, received) : toDisplayName(argNames)})`
+    fx.toString = () =>
+        "function " +
+        fn.name +
+        "(" +
+        expectedNames.join(", ") +
+        ") => " +
+        fn.name +
+        "(" +
+        toDisplayName(argNames, received) +
+        ", " +
+        receivedNames.join(", ") +
+        ")"
+    //toString(fn.name, argNames, received)
 
     fx.map = pairArgs(argNames, received)
 
