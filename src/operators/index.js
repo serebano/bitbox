@@ -2,6 +2,7 @@ import { observe, observable } from "../observer"
 import curry from "../curry"
 import invoke from "./invoke"
 import print from "./print"
+import is from "../is"
 import R from "ramda"
 
 export { default as __ } from "./__"
@@ -42,7 +43,11 @@ export const tap = curry(function tap(fn, x) {
     fn(x)
     return x
 })
-
+export const log1 = (...args) => {
+    print(args.map(a => (is.func(a) ? a.toString() : a)))
+    console.log(args)
+    return args[1]
+}
 export const log = tap(print)
 export const id = curry(function _id(arg) {
     return arg

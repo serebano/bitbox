@@ -103,6 +103,8 @@ box(pipe(r.union, resolve)).counter(
     log
 )(obj).demo
 
+// x('Hello', arg.toUpper(), arg(add, 1))('jjj',6)
+
 const cnt = set(
     "count",
     arg((value, index, args) => {
