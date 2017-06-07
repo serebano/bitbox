@@ -4,11 +4,16 @@ import is from "../is"
 export const store = new Map()
 
 export const getReceivedNames = (_argNames, received) =>
+    received.filter((arg, idx) => !is.placeholder(received[idx])).map((arg, idx) => _argNames[idx])
+
+export const getExpectedNames = (_argNames, received) =>
     _argNames.filter((arg, idx) => is.placeholder(received[idx]) || idx >= received.length)
 
-const _toString = (_displayName, _receivedNames) => `function ${_displayName}(${_receivedNames.join(", ")}) {...}`
+const _toString = (_name, _receivedArgs, _expectedArgs) =>
+    `function ${_name}${_receivedArgs ? "(" + _receivedArgs + ")" : ""}(${_expectedArgs.join(", ")}) {...}`
 export const toString = (_name, _argNames, received) => () =>
-    _toString(toDisplayName(_name, _argNames, received), getReceivedNames(_argNames, received))
+    _toString(_name, toDisplayName(_argNames, received), getExpectedNames(_argNames, received))
+
 export const pairArgs = (_argNames, received) =>
     received.reduce((obj, value, idx) => {
         const key = !is.undefined(_argNames[idx]) ? _argNames[idx] : idx
@@ -21,9 +26,15 @@ function desc(fn, fx, received = []) {
 
     const argNames = getArgNames(fn)
 
-    fx.argNames = getReceivedNames(argNames, received)
-    fx.displayName = fn.name // + received.join("_") // "(" + getReceivedNames(argNames, received) + ")"
+    fx.displayName = `${fn.name}(${toDisplayName(argNames, received)})`
     fx.toString = toString(fn.name, argNames, received)
+
+    fx.args = {
+        received: getReceivedNames(argNames, received),
+        expected: getExpectedNames(argNames, received)
+    }
+
+    fx.map = pairArgs(argNames, received)
 
     store.get(fn).add(fx)
 

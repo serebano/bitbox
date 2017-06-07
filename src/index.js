@@ -73,7 +73,7 @@ box(pipe(r.union, resolve)).counter(
     log
 )(obj).demo
 
-const hi = set("greeting", arg.concat("Hello "), obj)
+const hi = set("greeting", arg(concat("Hello ")), obj)
 
 hi("serebano")
 
@@ -81,21 +81,14 @@ hi("serebano")
 
 const cnt = set(
     "count",
-    arg(
-        (value, index, args) => {
-            log(args)
-            if (!is.number(value)) {
-                console.error(`nnumber required`, { value })
-                return id
-            }
-            if (value >= 10) {
-                return add(-10)
-            }
-            return add(value)
-        },
-        1,
-        2
-    )
+    arg(value => {
+        if (!is.number(value)) {
+            console.error(`nnumber required`, { value })
+            return id
+        }
+        return value >= 10 ? add(-10) : add(value)
+    }),
+    obj
 )
 
 Object.assign(window, bitbox, { cnt, r, b1, App, app, counter, bitbox, obj })

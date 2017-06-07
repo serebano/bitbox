@@ -17,18 +17,18 @@ function curry2(fn) {
                 return is.placeholder(a) && is.placeholder(b)
                     ? f2
                     : is.placeholder(a)
-                          ? curry1(function(_a) {
-                                return fn(_a, b)
-                            })
-                          : is.placeholder(b)
-                                ? curry1(function(_b) {
-                                      return fn(a, _b)
-                                  })
-                                : fn(a, b)
+                      ? curry1(function(_a) {
+                            return fn(_a, b)
+                        })
+                      : is.placeholder(b)
+                        ? curry1(function(_b) {
+                              return fn(a, _b)
+                          })
+                        : fn(a, b)
         }
     }
 
-    return f2 //desc(fn, f2) //2 // desc(fn, f2, 2)
+    return desc(fn, f2)
 }
 
 export default curry2

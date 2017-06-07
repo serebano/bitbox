@@ -10,12 +10,12 @@ import curry from "."
 function arg(handler, ...rest) {
     if (is.func(handler)) {
         function $(value, index, args, receiver) {
-            console.log(`$ ->`, { handler, value, index, args, receiver })
+            console.log(`$ ->`, handler, value, rest)
             return apply(handler, [value].concat(rest))
         }
 
         $["@@functional/placeholder"] = true
-        $.displayName = `$(${handler.displayName || handler.name || handler}, ${rest.map(String)})`
+        $.toString = () => `${handler.displayName || handler}`
 
         return $
     }
@@ -24,7 +24,6 @@ function arg(handler, ...rest) {
 }
 
 arg["@@functional/placeholder"] = true
-arg.displayName = "$"
 
 const defaulTo = curry(function defaultTo(d, v) {
     return v == null || v !== v ? d : v
@@ -32,10 +31,7 @@ const defaulTo = curry(function defaultTo(d, v) {
 
 arg.default = value => arg(defaulTo(value))
 
-// defaultArg["@@functional/placeholder"] = true
-// defaultArg.displayName = `$(${handler})`
-
-export default new Proxy(arg, {
+arg.$ = new Proxy(arg, {
     get(target, key, receiver) {
         if (key in target) {
             return target[key]
@@ -43,8 +39,8 @@ export default new Proxy(arg, {
         if (has(key, operators)) {
             return (...args) => target(get(key, operators), ...args)
         }
-        return target(key) //{ "@@functional/placeholder": true }
+        //return target(key) //{ "@@functional/placeholder": true }
     }
 })
 
-//export default arg
+export default arg
