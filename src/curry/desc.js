@@ -26,7 +26,8 @@ function desc(fn, fx, received = []) {
 
     const argNames = getArgNames(fn)
 
-    fx.displayName = `${fn.name}(${toDisplayName(argNames, received)})`
+    fx.displayName =
+        fn.name + (received.length ? `(${toDisplayName(argNames, received)})` : toDisplayName(argNames, argNames))
     fx.toString = toString(fn.name, argNames, received)
 
     fx.args = {
