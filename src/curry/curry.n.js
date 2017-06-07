@@ -3,24 +3,15 @@ import desc from "./desc"
 import is from "../is"
 import { getArgNames, toCamelCase, toDisplayName } from "../utils"
 
-const _pairArgs = (_argNames, received) =>
-    received.reduce((obj, value, idx) => {
-        const key = !is.undefined(_argNames[idx]) ? _argNames[idx] : idx
-        obj[key] = value
-        return obj
-    }, {})
-const _toString = (_displayName, _receivedNames) => `function ${_displayName}(${_receivedNames.join(", ")}) {...}`
-const getReceivedNames = (_argNames, received) =>
-    _argNames.filter((arg, idx) => is.placeholder(received[idx]) || idx >= received.length)
-
 function curryN(length, received, fn) {
-    const _name = fn._name || fn.name
-    const _argNames = fn._argNames || getArgNames(fn)
+    //    const _name = fn.name
+    //    const _argNames = getArgNames(fn)
 
     //const _receivedNames = getReceivedNames(_argNames, received)
     //const _displayName = toDisplayName(_name, _argNames, received)
-
-    N.toString = () => _toString(toDisplayName(_name, _argNames, received), getReceivedNames(_argNames, received))
+    //N.argumentNames = _argNames
+    //    N.displayName = fn.name
+    //    N.toString = () => _toString(toDisplayName(_name, _argNames, received), getReceivedNames(_argNames, received))
     //N["@@functional/placeholder"] = true
     function N() {
         let combined = []
@@ -84,13 +75,15 @@ function curryN(length, received, fn) {
         //const _displayName = toDisplayName(_name, _argNames, combined)
 
         //fx.toString = () => _toString(_displayName, _receivedNames)
-        fx.toString = () => _toString(toDisplayName(_name, _argNames, combined), getReceivedNames(_argNames, combined))
+        //fx.argumentNames = _argNames
+        //fx.displayName = fn.name
+        //fx.toString = () => _toString(toDisplayName(_name, _argNames, combined), getReceivedNames(_argNames, combined))
         //fx["@@functional/placeholder"] = true
 
-        return fx // desc(fn, fx, combined, length, left)
+        return desc(fn, fx, combined)
     }
 
-    return N //desc(fn, N, received, length)
+    return desc(fn, N, received)
 }
 
 export default curryN

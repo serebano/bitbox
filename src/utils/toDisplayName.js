@@ -6,11 +6,11 @@ export default (name, argNames = [], received = []) =>
     received
         //.filter(v => !is.placeholder(v))
         .map((val, idx) => {
-            let argName = idx
-            if (is.placeholder(val)) {
-                argName = val.key || argNames[idx]
-            }
-            let argValue = is.func(val) ? val.displayName || val.name : val
+            let argName = argNames[idx] || idx
+            let argValue = val //is.func(val) ? val.displayName : String(val)
+            // if (is.placeholder(val)) {
+            //     argName = val.argName || argNames[idx]
+            // }
 
             return `${argName}: ${argValue}`
         })
