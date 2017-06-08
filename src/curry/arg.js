@@ -2,36 +2,21 @@ import create from "./create"
 import is from "../is"
 import * as operators from "../operators"
 import { get, has, defaultTo } from "../operators"
-//import curry from "."
 import resolve from "../resolve"
-function arg(...args) {
-    //if (is.func(handler)) {
-    const $ = resolve(args)
-    // function $(value) {
-    //     const result = g(value) //apply(handler, args.concat(value))
-    //     console.log(`$ ->`, value, result)
-    //     return result
-    // }
+const pKey = "@@functional/placeholder"
 
-    $["@@functional/placeholder"] = true
-    $.isHandler = true
+function __(...args) {
+    const $ = resolve(args)
+    $[pKey] = true
     $.displayName = "(arg) => $(" + args.map(arg => arg.displayName || String(arg)).join(", ") + ")"
     $.toString = () => `function $(value) => $(${args.map(arg => arg.displayName || String(arg)).join(", ")})`
 
     return $
-    // }
-    //
-    // return arg(defaultTo(handler))
 }
+__[pKey] = true
+__.toString = () => "__"
 
-arg.toString = () => "arg"
-arg["@@functional/placeholder"] = true
-// d =>
-//     function defaultTo(v) {
-//         return v == null || v !== v ? d : v
-//     }, d)
-
-arg.$ = new Proxy(arg, {
+__.$ = new Proxy(__, {
     get(target, key, receiver) {
         if (key in target) {
             return target[key]
@@ -43,4 +28,4 @@ arg.$ = new Proxy(arg, {
     }
 })
 
-export default arg
+export default __

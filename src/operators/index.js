@@ -5,8 +5,7 @@ import print from "./print"
 import is from "../is"
 import R from "ramda"
 
-export { default as __ } from "./__"
-export { default as arg } from "../curry/arg"
+export { default as __ } from "../curry/arg"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 export { default as add } from "./add"
@@ -38,20 +37,24 @@ export { default as type } from "./type"
 export { default as lens } from "./lens"
 export { default as observe } from "./observe"
 export { default as tag } from "./template"
-export { default as fromPairs } from "./fromPairs"
-export { default as drop } from "./drop"
-export { default as dropLast } from "./dropLast"
-export { default as take } from "./take"
 
-const { assoc, assocPath, project, sort, of, objOf, replace } = R
-export { assoc, assocPath, project, sort, of, objOf, replace }
+// const { assoc, assocPath, project, sort, of, objOf, replace } = R
+// export { assoc, assocPath, project, sort, of, objOf, replace }
 
-export const assocp = curry(function assoc(path, value, target) {
-    return assocPath(path, value, target)
+export const assoc = curry(function assoc(key, value, target) {
+    const object = {}
+    for (const k in target) {
+        object[k] = target[k]
+    }
+    object[key] = value
+
+    return object
 })
+
 export const defaultTo = curry(function defaultTo(d, v) {
     return v == null || v !== v ? d : v
 })
+
 export const tap = curry(function tap(fn, x) {
     fn(x)
     return x
@@ -62,7 +65,7 @@ export const log1 = (...args) => {
     return args[1]
 }
 export const log = tap(print)
-export const id = curry(function _id(arg) {
+export const id = curry(function id(arg) {
     return arg
 })
 export const as = curry(function as(key, value) {
@@ -71,19 +74,12 @@ export const as = curry(function as(key, value) {
     }
 })
 
-export const obs = curry(function Observer(func, target) {
-    const obj = observable(target)
-    const o = () => func(obj)
-    observe(o)
-    return obj
-})
-
-export const join = invoke(["delimiter", "array"], "join")
-export const push = invoke(["value", "array"], "push")
+export const join = invoke(["delimiter", "target"], "join")
+export const push = invoke(["value", "target"], "push")
 export const concat = invoke(["a", "b"], "concat")
-export const filter = invoke(["fn", "array"], "filter")
-//export const sort = invoke(1, "sort")
-export const reduce = invoke(["fn", "initialValue", "array"], "reduce")
+export const filter = invoke(["fn", "target"], "filter")
+export const sort = invoke(["fn", "target"], "sort")
+export const reduce = invoke(["fn", "initialValue", "target"], "reduce")
 
 const toArray = curry(function toArray(arg) {
     return Array.prototype.slice.call(arg)
@@ -111,18 +107,12 @@ export const gt = curry(function gt(a, b) {
 export const proxy = curry(function proxy(handler, target) {
     return new Proxy(target, handler)
 })
-
-export function _toUpper(target) {
+export const toUpper = curry(function toUpper(target) {
     return target.toUpperCase()
-}
-
-export const toUpper = curry(_toUpper)
-
-export function _toLower(target) {
+})
+export const toLower = curry(function toLower(target) {
     return target.toLowerCase()
-}
-
-export const toLower = curry(_toLower)
+})
 export const assign = curry((object, target) => Object.assign(target, object))
 
 //
