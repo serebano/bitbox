@@ -1,5 +1,5 @@
-export default function template(strings, ...keys) {
-    return function(...values) {
+function tag(strings, ...keys) {
+    function t(...values) {
         var dict = values[values.length - 1] || {}
         var result = [strings[0]]
         keys.forEach(function(key, i) {
@@ -8,4 +8,7 @@ export default function template(strings, ...keys) {
         })
         return result.join("")
     }
+    t.displayName = `tag\`${strings}\``
+    return t
 }
+export default tag

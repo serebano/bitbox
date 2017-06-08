@@ -38,6 +38,10 @@ export { default as type } from "./type"
 export { default as lens } from "./lens"
 export { default as observe } from "./observe"
 export { default as tag } from "./template"
+export { default as fromPairs } from "./fromPairs"
+export { default as drop } from "./drop"
+export { default as dropLast } from "./dropLast"
+export { default as take } from "./take"
 
 const { assoc, assocPath, project, sort, of, objOf, replace } = R
 export { assoc, assocPath, project, sort, of, objOf, replace }

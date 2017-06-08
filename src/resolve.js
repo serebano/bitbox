@@ -2,6 +2,7 @@ import is from "./is"
 import curry from "./curry"
 import apply from "./operators/apply"
 import get from "./operators/get"
+
 /**
  * resolve()
  * @param  {Object} target

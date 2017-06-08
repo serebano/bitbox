@@ -1,7 +1,8 @@
 import { getArgNames, toCamelCase, toDisplayName } from "../utils"
 import is from "../is"
-
+//import fromPairs from "../operators/fromPairs"
 export const store = new Map()
+export const index = new Set()
 
 export const getReceivedNames = (_argNames, received) =>
     received.filter((arg, idx) => !is.placeholder(received[idx])).map((arg, idx) => _argNames[idx])
@@ -60,28 +61,48 @@ function toArgsString(names = [], values) {
 
 function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     if (!store.has(fn)) store.set(fn, new Set())
+    index.add(fx)
 
     const name = fn.displayName || fn.name
-    fx.displayName = name + `(${toArgsString(fx.receivedNames, received)})`
+    const receivedMap = idxMap.map((name, idx) => [name, received[idx]])
+    const stringMap = receivedMap
+        .map(([name, value]) => {
+            let strval
+            if (is.func(value)) {
+                strval = value.displayName || value.toString()
+            } else if (is.array(value)) {
+                strval = value.map(String).join(", ")
+            } else if (is.string(value)) strval = `"${value}"`
+            else strval = `${value}`
+            return strval // `${name}=${strval}`
+        })
+        .join(", ")
+
+    fx.args = new Map(receivedMap)
+    fx.displayName = name + `(${stringMap})`
 
     fx.toString = () =>
         "function " +
+        "$" +
         name +
-        fx.length +
+        //fx.length +
         "(" +
         fx.expectedNames.join(", ") +
         ") => " +
         name +
         "(" +
-        toArgsString(argNames, received) +
+        stringMap +
+        //toArgsString(argNames, received) +
         //", " +
-        //receivedNames.join(", ") +
+        //fx.receivedNames.join(", ") +
         ")"
     //toString(fn.name, argNames, received)
 
-    fx.map = pairArgs(argNames, received)
+    //fx.map = pairArgs(argNames, received)
 
     store.get(fn).add(fx)
+
+    console.log(name, store.get(fn).size, fx.displayName)
 
     return fx
 

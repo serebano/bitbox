@@ -1,8 +1,8 @@
 import create from "./create"
 import is from "../is"
 import * as operators from "../operators"
-import { get, has, apply, defaultTo } from "../operators"
-import curry from "."
+import { get, has, defaultTo } from "../operators"
+//import curry from "."
 import resolve from "../resolve"
 function arg(...args) {
     //if (is.func(handler)) {
@@ -15,7 +15,7 @@ function arg(...args) {
 
     $["@@functional/placeholder"] = true
     $.isHandler = true
-    $.displayName = args.map(arg => arg.displayName || String(arg))
+    $.displayName = "(arg) => $(" + args.map(arg => arg.displayName || String(arg)).join(", ") + ")"
     $.toString = () => `function $(value) => $(${args.map(arg => arg.displayName || String(arg)).join(", ")})`
 
     return $

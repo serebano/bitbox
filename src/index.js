@@ -35,33 +35,43 @@ const {
     concat,
     ife,
     observe,
-    slice
+    slice,
+    dropLast,
+    take,
+    push
 } = bitbox
-function take(n, xs) {
-    return slice(0, n < 0 ? Infinity : n, xs)
-}
-function dropLast(n, xs) {
-    return take(n < xs.length ? xs.length - n : 0, xs)
-}
+
 function App(path, args) {
     const key = last(path)
+
     if (has(key, bitbox)) {
         path = dropLast(1, path)
 
         const method = get(key, bitbox)
         if (is.func(method)) {
+            // const tMethod = curry.adapt(method)(arg(resolve(path)))
+            // tMethod(...args)
+
             if (method.map) {
                 if (has("key", method.map)) {
-                    method.map.key = path.pop()
+                    const mkey = method(path.pop())
+                    const target = arg(resolve(path))
+
+                    const mkeyLen = mkey.length
+                    const argsLen = args.length
+                    const mArgs = args.splice(0, mkeyLen - 1)
+                    const r = resolve(path.concat(mkey(...mArgs)), ...args)
+                    //console.log(`mkey`, { r, mkey, mkeyLen, argsLen, mArgs, args })
+                    return r
                 } else if (has("path", method.map)) {
-                    method.map.path = path
-                    console.log(`method/path`, path, method.map)
-                    return apply(method, args)
+                    //method.map.path = path
+                    //console.log(`method/path`, path, method.map)
+                    return method(path, ...args)
                 }
             }
             const m = apply(method, args)
             const r = resolve(path.concat(m))
-            console.log(`method`, { m, path, r }, method.map)
+            //console.log(`method`, { m, path, r }, method.map)
             return r
         }
     }
@@ -79,9 +89,22 @@ obj.todos = []
 obj.items = times(as("value"), 10)
 obj.numbers = times(id, 10)
 obj.counter = { value: 0 }
+obj.logs = []
 
 const counter = {}
 const b1 = box(concat)
+const hi = curry(function hi(name) {
+    return `Hello ${name}`
+})
+
+const hi2 = hi(arg(toUpper, concat("!"), log))
+
+hi2("Scooby Doo")
+
+const hi3 = hi2(arg(concat(arg, "Welcome!")))
+hi3("serebano")
+
+arg(toUpper)(arg(hi, set("foo", arg, obj)))("xxxx ouou")
 
 box(resolve(__, new Date())).getTime()
 
@@ -97,10 +120,7 @@ box(pipe(r.union, resolve)).counter(
     as("demo"),
     set("demo", add(-100)),
     log
-)(obj).demo
-
-const hi = set("greeting", arg(concat("Hello ")), obj)
-hi("serebano")
+)(obj)
 
 const h = curry(function h(a, b, c, d, e) {
     return { a, b, c, d, e }
@@ -135,4 +155,4 @@ arg(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(arg, "\n
 
 app.items.map(set("value", inc))(obj)
 
-Object.assign(window, bitbox, { h, cnt, r, b1, App, app, counter, bitbox, obj })
+Object.assign(window, bitbox, { h, hi, hi2, hi3, cnt, r, b1, App, app, counter, bitbox, obj })
