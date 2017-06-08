@@ -12,9 +12,9 @@ const {
     set,
     has,
     get,
+    tag,
     arg,
     apply,
-    observe,
     toUpper,
     observable,
     curry,
@@ -33,12 +33,24 @@ const {
     resolve,
     last,
     concat,
-    ife
+    ife,
+    observe,
+    slice
 } = bitbox
-
+function take(n, xs) {
+    return slice(0, n < 0 ? Infinity : n, xs)
+}
+function dropLast(n, xs) {
+    return take(n < xs.length ? xs.length - n : 0, xs)
+}
 function App(path, args) {
     const key = last(path)
-    //if (has(key, api)) return apply(get(key, api), args)
+    if (has(key, bitbox)) {
+        const method = get(key, bitbox)
+        path = dropLast(1, path)
+        return resolve(path.concat(apply(method, args)))
+    }
+
     return resolve(path.concat(args))
 }
 
@@ -52,8 +64,6 @@ obj.todos = []
 obj.items = times(as("value"), 10)
 obj.numbers = times(id, 10)
 obj.counter = { value: 0 }
-
-app.count.observe(pipe(add(100), String, as("xxx"), log), obj)
 
 const counter = {}
 const b1 = box(concat)
@@ -96,6 +106,14 @@ const cnt = set(
     obj
 )
 
-console.log(join(" - ", arg(times(arg, 10)))(concat(arg(String), "item ")))
+//console.log(join(" - ", arg(times(arg, 10)))(concat(arg(String), "item ")))
+
+observe(
+    "items",
+    pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", arg(tag`<ul>${0}</ul>`), document.body)),
+    obj
+)
+
+app.items.map(set("value", inc))(obj)
 
 Object.assign(window, bitbox, { h, cnt, r, b1, App, app, counter, bitbox, obj })

@@ -36,6 +36,8 @@ export { default as apply } from "./apply"
 export { default as toString } from "./toString"
 export { default as type } from "./type"
 export { default as lens } from "./lens"
+export { default as observe } from "./observe"
+export { default as tag } from "./template"
 
 const { assoc, assocPath, project, sort, of, objOf, replace } = R
 export { assoc, assocPath, project, sort, of, objOf, replace }

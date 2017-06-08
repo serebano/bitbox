@@ -8,7 +8,7 @@ export { default as box } from "./box"
 export { default as curry } from "./curry"
 export { default as resolve } from "./resolve"
 export { observer, operators }
-export { observable, isObservable, observe, unobserve, unqueue, exec } from "./observer/observer"
+export { observable, isObservable, unobserve, unqueue, exec } from "./observer/observer"
 
 export function Demo(key, value, object) {
     return { key, value, object }
