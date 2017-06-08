@@ -36,9 +36,12 @@ export { default as apply } from "./apply"
 export { default as toString } from "./toString"
 export { default as type } from "./type"
 
-const { assoc, assocPath, project, sort, of, objOf, replace, defaultTo } = R
-export { assoc, assocPath, project, sort, of, objOf, replace, defaultTo }
+const { assoc, assocPath, project, sort, of, objOf, replace } = R
+export { assoc, assocPath, project, sort, of, objOf, replace }
 
+export const defaultTo = curry(function defaultTo(d, v) {
+    return v == null || v !== v ? d : v
+})
 export const tap = curry(function tap(fn, x) {
     fn(x)
     return x

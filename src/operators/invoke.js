@@ -30,11 +30,13 @@ import toString from "./toString"
  * @symb R.invoker(2, 'method')(a, b, o) = o['method'](a, b)
  */
 export default curry(function invoke(arity, method) {
-    return curry.to(arity + 1, function() {
+    function invoker() {
         var target = arguments[arity]
         if (target != null && _isFunction(target[method])) {
             return target[method].apply(target, Array.prototype.slice.call(arguments, 0, arity))
         }
         throw new TypeError(toString(target) + ' does not have a method named "' + method + '"')
-    })
+    }
+    invoker.displayName = method
+    return curry.to(arity + 1, invoker)
 })

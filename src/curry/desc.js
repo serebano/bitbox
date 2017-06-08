@@ -15,34 +15,67 @@ const _toString = (_name, _receivedArgs, _expectedArgs) =>
 export const toString = (_name, _argNames, received) => () =>
     _toString(_name, toDisplayName(_argNames, received), getExpectedNames(_argNames, received))
 
-export const pairArgs = (_argNames, received) =>
-    received.reduce((obj, value, idx) => {
-        const key = !is.undefined(_argNames[idx]) ? _argNames[idx] : idx
-        obj[key] = value
-        return obj
-    }, {})
+export const pairArgs = (names, values, fn) => {
+    return new Proxy(
+        names.reduce((obj, name, idx) => {
+            obj[name] = values[idx]
+            return obj
+        }, {}),
+        {
+            get(target, key) {
+                return target[key]
+            },
+            set(target, key, value) {
+                const idx = names.indexOf(key)
+                if (idx > -1) {
+                    target[key] = values[idx] = value
+                    return true
+                }
+            },
+            deleteProperty(target, key) {
+                const idx = names.indexOf(key)
+                if (idx > -1) {
+                    values.splice(idx, 1)
+                    delete target[key]
+                    return true
+                }
+            }
+        }
+    )
+}
 
-function desc(fn, fx, received = []) {
+function toArgsString(names = [], values) {
+    return names
+        .map((name, index) => {
+            if (!is.undefined(values[index])) {
+                const value = values[index]
+                return is.func(value)
+                    ? value.displayName || value.toString()
+                    : is.object(value) ? JSON.stringify(value) : is.string(value) ? `"${value}"` : `${value}`
+            }
+            return name
+        })
+        .join(", ")
+}
+
+function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     if (!store.has(fn)) store.set(fn, new Set())
 
-    const argNames = getArgNames(fn)
-    const receivedNames = getReceivedNames(argNames, received)
-    const expectedNames = getExpectedNames(argNames, received)
-    fx.receivedNames = receivedNames
-    fx.expectedNames = expectedNames
+    const name = fn.displayName || fn.name
+    fx.displayName = name + `(${toArgsString(fx.receivedNames, received)})`
 
-    fx.displayName = fn.name + `(${received.length ? toDisplayName(argNames, received) : toDisplayName(argNames)})`
     fx.toString = () =>
         "function " +
-        fn.name +
+        name +
+        (fn.length - received.length) +
         "(" +
-        expectedNames.join(", ") +
+        fx.expectedNames.join(", ") +
         ") => " +
-        fn.name +
+        name +
         "(" +
-        toDisplayName(argNames, received) +
-        ", " +
-        receivedNames.join(", ") +
+        toArgsString(argNames, received) +
+        //", " +
+        //receivedNames.join(", ") +
         ")"
     //toString(fn.name, argNames, received)
 

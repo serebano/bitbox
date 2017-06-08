@@ -1,9 +1,7 @@
 import create from "./create"
 import is from "../is"
 import * as operators from "../operators"
-import has from "../operators/has"
-import get from "../operators/get"
-import apply from "../operators/apply"
+import { get, has, apply, defaultTo } from "../operators"
 import curry from "."
 
 function arg(handler, ...args) {
@@ -22,16 +20,11 @@ function arg(handler, ...args) {
         return $
     }
 
-    return arg(defaulTo(handler))
+    return arg(defaultTo(handler))
 }
+
 arg.toString = () => "arg"
 arg["@@functional/placeholder"] = true
-
-const defaulTo = curry(function defaultTo(d, v) {
-    return v == null || v !== v ? d : v
-})
-
-arg.default = defaulTo
 // d =>
 //     function defaultTo(v) {
 //         return v == null || v !== v ? d : v

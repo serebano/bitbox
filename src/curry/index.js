@@ -18,4 +18,4 @@ curry.to = curryTo
 curry.adapt = adapt
 curry.store = store
 
-export default curry
+export default curryX
