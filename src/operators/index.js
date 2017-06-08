@@ -42,6 +42,9 @@ export { default as tag } from "./template"
 const { assoc, assocPath, project, sort, of, objOf, replace } = R
 export { assoc, assocPath, project, sort, of, objOf, replace }
 
+export const assocp = curry(function assoc(path, value, target) {
+    return assocPath(path, value, target)
+})
 export const defaultTo = curry(function defaultTo(d, v) {
     return v == null || v !== v ? d : v
 })

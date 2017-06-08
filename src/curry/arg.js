@@ -3,24 +3,25 @@ import is from "../is"
 import * as operators from "../operators"
 import { get, has, apply, defaultTo } from "../operators"
 import curry from "."
+import resolve from "../resolve"
+function arg(...args) {
+    //if (is.func(handler)) {
+    const $ = resolve(args)
+    // function $(value) {
+    //     const result = g(value) //apply(handler, args.concat(value))
+    //     console.log(`$ ->`, value, result)
+    //     return result
+    // }
 
-function arg(handler, ...args) {
-    if (is.func(handler)) {
-        function $(value) {
-            const result = apply(handler, args.concat(value))
-            console.log(`$ ->`, handler, value, result)
-            return result
-        }
+    $["@@functional/placeholder"] = true
+    $.isHandler = true
+    $.displayName = args.map(arg => arg.displayName || String(arg))
+    $.toString = () => `function $(value) => $(${args.map(arg => arg.displayName || String(arg)).join(", ")})`
 
-        $["@@functional/placeholder"] = true
-        $.isHandler = true
-        $.displayName = handler.displayName
-        $.toString = () => `${handler.displayName || handler}`
-
-        return $
-    }
-
-    return arg(defaultTo(handler))
+    return $
+    // }
+    //
+    // return arg(defaultTo(handler))
 }
 
 arg.toString = () => "arg"

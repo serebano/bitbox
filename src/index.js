@@ -46,9 +46,24 @@ function dropLast(n, xs) {
 function App(path, args) {
     const key = last(path)
     if (has(key, bitbox)) {
-        const method = get(key, bitbox)
         path = dropLast(1, path)
-        return resolve(path.concat(apply(method, args)))
+
+        const method = get(key, bitbox)
+        if (is.func(method)) {
+            if (method.map) {
+                if (has("key", method.map)) {
+                    method.map.key = path.pop()
+                } else if (has("path", method.map)) {
+                    method.map.path = path
+                    console.log(`method/path`, path, method.map)
+                    return apply(method, args)
+                }
+            }
+            const m = apply(method, args)
+            const r = resolve(path.concat(m))
+            console.log(`method`, { m, path, r }, method.map)
+            return r
+        }
     }
 
     return resolve(path.concat(args))
@@ -113,6 +128,10 @@ observe(
     pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", arg(tag`<ul>${0}</ul>`), document.body)),
     obj
 )
+app.count.observe(log, obj)
+app.count.set(inc, obj)
+
+arg(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(arg, "\n*** Items: \n * "))(obj)
 
 app.items.map(set("value", inc))(obj)
 
