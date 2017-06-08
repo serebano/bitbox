@@ -35,6 +35,7 @@ export { default as slice } from "./slice"
 export { default as apply } from "./apply"
 export { default as toString } from "./toString"
 export { default as type } from "./type"
+export { default as lens } from "./lens"
 
 const { assoc, assocPath, project, sort, of, objOf, replace } = R
 export { assoc, assocPath, project, sort, of, objOf, replace }
@@ -68,12 +69,12 @@ export const obs = curry(function Observer(func, target) {
     return obj
 })
 
-export const join = invoke(1, "join")
-export const push = invoke(1, "push")
-export const concat = invoke(1, "concat")
-export const filter = invoke(1, "filter")
+export const join = invoke(["delimiter", "array"], "join")
+export const push = invoke(["value", "array"], "push")
+export const concat = invoke(["a", "b"], "concat")
+export const filter = invoke(["fn", "array"], "filter")
 //export const sort = invoke(1, "sort")
-export const reduce = invoke(2, "reduce")
+export const reduce = invoke(["fn", "initialValue", "array"], "reduce")
 
 const toArray = curry(function toArray(arg) {
     return Array.prototype.slice.call(arg)

@@ -51,7 +51,7 @@ function toArgsString(names = [], values) {
                 const value = values[index]
                 return is.func(value)
                     ? value.displayName || value.toString()
-                    : is.object(value) ? JSON.stringify(value) : is.string(value) ? `"${value}"` : `${value}`
+                    : is.complexObject(value) ? JSON.stringify(value) : is.string(value) ? `"${value}"` : `${value}`
             }
             return name
         })
@@ -67,7 +67,7 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     fx.toString = () =>
         "function " +
         name +
-        (fn.length - received.length) +
+        fx.length +
         "(" +
         fx.expectedNames.join(", ") +
         ") => " +

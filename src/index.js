@@ -18,6 +18,7 @@ const {
     toUpper,
     observable,
     curry,
+    join,
     obs,
     tap,
     log,
@@ -74,8 +75,12 @@ box(pipe(r.union, resolve)).counter(
 )(obj).demo
 
 const hi = set("greeting", arg(concat("Hello ")), obj)
-
 hi("serebano")
+
+const h = curry(function h(a, b, c, d, e) {
+    return { a, b, c, d, e }
+})
+h(1, 2, 3, 4, 5)
 
 // x('Hello', arg.toUpper(), arg(add, 1))('jjj',6)
 
@@ -91,4 +96,6 @@ const cnt = set(
     obj
 )
 
-Object.assign(window, bitbox, { cnt, r, b1, App, app, counter, bitbox, obj })
+console.log(join(" - ", arg(times(arg, 10)))(concat(arg(String), "item ")))
+
+Object.assign(window, bitbox, { h, cnt, r, b1, App, app, counter, bitbox, obj })

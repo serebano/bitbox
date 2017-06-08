@@ -3,23 +3,19 @@ import desc, { pairArgs } from "./desc"
 import is from "../is"
 import create from "./create"
 
-function curry(fn) {
-    return curryX(fn, fn.length, [], getArgNames(fn), [])
+function curry(fn, argNames) {
+    const length = fn.length
+    return curryX(fn, length, [], argNames || getArgNames(fn), [], length)
 }
 
 curry.to = curryTo
 
-function curryTo(length, fn) {
-    return curryX(fn, length, [], getArgNames(fn), [])
+function curryTo(length, fn, argNames) {
+    return curryX(fn, length, [], argNames || getArgNames(fn), [], length)
 }
 
-function curryX(fn, length, received, argNames, receivedIdxMap) {
+function curryX(fn, length, received, argNames, receivedNames, left) {
     //console.log(`curryX`, length, left, received, argNames, idxMap)
-    next.receivedNames = receivedIdxMap.map((_, idx) => argNames[idx])
-    next.expectedNames = argNames.filter((name, idx) => !next.receivedNames.includes(name))
-    //next.idxMap = [next.receivedNames, next.expectedNames]
-    next.received = received
-
     function next() {
         //console.log(`next/arguments`, arguments)
         let idx = 0
@@ -31,7 +27,7 @@ function curryX(fn, length, received, argNames, receivedIdxMap) {
             let result, idxres
             if (argsIdx < received.length && (!is.placeholder(received[argsIdx]) || idx >= arguments.length)) {
                 result = received[argsIdx]
-                idxres = receivedIdxMap[argsIdx]
+                //idxres = argNames[argsIdx]
                 //if (!is.placeholder(result)) idxMap[argsIdx] = argsIdx
             } else {
                 const $arg = received[argsIdx]
@@ -43,14 +39,14 @@ function curryX(fn, length, received, argNames, receivedIdxMap) {
                     }
                 } else {
                     result = arguments[idx]
-                    idxres = idx
+                    //idxres = argNames[idx]
                 }
                 idx += 1
             }
 
             args[argsIdx] = result
+            idxMap[argsIdx] = argNames[argsIdx]
             if (!is.placeholder(result)) {
-                idxMap[argsIdx] = idxres
                 left -= 1
             }
             argsIdx += 1
@@ -60,10 +56,14 @@ function curryX(fn, length, received, argNames, receivedIdxMap) {
             return fn.apply(this, args)
         }
 
-        return curryX(fn, length, args, argNames, idxMap)
+        return curryX(fn, length, args, argNames, idxMap, left)
     }
+    const fx = create(left, next)
+    fx.receivedNames = receivedNames //receivedIdxMap.map((_, idx) => argNames[idx])
+    fx.expectedNames = argNames.filter((name, idx) => is.placeholder(received[idx]) || !receivedNames.includes(name))
+    //next.received = received
 
-    const fx = desc(fn, next, received, argNames, receivedIdxMap)
+    desc(fn, fx, received, argNames, receivedNames)
     //console.warn(`fx`, fx.receivedNames, fx.expectedNames, received, { fx })
 
     return fx
