@@ -53,11 +53,11 @@ function createFn(length, fn) {
 }
 
 function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
-    console.log({ length, nextFn, targetFn, args, argNames, argMap })
-
     const receiverFn = createFn(length, nextFn)
     receiverFn.receivedNames = argMap
     receiverFn.expectedNames = argNames.filter((name, idx) => is.placeholder(args[idx]) || !argMap.includes(name))
+    //console.log({ length, nextFn, targetFn, args, argNames, argMap })
+
     desc(targetFn, receiverFn, args, argNames, argMap)
 
     return receiverFn

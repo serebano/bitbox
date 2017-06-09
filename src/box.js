@@ -4,25 +4,54 @@ import resolve from "./resolve"
 import * as api from "./operators"
 import { toPrimitive, toJSON } from "./utils"
 import { get, has, apply, last, log } from "./operators"
+const h = {
+    get(path, key, box) {
+        if (key === "@@functional/placeholder") {
+            console.log(`executingTarget`, key, path)
+            return true
+        }
+        if (key === "@@isHandler") return true
+        return create(box, path.concat(key), h)
+    }
+}
+export const __ = create(
+    function __(path, ...args) {
+        if (args.length === 1 && !is.func(args[0])) return resolve(path, args[0])
+        return create(resolve, path.concat(args), h)
+    },
+    [],
+    h
+)
 
-export default function create(box, path = [], handler) {
+let isExecuting
+let executingTarget
+
+function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
-        apply(target, thisArg, args) {
-            // if (handler && handler.apply) {
-            //     return handler.apply(target, [path, args])
-            // }
-            return Reflect.apply(target, thisArg, [path].concat(args))
+        apply(target, context, args) {
+            isExecuting = true
+            executingTarget = target
+            const result = Reflect.apply(target, context, [path].concat(args))
+            isExecuting = false
+            executingTarget = undefined
+            return result
         },
         get(target, key, receiver) {
-            if (key === "$") return path
+            if (key === "$") return { box, target, path }
+            if (key === Symbol.for("box")) return [box, path]
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
             if (key === Symbol.toPrimitive) return primitive(path)
-            if (key === "toJSON") return () => toJSON(path)
-            if (key === Symbol.for("box/path")) return [box, path]
+            if (key === "displayName") return toPrimitive(path)
+            if (key === "toString") return Reflect.get(target, key)
+            if (key === "toJSON" || key === "toJS") return () => toJSON(path)
+
             if (target && Reflect.has(target, key)) {
-                const f = Reflect.get(target, key)
-                if (is.func(f)) return create(f, path.slice(), handler)
+                const fn = Reflect.get(target, key)
+                if (is.func(fn)) {
+                    return create(fn, path.slice(), handler)
+                }
             }
+
             const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
                 ? primitive.__keys
                 : is.numeric(key) ? parseInt(key) : key
@@ -31,17 +60,17 @@ export default function create(box, path = [], handler) {
             delete primitive.__keys
 
             if (handler && handler.get) {
-                return handler.get(path, nextKey, target)
+                return handler.get(path, nextKey, box)
             }
 
             return create(box, path.concat(nextKey), handler)
         },
         has(target, key, receiver) {
-            if (key === Symbol.for("box/path")) return true
-            if (has(key, api)) return true
+            if (key === Symbol.for("box")) return true
             if (handler && handler.has) {
                 return handler.has(path, key, receiver)
             }
+            if (has(key, api)) return true
             return true
         },
         set(target, key, value, receiver) {
@@ -54,68 +83,9 @@ export default function create(box, path = [], handler) {
     return proxy
 }
 
-export const x = (box, handler = {}) => {
-    function _box(path, args) {
-        path = path.slice()
-        args = args.slice()
-
-        const pathLen = path.length
-        const argsLen = args.length
-        const lastKey = pathLen && path[pathLen - 1]
-        const lastArg = argsLen && args[argsLen - 1]
-
-        const isMethod = lastKey && has(lastKey, api)
-        const method = isMethod && get(lastKey, api)
-
-        if (isMethod) {
-            const methodLen = method.length
-            const methodName = method.name
-            log({ pathLen, argsLen, methodLen, methodName, method, path, args })
-
-            //path.pop()
-
-            if (argsLen >= methodLen) {
-                const methodArgs = args.slice(0, methodLen - 1)
-                const target = args.pop() //args.slice(methodLen - 1, 1).pop()
-                const resolved = resolve(path.concat(apply(method, methodArgs)), target)
-                //const result = apply(method, methodArgs.concat(resolved))
-                return resolved
-            }
-
-            const result = apply(method, args.slice(0, methodLen))
-            const resultLen = result.length
-            //console.log(`(apply/method/create)`, { method, methodLen, argsLen, path, args, result })
-            return create(box, path.concat(result), handler, api)
-        }
-
-        if (lastArg && !is.func(lastArg)) {
-            const target = args.pop()
-            //console.warn(`(apply/resolve)`, { pathLen, argsLen, isMethod, lastKey, target, path, args })
-            return resolve(path.concat(args), target)
-        }
-
-        return create(box, path.concat(args), handler)
-    }
-
-    // const handler = {
-    //     get(path, key, proxy) {
-    //         if (key === "apply") return (context, args) => handler.apply(path, args, proxy)
-    //         if (key === "length" && is.func(path[path.length - 1])) return path[path.length - 1].length
-    //         if (has(key, api)) {
-    //             return create(box, path.concat(get(key, api)), handler)
-    //         }
-    //
-    //         return create(box, path.concat(key), handler, api)
-    //     },
-    //     has(path, key) {
-    //         return has(key, api)
-    //     }
-    // }
-
-    return create(box, [], handler)
-}
-
 function primitive(keys) {
     primitive.__keys = keys
     return () => (primitive.__key = toPrimitive(keys))
 }
+
+export default create

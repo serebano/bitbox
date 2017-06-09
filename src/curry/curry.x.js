@@ -52,7 +52,7 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
             } else {
                 const $arg = received[argsIdx]
                 if (is.placeholder($arg)) {
-                    if (is.func($arg) && $arg.isHandler) {
+                    if (is.func($arg) && $arg["@@isHandler"]) {
                         result = $arg(arguments[idx])
                     } else {
                         result = arguments[idx]

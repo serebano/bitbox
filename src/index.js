@@ -34,8 +34,11 @@ const {
     observe,
     slice,
     dropLast,
+    assocPath,
     take,
-    push
+    push,
+    call,
+    keys
 } = bitbox
 
 function App(path, __s) {
@@ -76,11 +79,22 @@ function App(path, __s) {
     return resolve(path.concat(__s))
 }
 
-//const app = box(App)
-const app = box((path, ...args) => resolve(path.concat(args)))
+const app = box((path, ...args) => {
+    if (args.length === 1 && !is.func(args[0])) {
+        return resolve(path, args[0])
+    }
+    return box((path, target) => resolve(path, target), path.concat(args))
+})
 const obj = observable()
 
+//observer.observe(() => app.count(tag`count = ${0}`, log)(obj))
+
 app(set("a", box(r.assocPath).b.c.d.e.f(1, {})))(obj)
+const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
+
+const x2 = x(__.items(map(app.value(inc))), __(set("count", add(10))), __(keys))
+
+call(x2, obj, obj, obj)
 
 app.a.b.c.d.e(set("f", inc))(obj)
 
@@ -113,7 +127,7 @@ box(resolve(__, new Date())).getTime()
 
 box(resolve(__, obj)).counter(set("value", inc), log, add(20))
 
-box(r.assocPath).a.b.c.d.e.f.g.h(10, obj)
+box(assocPath).a.b.c.d.e.f.g.h(10, obj)
 
 box(pipe(r.union, resolve)).counter(
     set("value", inc),
@@ -146,16 +160,16 @@ const cnt = set(
 
 //console.log(join(" - ", __(times(__, 10)))(concat(__(String), "item ")))
 
-observe(
-    "items",
-    pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", __(tag`<ul>${0}</ul>`), document.body)),
-    obj
-)
+// observe(
+//     "items",
+//     pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", __(tag`<ul>${0}</ul>`), document.body)),
+//     obj
+// )
 
 observe("count", log, obj)
 set("count", inc, obj)
 
-__(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(__, "\n*** Items: \n * "))(obj)
+// __(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(__, "\n*** Items: \n * "))(obj)
 
 // app.items.map(set("value", inc))(obj)
 

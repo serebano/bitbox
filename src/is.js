@@ -6,7 +6,7 @@ function _is(Ctor, val) {
 }
 
 const is = {
-    box: arg => is.func(arg) && Reflect.has(arg, Symbol.for("box/path")),
+    box: arg => is.func(arg) && Reflect.has(arg, Symbol.for("box")),
     observable: arg => isObservable(arg),
     placeholder: arg => arg && isPlaceholder(arg),
     func: arg => typeof arg === "function",
@@ -17,6 +17,7 @@ const is = {
     string: arg => typeof arg === "string",
     number: arg => typeof arg === "number",
     numeric: arg => !is.symbol(arg) && !isNaN(arg),
+    integer: Number.isInteger || (n => n << 0 === n),
     symbol: arg => typeof arg === "symbol",
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null
