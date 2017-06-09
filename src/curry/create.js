@@ -1,6 +1,7 @@
 import desc from "./desc"
+import is from "../is"
 
-function create(length, fn) {
+function createFn(length, fn) {
     switch (length) {
         case 0:
             return function() {
@@ -49,6 +50,17 @@ function create(length, fn) {
         default:
             throw new Error("First argument to _arity must be a non-negative integer no greater than ten")
     }
+}
+
+function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
+    console.log({ length, nextFn, targetFn, args, argNames, argMap })
+
+    const receiverFn = createFn(length, nextFn)
+    receiverFn.receivedNames = argMap
+    receiverFn.expectedNames = argNames.filter((name, idx) => is.placeholder(args[idx]) || !argMap.includes(name))
+    desc(targetFn, receiverFn, args, argNames, argMap)
+
+    return receiverFn
 }
 
 export default create

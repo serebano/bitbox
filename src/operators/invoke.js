@@ -38,6 +38,7 @@ export default curry(function invoke(a, method) {
         length = a
         argNames = Array(length + 1).fill("arg").map((_, i) => `a${i}`)
     }
+
     function invoker() {
         const target = arguments[length]
         if (target != null && _isFunction(target[method])) {
@@ -45,6 +46,8 @@ export default curry(function invoke(a, method) {
         }
         throw new TypeError(toString(target) + ' does not have a method named "' + method + '"')
     }
+
     invoker.displayName = method
+
     return curry.to(length + 1, invoker, argNames)
 })

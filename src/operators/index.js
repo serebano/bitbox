@@ -37,6 +37,9 @@ export { default as type } from "./type"
 export { default as lens } from "./lens"
 export { default as observe } from "./observe"
 export { default as tag } from "./template"
+export { default as take } from "./take"
+export { default as drop } from "./drop"
+export { default as dropLast } from "./dropLast"
 
 // const { assoc, assocPath, project, sort, of, objOf, replace } = R
 // export { assoc, assocPath, project, sort, of, objOf, replace }
@@ -76,6 +79,7 @@ export const as = curry(function as(key, value) {
 
 export const join = invoke(["delimiter", "target"], "join")
 export const push = invoke(["value", "target"], "push")
+export const pop = invoke(["target"], "pop")
 export const concat = invoke(["a", "b"], "concat")
 export const filter = invoke(["fn", "target"], "filter")
 export const sort = invoke(["fn", "target"], "sort")
@@ -114,6 +118,10 @@ export const toLower = curry(function toLower(target) {
     return target.toLowerCase()
 })
 export const assign = curry((object, target) => Object.assign(target, object))
+
+export const stringify = curry(function stringify(target) {
+    return JSON.stringify(target, null, 4)
+})
 
 //
 // export function compute(...args) {

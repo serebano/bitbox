@@ -9,10 +9,13 @@ function curry(fn, argNames) {
 }
 
 function curryTo(length, fn, argNames) {
+    argNames = argNames || getArgNames(fn)
+
     if (length === 1) {
-        return curry1(fn)
+        return curry1(fn, argNames)
     }
-    return create(length, curryX(fn, length, [], argNames || getArgNames(fn), [], length))
+    const nextFn = curryX(fn, length, [], argNames, [], length)
+    return create(length, nextFn, fn, [], argNames)
 }
 
 export const adaptTo = curry(function(length, fn) {
@@ -72,18 +75,15 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
             return fn.apply(this, args)
         }
 
-        const fx = create(left, curryX(fn, length, args, argNames, idxMap, left))
-        fx.receivedNames = idxMap
-        fx.expectedNames = argNames.filter((name, idx) => is.placeholder(args[idx]) || !idxMap.includes(name))
+        const nextFn = curryX(fn, length, args, argNames, idxMap, left)
 
-        desc(fn, fx, args, argNames, idxMap)
-        return fx
+        return create(left, nextFn, fn, args, argNames, idxMap)
     }
 
-    next.receivedNames = receivedNames
-    next.expectedNames = argNames.filter((name, idx) => is.placeholder(received[idx]) || !receivedNames.includes(name))
+    //next.receivedNames = receivedNames
+    //next.expectedNames = argNames.filter((name, idx) => is.placeholder(received[idx]) || !receivedNames.includes(name))
 
-    desc(fn, next, received, argNames, receivedNames)
+    //desc(fn, next, received, argNames, receivedNames)
 
     return next
 }

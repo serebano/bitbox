@@ -76,8 +76,13 @@ function App(path, __s) {
     return resolve(path.concat(__s))
 }
 
-const app = box(App)
+//const app = box(App)
+const app = box((path, ...args) => resolve(path.concat(args)))
 const obj = observable()
+
+app(set("a", box(r.assocPath).b.c.d.e.f(1, {})))(obj)
+
+app.a.b.c.d.e(set("f", inc))(obj)
 
 obj.foo = { x: 1, y: 2 }
 obj.name = "my app"
@@ -90,9 +95,7 @@ obj.logs = []
 
 const counter = {}
 const b1 = box(concat)
-export const replace = curry(function replace(regex, replacement, str) {
-    return str.replace(regex, replacement)
-})
+
 const hi = curry(function hi(name) {
     return `Hello ${name}`
 })
@@ -108,9 +111,9 @@ __(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
 
 box(resolve(__, new Date())).getTime()
 
-box(use(pipe, [resolve, resolve])).counter(set("value", inc), log, add(20))(obj)
+box(resolve(__, obj)).counter(set("value", inc), log, add(20))
 
-box(r.assocPath, [0]).a.b.c.d.e.f.g.h(10, log)(obj)
+box(r.assocPath).a.b.c.d.e.f.g.h(10, obj)
 
 box(pipe(r.union, resolve)).counter(
     set("value", inc),
@@ -148,11 +151,12 @@ observe(
     pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", __(tag`<ul>${0}</ul>`), document.body)),
     obj
 )
-app.count.observe(log, obj)
-app.count.set(inc, obj)
+
+observe("count", log, obj)
+set("count", inc, obj)
 
 __(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(__, "\n*** Items: \n * "))(obj)
 
-app.items.map(set("value", inc))(obj)
+// app.items.map(set("value", inc))(obj)
 
 Object.assign(window, bitbox, { h, hi, hi2, hi3, cnt, r, b1, App, app, counter, bitbox, obj })

@@ -11,7 +11,7 @@ export default function create(box, path = [], handler) {
             // if (handler && handler.apply) {
             //     return handler.apply(target, [path, args])
             // }
-            return Reflect.apply(target, thisArg, [path, args])
+            return Reflect.apply(target, thisArg, [path].concat(args))
         },
         get(target, key, receiver) {
             if (key === "$") return path

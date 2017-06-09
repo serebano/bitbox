@@ -1,7 +1,10 @@
 import is from "../is"
 import desc from "./desc"
+import { getArgNames } from "../utils"
 
-function curry1(fn) {
+function curry1(fn, argNames) {
+    if (!argNames) argNames = getArgNames(fn)
+
     function f1(a) {
         if (arguments.length === 0) {
             return f1
@@ -15,7 +18,7 @@ function curry1(fn) {
         }
     }
 
-    f1.toString = () => String(fn)
+    desc(fn, f1, [], argNames)
 
     return f1
 }

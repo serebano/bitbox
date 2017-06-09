@@ -64,6 +64,7 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     index.add(fx)
 
     const name = fn.displayName || fn.name
+    const expectedNames = argNames //fx.expectedNames || []
     const receivedMap = idxMap.map((name, idx) => [name, received[idx]])
     const stringMap = receivedMap
         .map(([name, value]) => {
@@ -78,27 +79,8 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
         })
         .join(", ")
 
-    fx.args = new Map(receivedMap)
     fx.displayName = name + `(${stringMap})`
-
-    fx.toString = () =>
-        "function " +
-        "$" +
-        name +
-        //fx.length +
-        "(" +
-        fx.expectedNames.join(", ") +
-        ") => " +
-        name +
-        "(" +
-        stringMap +
-        //toArgsString(argNames, received) +
-        //", " +
-        //fx.receivedNames.join(", ") +
-        ")"
-    //toString(fn.name, argNames, received)
-
-    //fx.map = pairArgs(argNames, received)
+    fx.toString = () => "" + "$(" + expectedNames.join(", ") + ") => " + name + "(" + stringMap + ")"
 
     store.get(fn).add(fx)
 
