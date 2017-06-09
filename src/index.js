@@ -26,6 +26,7 @@ const {
     as,
     add,
     proxy,
+    first,
     view,
     resolve,
     last,
@@ -41,55 +42,18 @@ const {
     keys
 } = bitbox
 
-function App(path, __s) {
-    const key = last(path)
-
-    if (has(key, bitbox)) {
-        path = dropLast(1, path)
-
-        const method = get(key, bitbox)
-        if (is.func(method)) {
-            // const tMethod = curry.adapt(method)(__(resolve(path)))
-            // tMethod(...__s)
-
-            if (method.map) {
-                if (has("key", method.map)) {
-                    const mkey = method(path.pop())
-                    const t__et = __(resolve(path))
-
-                    const mkeyLen = mkey.length
-                    const __sLen = __s.length
-                    const mArgs = __s.splice(0, mkeyLen - 1)
-                    const r = resolve(path.concat(mkey(...mArgs)), ...__s)
-                    //console.log(`mkey`, { r, mkey, mkeyLen, __sLen, mArgs, __s })
-                    return r
-                } else if (has("path", method.map)) {
-                    //method.map.path = path
-                    //console.log(`method/path`, path, method.map)
-                    return method(path, ...__s)
-                }
-            }
-            const m = apply(method, __s)
-            const r = resolve(path.concat(m))
-            //console.log(`method`, { m, path, r }, method.map)
-            return r
-        }
-    }
-
-    return resolve(path.concat(__s))
-}
-
-const app = box((path, ...args) => {
+const app = box(function app(path, args) {
     if (args.length === 1 && !is.func(args[0])) {
         return resolve(path, args[0])
     }
-    return box((path, target) => resolve(path, target), path.concat(args))
+    return box(resolve, path.concat(args))
 })
+
 const obj = observable()
 
 //observer.observe(() => app.count(tag`count = ${0}`, log)(obj))
 
-app(set("a", box(r.assocPath).b.c.d.e.f(1, {})))(obj)
+app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
 
 const x2 = x(__.items(map(app.value(inc))), __(set("count", add(10))), __(keys))
@@ -173,4 +137,4 @@ set("count", inc, obj)
 
 // app.items.map(set("value", inc))(obj)
 
-Object.assign(window, bitbox, { h, hi, hi2, hi3, cnt, r, b1, App, app, counter, bitbox, obj })
+Object.assign(window, bitbox, { h, hi, hi2, hi3, cnt, r, b1, app, counter, bitbox, obj })

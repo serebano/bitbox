@@ -1,26 +1,35 @@
 import is from "./is"
 import curry from "./curry"
 import resolve from "./resolve"
-import * as api from "./operators"
+import * as functions from "./operators"
 import { toPrimitive, toJSON } from "./utils"
-import { get, has, apply, last, log } from "./operators"
-const h = {
+import { get, has, apply, last, log, first } from "./operators"
+
+const handler = {
     get(path, key, box) {
+        console.log(`[GET]`, path, `${key}`)
         if (key === "@@functional/placeholder") {
             console.log(`executingTarget`, key, path)
             return true
         }
-        if (key === "@@isHandler") return true
-        return create(box, path.concat(key), h)
+        if (key === "@@isHandler") {
+            return has(first(path), functions)
+        }
+
+        return create(box, path.concat(key), handler)
+    },
+    has(path, key) {
+        return has(first(path), functions)
     }
 }
+
 export const __ = create(
-    function __(path, ...args) {
+    function __(path, args) {
         if (args.length === 1 && !is.func(args[0])) return resolve(path, args[0])
-        return create(resolve, path.concat(args), h)
+        return create(resolve, path.concat(args), handler)
     },
     [],
-    h
+    handler
 )
 
 let isExecuting
@@ -31,7 +40,7 @@ function create(box, path = [], handler) {
         apply(target, context, args) {
             isExecuting = true
             executingTarget = target
-            const result = Reflect.apply(target, context, [path].concat(args))
+            const result = Reflect.apply(target, context, [path, args])
             isExecuting = false
             executingTarget = undefined
             return result
@@ -70,7 +79,7 @@ function create(box, path = [], handler) {
             if (handler && handler.has) {
                 return handler.has(path, key, receiver)
             }
-            if (has(key, api)) return true
+            if (has(key, functions)) return true
             return true
         },
         set(target, key, value, receiver) {
