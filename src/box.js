@@ -5,11 +5,10 @@ import * as functions from "./operators"
 import { toPrimitive, toJSON } from "./utils"
 import { get, has, apply, last, log } from "./operators"
 
-
 function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
         apply(target, context, args) {
-          //console.log(`(apply)`, path, args)
+            //console.log(`(apply)`, path, args)
 
             const result = Reflect.apply(target, context, [path, args])
             return result
@@ -26,14 +25,14 @@ function create(box, path = [], handler) {
             if (target && Reflect.has(functions, key)) {
                 const fn = Reflect.get(functions, key)
                 if (is.func(fn)) {
-                  const lastKey = last(path)
-                  const hasKey = fn.argNames.indexOf('key')
-                  //const methodKey = path.pop()
-                  const method = hasKey > -1 ? fn(path.pop()) : fn
+                    const lastKey = last(path)
+                    const hasKey = fn.argNames && fn.argNames.indexOf("key")
+                    //const methodKey = path.pop()
+                    const method = hasKey > -1 ? fn(path.pop()) : fn
 
-                  console.log(`(method)`, lastKey, hasKey, method)
+                    console.log(`(method)`, lastKey, hasKey, method)
 
-                  return create(box, path.concat(method), handler)
+                    return create(box, path.concat(method), handler)
                 }
             }
 

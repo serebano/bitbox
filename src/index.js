@@ -43,19 +43,23 @@ const {
 } = bitbox
 
 const app = box(function app(path, args) {
-  const method = last(path)
+    const method = last(path)
 
-  if (is.func(method) && method.length > 1) {
-    path = path.concat(apply(path.pop(), args.splice(0, method.length-1)))
-    const target = args.length && args.pop()
-    console.log(`path-method-1`, path, args)
-    return target ? resolve(path, target) : box(app, path)
-  }
+    if (is.func(method) && method.length > 1) {
+        path = path.concat(apply(path.pop(), args.splice(0, method.length - 1)))
+        const target = args.length && args.pop()
+        console.log(`path-method-1`, path, args)
+        return target ? resolve(path, target) : box(app, path)
+    }
     if (args.length && !is.func(args[0])) {
         return resolve(path, args[0])
     }
-    return box(resolve, path.concat(args))
+    return box(app, path.concat(args))
 })
+
+const foo = app.count.assoc(100)(observable)({})
+app.count.observe(log, foo)
+app.count.set(inc, foo)
 
 const obj = observable()
 
@@ -79,14 +83,13 @@ obj.numbers = times(id, 10)
 obj.counter = { value: 0 }
 obj.logs = []
 
-const counter = {}
 const b1 = box(concat)
 
 const hi = curry(function hi(name) {
     return `Hello ${name}`
 })
 
-const hi2 = hi(__(defaultTo('??'), concat("!"), log))
+const hi2 = hi(__(defaultTo("??"), concat("!"), log))
 
 hi2("Scooby Doo")
 
@@ -139,9 +142,10 @@ const cnt = set(
 // setitem = curry((idx,obj) => getItem(idx).set(add(idx), obj))
 // getItem(1).observe(log, obj)
 // setitem(1, obj)
-//
-// app.count.observe(app(tag`item = ${0}`, log), obj)
-// app.count.set(inc, obj)
+
+const counter = app(observable)({ value: 0 })
+app.count.observe(app(tag`item = ${0}`, log), obj)
+app.count.set(inc, obj)
 
 //console.log(join(" - ", __(times(__, 10)))(concat(__(String), "item ")))
 
