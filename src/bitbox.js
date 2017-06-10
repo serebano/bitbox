@@ -15,7 +15,11 @@ export function Demo(key, value, object) {
 }
 
 export function g(a, b, c) {
-    return { a, b, c }
+    return [ a, b, c ]
+}
+
+export function args(...args) {
+  return args
 }
 
 export const x = curry(g)

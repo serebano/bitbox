@@ -3,46 +3,15 @@ import curry from "./curry"
 import resolve from "./resolve"
 import * as functions from "./operators"
 import { toPrimitive, toJSON } from "./utils"
-import { get, has, apply, last, log, first } from "./operators"
+import { get, has, apply, last, log } from "./operators"
 
-const handler = {
-    get(path, key, box) {
-        console.log(`[GET]`, path, `${key}`)
-        if (key === "@@functional/placeholder") {
-            console.log(`executingTarget`, key, path)
-            return true
-        }
-        if (key === "@@isHandler") {
-            return has(first(path), functions)
-        }
-
-        return create(box, path.concat(key), handler)
-    },
-    has(path, key) {
-        return has(first(path), functions)
-    }
-}
-
-export const __ = create(
-    function __(path, args) {
-        if (args.length === 1 && !is.func(args[0])) return resolve(path, args[0])
-        return create(resolve, path.concat(args), handler)
-    },
-    [],
-    handler
-)
-
-let isExecuting
-let executingTarget
 
 function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
         apply(target, context, args) {
-            isExecuting = true
-            executingTarget = target
+          //console.log(`(apply)`, path, args)
+
             const result = Reflect.apply(target, context, [path, args])
-            isExecuting = false
-            executingTarget = undefined
             return result
         },
         get(target, key, receiver) {
@@ -54,10 +23,17 @@ function create(box, path = [], handler) {
             if (key === "toString") return Reflect.get(target, key)
             if (key === "toJSON" || key === "toJS") return () => toJSON(path)
 
-            if (target && Reflect.has(target, key)) {
-                const fn = Reflect.get(target, key)
+            if (target && Reflect.has(functions, key)) {
+                const fn = Reflect.get(functions, key)
                 if (is.func(fn)) {
-                    return create(fn, path.slice(), handler)
+                  const lastKey = last(path)
+                  const hasKey = fn.argNames.indexOf('key')
+                  //const methodKey = path.pop()
+                  const method = hasKey > -1 ? fn(path.pop()) : fn
+
+                  console.log(`(method)`, lastKey, hasKey, method)
+
+                  return create(box, path.concat(method), handler)
                 }
             }
 

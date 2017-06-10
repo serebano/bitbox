@@ -26,7 +26,6 @@ const {
     as,
     add,
     proxy,
-    first,
     view,
     resolve,
     last,
@@ -39,11 +38,20 @@ const {
     take,
     push,
     call,
-    keys
+    keys,
+    defaultTo
 } = bitbox
 
 const app = box(function app(path, args) {
-    if (args.length === 1 && !is.func(args[0])) {
+  const method = last(path)
+
+  if (is.func(method) && method.length > 1) {
+    path = path.concat(apply(path.pop(), args.splice(0, method.length-1)))
+    const target = args.length && args.pop()
+    console.log(`path-method-1`, path, args)
+    return target ? resolve(path, target) : box(app, path)
+  }
+    if (args.length && !is.func(args[0])) {
         return resolve(path, args[0])
     }
     return box(resolve, path.concat(args))
@@ -56,7 +64,7 @@ const obj = observable()
 app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
 
-const x2 = x(__.items(map(app.value(inc))), __(set("count", add(10))), __(keys))
+const x2 = x(__(app.items(map(app.value(inc))), __(set("count", add(10))), __(keys)))
 
 call(x2, obj, obj, obj)
 
@@ -78,14 +86,14 @@ const hi = curry(function hi(name) {
     return `Hello ${name}`
 })
 
-const hi2 = hi(__(toUpper, concat("!"), log))
+const hi2 = hi(__(defaultTo('??'), concat("!"), log))
 
 hi2("Scooby Doo")
 
 const hi3 = hi2(__(concat(__, "Welcome!")))
 hi3("serebano")
 
-__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
+//__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
 
 box(resolve(__, new Date())).getTime()
 
@@ -95,7 +103,7 @@ box(assocPath).a.b.c.d.e.f.g.h(10, obj)
 
 box(pipe(r.union, resolve)).counter(
     set("value", inc),
-    tap(log),
+    //tap(log),
     "value",
     add(3),
     as("demo"),
@@ -121,6 +129,19 @@ const cnt = set(
     }),
     obj
 )
+
+// items = app.items
+// itemValues = items.pluck('value')
+// itemTags = itemValues.map(tag`Item #${0}`)
+// itemTags.join('\n', obj)
+// //items.observe(log, obj)
+// getItem = idx => items[idx].value
+// setitem = curry((idx,obj) => getItem(idx).set(add(idx), obj))
+// getItem(1).observe(log, obj)
+// setitem(1, obj)
+//
+// app.count.observe(app(tag`item = ${0}`, log), obj)
+// app.count.set(inc, obj)
 
 //console.log(join(" - ", __(times(__, 10)))(concat(__(String), "item ")))
 

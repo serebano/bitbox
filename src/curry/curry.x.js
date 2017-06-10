@@ -36,7 +36,7 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
     //console.log(`curryX`, fn.name, length, left, received, argNames, receivedNames)
 
     function next() {
-        if (arguments.length === 0) return next
+        if (arguments.length === 0) return next.fn
 
         let idx = 0
         let args = []

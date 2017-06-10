@@ -70,7 +70,7 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
             if (is.func(value)) {
                 strval = value.displayName || String(value)
             } else if (is.array(value)) {
-                strval = value.map(String).join(", ")
+                strval = '['+value.map(String).join(", ")+']'
             } else if (is.object(value)) strval = String(value)
             else if (is.string(value)) strval = `"${value}"`
             else strval = `${value}`
@@ -78,12 +78,14 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
         })
         .join(", ")
 
-    fx.displayName = "$" + name + "(" + expectedNames.join(", ") + ")"
-    fx.toString = () => "function " + fx.displayName + " => " + name + "(" + stringMap + ")"
-
+    fx.displayName = name + "(" + expectedNames.join(", ") + ")"
+    fx.toString = () => "(" + expectedNames.join(", ") + ")" + " => " + name + "(" + stringMap + ")"
+    fx.args = received
+    fx.argNames = argNames
+    fx.idxMap = idxMap
     fnStore.add(fx)
 
-    console.log(fnStore.size, fx)
+  //  console.log(fnStore.size, fx)
 
     return fx
 }
