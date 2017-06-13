@@ -5,8 +5,29 @@ import create from "./create"
 import curry1 from "./curry.1"
 
 function curry(fn, argNames) {
+    if (arguments.length === 2) {
+        return curryTo(argNames.length, fn, argNames)
+    }
     return curryTo(fn.length, fn, argNames)
 }
+function fn(...args) {
+    const f = Function(...args)
+    return curryTo(f.length, f)
+}
+curry.fn = fn
+function f(...args) {
+    return curryTo(
+        args.length,
+        function $() {
+            return args.reduce((obj, key, idx) => {
+                obj[key] = arguments[idx]
+                return obj
+            }, {})
+        },
+        args
+    )
+}
+curry.f = f
 
 function curryTo(length, fn, argNames) {
     argNames = argNames || getArgNames(fn)
@@ -18,6 +39,22 @@ function curryTo(length, fn, argNames) {
     return create(length, nextFn, fn, [], argNames)
 }
 
+function curryMap(fn, ...m) {
+    if (m.length < fn.length) {
+        fn.argNames.forEach((a, i) => {
+            if (m.indexOf(i) === -1) {
+                m.push(i)
+            }
+        })
+    }
+    const argNames = m.map(i => fn.argNames[i])
+    function argMap() {
+        return fn.apply(this, m.map(i => arguments[i]))
+    }
+    //argMap.displayName = fn.name
+    return curryTo(m.length, argMap, argNames)
+}
+curry.map = create.map = curryMap
 export const adaptTo = curry(function(length, fn) {
     return curryTo(length, function adaptTo(target) {
         return fn.apply(this, Array.prototype.slice.call(arguments, 1).concat(target))
@@ -64,9 +101,13 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
             }
 
             args[argsIdx] = result
-            idxMap[argsIdx] = argNames[argsIdx]
+            idxMap.push(argNames[argsIdx] || argsIdx)
+            //idxMap[argsIdx] = [argNames[argsIdx], result]
+
             if (!is.placeholder(result)) {
                 left -= 1
+            } else {
+                //idxMap.push("__" + (argNames[argsIdx] || argsIdx))
             }
             argsIdx += 1
         }
@@ -76,12 +117,11 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
         }
 
         const nextFn = curryX(fn, length, args, argNames, idxMap, left)
-
         return create(left, nextFn, fn, args, argNames, idxMap)
     }
-
-    //next.receivedNames = receivedNames
-    //next.expectedNames = argNames.filter((name, idx) => is.placeholder(received[idx]) || !receivedNames.includes(name))
+    //next.keys = receivedNames
+    //next.args = received
+    //next.rest = argNames.filter((name, idx) => !is.placeholder(received[idx]) || !receivedNames.includes(name))
 
     //desc(fn, next, received, argNames, receivedNames)
 

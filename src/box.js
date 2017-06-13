@@ -9,9 +9,10 @@ function create(box, path = [], handler) {
     const proxy = new Proxy(box, {
         apply(target, context, args) {
             //console.log(`(apply)`, path, args)
-
-            const result = Reflect.apply(target, context, [path, args])
-            return result
+            if (handler && handler.apply) {
+                return handler.apply(path, args, box)
+            }
+            return Reflect.apply(target, context, [path, ...args])
         },
         get(target, key, receiver) {
             if (key === "$") return { box, target, path }
@@ -22,19 +23,17 @@ function create(box, path = [], handler) {
             if (key === "toString") return Reflect.get(target, key)
             if (key === "toJSON" || key === "toJS") return () => toJSON(path)
 
-            if (target && Reflect.has(functions, key)) {
-                const fn = Reflect.get(functions, key)
-                if (is.func(fn)) {
-                    const lastKey = last(path)
-                    const hasKey = fn.argNames && fn.argNames.indexOf("key")
-                    //const methodKey = path.pop()
-                    const method = hasKey > -1 ? fn(path.pop()) : fn
-
-                    console.log(`(method)`, lastKey, hasKey, method)
-
-                    return create(box, path.concat(method), handler)
-                }
-            }
+            // if (Reflect.has(functions, key)) {
+            //     const fn = Reflect.get(functions, key)
+            //
+            //     if (is.func(fn)) {
+            //         const lastKey = last(path)
+            //         const hasKey = fn.argNames && fn.argNames.includes("key")
+            //         const fx = hasKey ? fn(path.pop()) : fn
+            //         console.log(`(fn:${key}) ->`, fx.length, { lastKey, hasKey, fx, length: fx.length })
+            //         return create(box, path.concat(fx), handler)
+            //     }
+            // }
 
             const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
                 ? primitive.__keys

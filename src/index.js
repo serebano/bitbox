@@ -1,7 +1,7 @@
 import is from "./is"
 import * as bitbox from "./bitbox"
 import r from "ramda"
-
+import app from "./app"
 const {
     __,
     id,
@@ -39,31 +39,21 @@ const {
     push,
     call,
     keys,
-    defaultTo
+    defaultTo,
+    delay,
+    operators
 } = bitbox
-
-const app = box(function app(path, args) {
-    const method = last(path)
-
-    if (is.func(method) && method.length > 1) {
-        path = path.concat(apply(path.pop(), args.splice(0, method.length - 1)))
-        const target = args.length && args.pop()
-        console.log(`path-method-1`, path, args)
-        return target ? resolve(path, target) : box(app, path)
-    }
-    if (args.length && !is.func(args[0])) {
-        return resolve(path, args[0])
-    }
-    return box(app, path.concat(args))
-})
-
-const foo = app.count.assoc(100)(observable)({})
-app.count.observe(log, foo)
-app.count.set(inc, foo)
 
 const obj = observable()
 
-//observer.observe(() => app.count(tag`count = ${0}`, log)(obj))
+app.foo.set(app.count.assoc(10, {}), obj)
+
+const foo = app.foo
+foo.count.observe(log, obj)
+foo.count.set(inc, obj)
+
+// const run = delay(foo.count.set(inc), 3000)
+// run(obj)
 
 app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
@@ -74,7 +64,7 @@ call(x2, obj, obj, obj)
 
 app.a.b.c.d.e(set("f", inc))(obj)
 
-obj.foo = { x: 1, y: 2 }
+obj.xy = { x: 1, y: 2 }
 obj.name = "my app"
 obj.count = 0
 obj.todos = []

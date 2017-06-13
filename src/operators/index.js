@@ -7,6 +7,7 @@ import is from "../is"
 import R from "ramda"
 
 export { default as __ } from "../curry/arg"
+export { _ } from "../curry/arg"
 export { default as delay } from "./delay"
 export { default as print } from "./print"
 export { default as add } from "./add"
@@ -45,8 +46,21 @@ export { default as call } from "./call"
 export { default as assoc } from "./assoc"
 export { default as assocPath } from "./assocPath"
 export { default as isNil } from "./isNil"
+export { default as path } from "./path"
+export { default as arg } from "./arg"
+export { default as flip } from "./flip"
 
 export * from "./array"
+
+export const a = curry(function aFun(a, b, c, target) {
+    log({ a, b, c, target })
+    return { a, b, c, target }
+})
+
+// export const setPath = curry(function setPath(path, value, target) {
+//     const obj = resolve(take(path.length - 1, path), target)
+//     return set(last(path), value, obj)
+// })
 
 export const defaultTo = curry(function defaultTo(d, v) {
     return v == null || v !== v ? d : v

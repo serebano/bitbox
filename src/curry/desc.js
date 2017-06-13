@@ -45,7 +45,30 @@ function toArgsString(names = [], values) {
         })
         .join(", ")
 }
-
+function toStringMap(argNames, received) {
+    return argNames
+        .map((name, idx) => {
+            let value = received[idx]
+            if (is.undefined(value)) return name
+            let strval
+            if (is.func(value)) {
+                if (value.length <= 1) {
+                    strval = value.displayName || value.name
+                } else {
+                    strval = is.placeholder(value)
+                        ? value["@@isHandler"] ? name + " => " + value.args.map(String).join(", ") : name
+                        : value.displayName || String(value)
+                }
+            } else if (is.array(value))
+                //value.displayName || String(value)
+                strval = "[" + value.map(val => String(val)).join(", ") + "]"
+            else if (is.object(value)) strval = String(value)
+            else if (is.string(value)) strval = `"${value}"`
+            else strval = `${value}`
+            return strval
+        })
+        .join(", ")
+}
 function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     if (!store.has(fn)) {
         store.set(fn, new Set())
@@ -62,30 +85,17 @@ function desc(fn, fx, received = [], argNames = [], idxMap = []) {
     const name = fn.displayName || fn.name
     const expectedNames = fx.expectedNames || argNames
     const receivedMap = idxMap.map((name, idx) => [name, received[idx]])
-    const stringMap = argNames
-        .map((name, idx) => {
-            let value = received[idx]
-            if (is.undefined(value)) return name
-            let strval
-            if (is.func(value)) {
-                strval = value.displayName || String(value)
-            } else if (is.array(value)) {
-                strval = '['+value.map(String).join(", ")+']'
-            } else if (is.object(value)) strval = String(value)
-            else if (is.string(value)) strval = `"${value}"`
-            else strval = `${value}`
-            return strval
-        })
-        .join(", ")
+    const stringMap = toStringMap(argNames, received)
 
-    fx.displayName = name + "(" + expectedNames.join(", ") + ")"
-    fx.toString = () => "(" + expectedNames.join(", ") + ")" + " => " + name + "(" + stringMap + ")"
+    fx.displayName = name + "(" + stringMap + ")"
+    //fx.toString = () => "(" + expectedNames.join(", ") + ")" + " => " +
+    //fx.toString = () => "(" + expectedNames.join(", ") + ") => " + name + "(" + stringMap + ")"
     fx.args = received
     fx.argNames = argNames
     fx.idxMap = idxMap
     fnStore.add(fx)
 
-  //  console.log(fnStore.size, fx)
+    //  console.log(fnStore.size, fx)
 
     return fx
 }

@@ -1,21 +1,36 @@
 import create from "./create"
 import is from "../is"
 import * as operators from "../operators"
-import { apply,get, has, defaultTo, pipe } from "../operators"
+import { apply, get, has, defaultTo, pipe } from "../operators"
 import resolve from "../resolve"
 const pKey = "@@functional/placeholder"
 
 function __(...args) {
-    //const p = pipe(...args)
-    const $ = pipe(...args) //(a) => p(a) //resolve(args) //(a) => p(a)
-
+    const $ = resolve(args)
     $.args = args
-  //  $.pipe = p
-    //$.toString = () => `function ${args.map(arg => String(arg)).join(", ")}`
+    $["@@isHandler"] = true
+    $.toString = () => `${args.map(String).join(", ")}`
     $[pKey] = true
 
     return $
 }
 __[pKey] = true
+__.toString = () => "__"
 
+function _(i) {
+    const $ = (idx, args) => {
+        const arg = args[idx]
+        console.log(`_`, { i, idx, args, arg })
+        return arg
+    }
+    $.index = i
+    $["@@_"] = true
+    $[pKey] = true
+
+    return $
+}
+_[pKey] = true
+_.toString = () => "_(i)"
+
+export { _ }
 export default __
