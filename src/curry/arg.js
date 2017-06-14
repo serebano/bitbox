@@ -19,6 +19,6 @@ function __(fn, ...args) {
 }
 
 __[pKey] = true
-__.toString = a => (a ? "__" + "(" + a + ")" : "__")
+__.toString = a => (a ? a : "__")
 
 export default __

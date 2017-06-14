@@ -1,18 +1,18 @@
 import is from "../is"
 import curry from "../curry"
 
-function getByPath(path, getter, target) {
-    if (!path.length) return getter(undefined, target)
-    return path.reduce((obj, key, index, path) => {
-        if (is.array(key)) key = getByPath(key, getter, target)
-        if (index === path.length - 1) return getter.length === 2 ? getter(key, obj) : getter(obj[key])
+function path(keys, getter, target) {
+    if (!keys.length) return getter(undefined, target)
+    return keys.reduce((obj, key, index) => {
+        if (is.array(key)) key = path(key, getter, target)
         if (is.func(key)) return key(obj)
+        if (index === keys.length - 1) return getter(key, obj)
 
         return obj[key]
     }, target)
 }
 
-export default curry(getByPath)
+export default curry(path)
 
 // box(path(__, set(__, inc, __), obj)).count()
 // > incx = path(__, set(__, inc, __), obj)

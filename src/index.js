@@ -5,7 +5,7 @@ import app from "./app"
 const {
     __,
     id,
-    box,
+    path,
     use,
     times,
     map,
@@ -38,12 +38,14 @@ const {
     take,
     push,
     call,
-    path,
+    getPath,
     keys,
     defaultTo,
     delay,
     pick,
-    operators
+    functions,
+    pipeP,
+    flip
 } = bitbox
 
 const obj = observable()
@@ -56,7 +58,7 @@ foo.count.set(inc, obj)
 // const run = delay(foo.count.set(inc), 3000)
 // run(obj)
 
-app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
+app(set("a", path(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
 
 const x2 = x(__(app.items(map(app.value(inc)))), __(set("count", add(10))), __(keys))
@@ -73,16 +75,20 @@ obj.counter = { value: 0 }
 obj.logs = []
 
 const setInc = set(__, inc(__(0)))
-const boxInc = box(path(__, setInc))
-const setBox = box(path(__, __(curry.map(set, 1))))
-const observeBox = box(path(__, __(curry.map(observe, 1))))
-const github = box(
-    curry(url => fetch(url).then(res => res.json()))(__(concat(__(join("/"))), "https://api.github.com/"))
+const pathInc = path(getPath(__, setInc))
+const setBox = path(getPath(__, __(curry.map(set, 1))))
+const observeBox = path(getPath(__, __(curry.map(observe, 1))))
+const toJSON = res => res.json()
+//pipeP(fetch, toJSON)(__(concat(__(join("/"))), "https://api.github.com/"))
+const github = path(
+    curry((url, resolve) => fetch(url).then(toJSON).then(resolve))(__(concat(__(join("/"))), "https://api.github.com/"))
 )
 
-//github.repos.serebano.bitbox.then(log)
+const getRepo = github.repos.serebano
+const setRepo = curry.map(set(__, __(pick(["git_url", "owner", "id"]))), 0, 2)
+
 observeBox.repos(log, obj)
-github.repos.serebano.bitbox().then(setBox.repos(__(pick(["owner", "id"])), obj))
+github.repos.serebano.bitbox(setRepo("bitbox", obj))
 
 setBox.name(__(toUpper(__(concat, "Mr. "))))("serebano", obj)
 
@@ -94,15 +100,15 @@ setInc("x", obj)
 setInc("y", obj)
 setInc("z", obj)
 
-boxInc.x(obj)
-boxInc.y(obj)
-boxInc.items[0].value(obj)
-boxInc.items[1].count(obj)
-boxInc.items[1].foo(obj)
+pathInc.x(obj)
+pathInc.y(obj)
+pathInc.items[0].value(obj)
+pathInc.items[1].count(obj)
+pathInc.items[1].foo(obj)
 
-app.items(take(5), tap(map(boxInc.value)), log)(obj)
+app.items(take(5), tap(map(pathInc.value)), log)(obj)
 
-const b1 = box(concat)
+const b1 = path(concat)
 
 const hi = curry(function hi(name) {
     return `Hello ${name}`
@@ -121,13 +127,13 @@ hi4(["Sergiu", "Toderascu"])
 
 //__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
 
-box(resolve(__, new Date())).getTime()
+path(resolve(__, new Date())).getTime()
 
-box(resolve(__, obj)).counter(set("value", inc), log, add(20))
+path(resolve(__, obj)).counter(set("value", inc), log, add(20))
 
-box(assocPath).a.b.c.d.e.f.g.h(10, obj)
+path(assocPath).a.b.c.d.e.f.g.h(10, obj)
 
-box(pipe(r.union, resolve)).counter(
+path(pipe(r.union, resolve)).counter(
     set("value", inc),
     //tap(log),
     "value",
@@ -186,12 +192,15 @@ set("count", inc, obj)
 // app.items.map(set("value", inc))(obj)
 
 Object.assign(window, bitbox, {
+    functions,
     h,
     x2,
     hi,
     setInc,
     setBox,
-    boxInc,
+    setRepo,
+    getRepo,
+    pathInc,
     hi2,
     hi3,
     hi4,

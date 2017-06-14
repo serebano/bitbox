@@ -7,7 +7,7 @@ import { isCurryable } from "./isCurryable"
 export function createFn(length, fn) {
     switch (length) {
         case 0:
-            return function f() {
+            return function f0() {
                 return fn.apply(this, arguments)
             }
         case 1:
@@ -77,7 +77,7 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
                     if (is.placeholder(argValue)) {
                         return argValue.toString(argName)
                     }
-                    return is.string(argValue) ? `"${argValue}"` : argValue
+                    return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
                 }
                 const argName = a[idx - receivedLen] || name
                 //console.log(`arg->`, idx, idx - receivedLen, argName)
@@ -92,9 +92,9 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
         return `(${rest.join(", ")}) => ${name}(${argNames
             .map((arg, idx) => {
                 if (receivedLen > idx) {
-                    const value = args[idx]
-                    if (is.placeholder(value)) return value.toString(arg)
-                    return is.string(value) ? `"${value}"` : value
+                    const argValue = args[idx]
+                    if (is.placeholder(argValue)) return argValue.toString(arg)
+                    return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
                 }
                 return arg
             })
