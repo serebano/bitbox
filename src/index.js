@@ -58,9 +58,7 @@ foo.count.set(inc, obj)
 app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
 
-const x2 = x //(__(app.items(map(app.value(inc)))), __(set("count", add(10))), __(keys))
-
-call(x2, obj, obj, obj)
+const x2 = x(__(app.items(map(app.value(inc)))), __(set("count", add(10))), __(keys))
 
 app.a.b.c.d.e(set("f", inc))(obj)
 
@@ -75,6 +73,11 @@ obj.logs = []
 
 const setInc = set(__, inc(__(0)))
 const boxInc = box(path(__, setInc))
+const observeBox = box(path(__, __(curry.map(observe, 1))))
+
+observeBox.x(console.warn, obj)
+observeBox.y(console.warn, obj)
+observeBox.z(console.warn, obj)
 
 setInc("x", obj)
 setInc("y", obj)
@@ -169,4 +172,4 @@ set("count", inc, obj)
 
 // app.items.map(set("value", inc))(obj)
 
-Object.assign(window, bitbox, { h, hi, setInc, boxInc, hi2, hi3, hi4, cnt, r, b1, app, counter, bitbox, obj })
+Object.assign(window, bitbox, { h, x2, hi, setInc, boxInc, hi2, hi3, hi4, cnt, r, b1, app, counter, bitbox, obj })
