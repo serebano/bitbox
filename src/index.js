@@ -73,7 +73,10 @@ obj.logs = []
 
 const setInc = set(__, inc(__(0)))
 const boxInc = box(path(__, setInc))
+const setBox = box(path(__, __(curry.map(set, 1))))
 const observeBox = box(path(__, __(curry.map(observe, 1))))
+
+setBox.name(__(toUpper(__(concat, "Mr. "))))("serebano", obj)
 
 observeBox.x(console.warn, obj)
 observeBox.y(console.warn, obj)
@@ -88,6 +91,8 @@ boxInc.y(obj)
 boxInc.items[0].value(obj)
 boxInc.items[1].count(obj)
 boxInc.items[1].foo(obj)
+
+app.items(take(5), tap(map(boxInc.value)), log)(obj)
 
 const b1 = box(concat)
 
@@ -172,4 +177,21 @@ set("count", inc, obj)
 
 // app.items.map(set("value", inc))(obj)
 
-Object.assign(window, bitbox, { h, x2, hi, setInc, boxInc, hi2, hi3, hi4, cnt, r, b1, app, counter, bitbox, obj })
+Object.assign(window, bitbox, {
+    h,
+    x2,
+    hi,
+    setInc,
+    setBox,
+    boxInc,
+    hi2,
+    hi3,
+    hi4,
+    cnt,
+    r,
+    b1,
+    app,
+    counter,
+    bitbox,
+    obj
+})
