@@ -52,6 +52,7 @@ export { default as flip } from "./flip"
 export { default as pipeP } from "./pipePromise"
 export { default as composePromise } from "./composePromise"
 export { default as reverse } from "./reverse"
+export { default as pick } from "./pick"
 
 export * from "./array"
 

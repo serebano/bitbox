@@ -42,6 +42,7 @@ const {
     keys,
     defaultTo,
     delay,
+    pick,
     operators
 } = bitbox
 
@@ -81,7 +82,7 @@ const github = box(
 
 //github.repos.serebano.bitbox.then(log)
 observeBox.repos(log, obj)
-github.repos.serebano.bitbox().then(setBox.repos(__, obj))
+github.repos.serebano.bitbox().then(setBox.repos(__(pick(["owner", "id"])), obj))
 
 setBox.name(__(toUpper(__(concat, "Mr. "))))("serebano", obj)
 
