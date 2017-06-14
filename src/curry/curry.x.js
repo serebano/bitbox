@@ -33,7 +33,9 @@ function curryTo(length, fn, argNames) {
     argNames = argNames || getArgNames(fn)
 
     if (length === 1) {
-        return curry1(fn, argNames)
+        const f = curry1(fn, argNames)
+        f.toPrimitive = a => `${fn.name}(${a})`
+        return f
     }
     const nextFn = curryX(fn, length, [], argNames, [], length)
     return create(length, nextFn, fn, [], argNames)
@@ -90,7 +92,7 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
                 const $arg = received[argsIdx]
                 if (is.placeholder($arg)) {
                     if (is.func($arg) && $arg["@@isHandler"]) {
-                        result = $arg(arguments[idx])
+                        result = $arg(arguments[idx], argsIdx, args)
                     } else {
                         result = arguments[idx]
                     }

@@ -55,24 +55,42 @@ function createFn(length, fn) {
 }
 
 function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
-    const receiverFn = createFn(length, nextFn)
-    receiverFn.argNames = argNames
-    receiverFn.args = args
-    receiverFn.box = (...args) => createFn(args.length, (...rest) => console.log({ args, rest, targetFn, nextFn }))
-    nextFn.fn = receiverFn
-
+    const fn = (nextFn.fn = createFn(length, nextFn))
     const name = targetFn.displayName || targetFn.name
     const rest = argNames.filter((name, idx) => is.placeholder(args[idx]) || !argMap.includes(name))
-    receiverFn.rest = rest
 
-    receiverFn.toString = () => {
+    fn.args = args
+    fn.rest = rest
+    fn.argNames = argNames
+    fn.displayName = name
+
+    const toPrimitive = (...a) =>
+        `${name}(${argNames
+            .map((arg, idx) => {
+                const value = args[idx]
+                const x = a[args.length - idx] || arg
+                if (args.length > idx) return is.placeholder(value) ? value.toString(arg) : value
+                return x
+            })
+            .join(", ")})`
+
+    fn.toString = x => {
+        if (x) return toPrimitive(x)
         if (!argMap.length) return `function ${name}(${rest.join(", ")}) {...}`
         return `(${rest.join(", ")}) => ${name}(${argNames
-            .map((arg, idx) => `${arg}${args.length > idx && !is.placeholder(args[idx]) ? ":" + args[idx] : ""}`)
+            .map((arg, idx) => {
+                if (args.length > idx) {
+                    const value = args[idx]
+                    if (is.placeholder(value)) return value.toString(arg)
+                    //if (is.func(args[idx]) && args[idx].toPrimitive) return args[idx].toPrimitive(x || arg)
+                    return value
+                }
+                return arg
+            })
             .join(", ")})`
     }
 
-    return receiverFn
+    return fn
 }
 
 export default create

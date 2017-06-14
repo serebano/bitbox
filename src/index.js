@@ -58,7 +58,7 @@ foo.count.set(inc, obj)
 app(set("a", box(assocPath).b.c.d.e.f(1, {})))(obj)
 const x = curry((foo, bar, baz) => ({ foo, bar, baz }))
 
-const x2 = x(__(app.items(map(app.value(inc))), __(set("count", add(10))), __(keys)))
+const x2 = x //(__(app.items(map(app.value(inc)))), __(set("count", add(10))), __(keys))
 
 call(x2, obj, obj, obj)
 
@@ -79,11 +79,11 @@ const hi = curry(function hi(name) {
     return `Hello ${name}`
 })
 
-const hi2 = hi(__(defaultTo("??"), concat("!"), log))
+const hi2 = hi(__(defaultTo("??")))
 
 hi2("Scooby Doo")
 
-const hi3 = hi2(__(concat(__, "Welcome!")))
+const hi3 = hi2(__(concat, "Welcome!"))
 hi3("serebano")
 
 //__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")

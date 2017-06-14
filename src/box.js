@@ -20,7 +20,7 @@ function create(box, path = [], handler) {
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
             if (key === Symbol.toPrimitive) return primitive(path)
             if (key === "displayName") return toPrimitive(path)
-            if (key === "toString") return Reflect.get(target, key)
+            if (key === "toString") return a => target.toString(a)
             if (key === "toJSON" || key === "toJS") return () => toJSON(path)
 
             // if (Reflect.has(functions, key)) {

@@ -3,19 +3,31 @@ import is from "../is"
 import * as operators from "../operators"
 import { apply, get, has, defaultTo, pipe } from "../operators"
 import resolve from "../resolve"
+
 const pKey = "@@functional/placeholder"
 
-function __(...args) {
-    const $ = resolve(args)
-    $.args = args
-    $["@@isHandler"] = true
-    $.toString = () => `${args.map(String).join(", ")}`
-    $[pKey] = true
+function __(fn, ...args) {
+    //const $ = arg => apply(fn, [arg].concat(args))
+    const $ = apply(fn, [__].concat(args))
+
+    // $.toString = arg => {
+    //     //if (arg && fn.toPrimitive) return fn.toPrimitive(arg)
+    //     //if (arg) return `${fn.displayName || fn.name || "(" + fn + ")"}(${arg})`
+    //     return fn.toString(arg)
+    // }
+
+    //$.fn = fn
+    //$.args = args
+    if (is.func($)) {
+        $[pKey] = true
+        $["@@isHandler"] = true
+    }
 
     return $
 }
+
 __[pKey] = true
-__.toString = () => "__"
+__.toString = a => (a ? "__" + "(" + a + ")" : "__")
 
 function _(i) {
     const $ = (idx, args) => {
