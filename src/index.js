@@ -75,6 +75,13 @@ const setInc = set(__, inc(__(0)))
 const boxInc = box(path(__, setInc))
 const setBox = box(path(__, __(curry.map(set, 1))))
 const observeBox = box(path(__, __(curry.map(observe, 1))))
+const github = box(
+    curry(url => fetch(url).then(res => res.json()))(__(concat(__(join("/"))), "https://api.github.com/"))
+)
+
+//github.repos.serebano.bitbox.then(log)
+observeBox.repos(log, obj)
+github.repos.serebano.bitbox().then(setBox.repos(__, obj))
 
 setBox.name(__(toUpper(__(concat, "Mr. "))))("serebano", obj)
 
@@ -188,6 +195,7 @@ Object.assign(window, bitbox, {
     hi3,
     hi4,
     cnt,
+    github,
     r,
     b1,
     app,
