@@ -34,7 +34,7 @@ export { default as props } from "./props"
 export { default as pluck } from "./pluck"
 export { default as slice } from "./slice"
 export { default as apply } from "./apply"
-export { default as toString } from "./toString"
+export { default as _toString } from "./toString"
 export { default as type } from "./type"
 export { default as lens } from "./lens"
 export { default as observe } from "./observe"
@@ -115,6 +115,12 @@ export const toUpper = curry(function toUpper(target) {
 })
 export const toLower = curry(function toLower(target) {
     return target.toLowerCase()
+})
+export const toString = curry(function toString(target) {
+    return String(target)
+})
+export const toNumber = curry(function toNumber(target) {
+    return Number(target)
 })
 export const assign = curry((object, target) => Object.assign(target, object))
 export const keys = curry(function keys(target) {

@@ -38,6 +38,7 @@ const {
     take,
     push,
     call,
+    path,
     keys,
     defaultTo,
     delay,
@@ -45,7 +46,6 @@ const {
 } = bitbox
 
 const obj = observable()
-
 app.foo.set(app.count.assoc(10, {}), obj)
 
 const foo = app.foo
@@ -73,18 +73,35 @@ obj.numbers = times(id, 10)
 obj.counter = { value: 0 }
 obj.logs = []
 
+const setInc = set(__, inc(__(0)))
+const boxInc = box(path(__, setInc))
+
+setInc("x", obj)
+setInc("y", obj)
+setInc("z", obj)
+
+boxInc.x(obj)
+boxInc.y(obj)
+boxInc.items[0].value(obj)
+boxInc.items[1].count(obj)
+boxInc.items[1].foo(obj)
+
 const b1 = box(concat)
 
 const hi = curry(function hi(name) {
     return `Hello ${name}`
 })
 
-const hi2 = hi(__(defaultTo("??")))
+const hi2 = hi(__(toUpper))
 
 hi2("Scooby Doo")
 
-const hi3 = hi2(__(concat, "Welcome!"))
+const hi3 = hi2(__(concat, "Mr. "))
 hi3("serebano")
+
+const hi4 = hi3(__(join(" - ")))
+
+hi4(["Sergiu", "Toderascu"])
 
 //__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
 
@@ -152,4 +169,4 @@ set("count", inc, obj)
 
 // app.items.map(set("value", inc))(obj)
 
-Object.assign(window, bitbox, { h, hi, hi2, hi3, cnt, r, b1, app, counter, bitbox, obj })
+Object.assign(window, bitbox, { h, hi, setInc, boxInc, hi2, hi3, hi4, cnt, r, b1, app, counter, bitbox, obj })

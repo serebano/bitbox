@@ -3,13 +3,19 @@ import desc, { pairArgs } from "./desc"
 import is from "../is"
 import create from "./create"
 import curry1 from "./curry.1"
+import isCurryable from "./isCurryable"
+import __ from "./arg"
 
 function curry(fn, argNames) {
+    if (isCurryable(fn)) {
+        return fn
+    }
     if (arguments.length === 2) {
         return curryTo(argNames.length, fn, argNames)
     }
     return curryTo(fn.length, fn, argNames)
 }
+
 function fn(...args) {
     const f = Function(...args)
     return curryTo(f.length, f)
@@ -31,12 +37,6 @@ curry.f = f
 
 function curryTo(length, fn, argNames) {
     argNames = argNames || getArgNames(fn)
-
-    if (length === 1) {
-        const f = curry1(fn, argNames)
-        f.toPrimitive = a => `${fn.name}(${a})`
-        return f
-    }
     const nextFn = curryX(fn, length, [], argNames, [], length)
     return create(length, nextFn, fn, [], argNames)
 }
@@ -53,7 +53,6 @@ function curryMap(fn, ...m) {
     function argMap() {
         return fn.apply(this, m.map(i => arguments[i]))
     }
-    //argMap.displayName = fn.name
     return curryTo(m.length, argMap, argNames)
 }
 curry.map = create.map = curryMap
@@ -90,14 +89,15 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
                 result = received[argsIdx]
             } else {
                 const $arg = received[argsIdx]
+                const val = arguments[idx]
                 if (is.placeholder($arg)) {
-                    if (is.func($arg) && $arg["@@isHandler"]) {
-                        result = $arg(arguments[idx], argsIdx, args)
+                    if ($arg["@@isHandler"]) {
+                        result = $arg(val)
                     } else {
-                        result = arguments[idx]
+                        result = val
                     }
                 } else {
-                    result = arguments[idx]
+                    result = val
                 }
                 idx += 1
             }

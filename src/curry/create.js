@@ -2,6 +2,7 @@ import desc from "./desc"
 //import curry from "./curry.x"
 import is from "../is"
 import print from "../operators/print"
+import { isCurryable } from "./isCurryable"
 
 function createFn(length, fn) {
     switch (length) {
@@ -64,32 +65,42 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
     fn.argNames = argNames
     fn.displayName = name
 
-    const toPrimitive = (...a) =>
-        `${name}(${argNames
-            .map((arg, idx) => {
-                const value = args[idx]
-                const x = a[args.length - idx] || arg
-                if (args.length > idx) return is.placeholder(value) ? value.toString(arg) : value
-                return x
+    const toPrimitive = a => {
+        const receivedLen = args.length
+        //console.log(`toPrimitive`, name, receivedLen, a, argNames, args, rest)
+        return `${name}(${argNames
+            .map((name, idx) => {
+                if (receivedLen > idx) {
+                    const argName = a[idx] || name
+                    const argValue = args[idx]
+                    //console.log(`received-arg ->`, idx, argName, argValue)
+                    if (is.placeholder(argValue)) {
+                        return argValue.toString(argName)
+                    }
+                    return is.string(argValue) ? `"${argValue}"` : argValue
+                }
+                const argName = a[idx - receivedLen] || name
+                //console.log(`arg->`, idx, idx - receivedLen, argName)
+                return argName
             })
             .join(", ")})`
+    }
 
-    fn.toString = x => {
-        if (x) return toPrimitive(x)
-        if (!argMap.length) return `function ${name}(${rest.join(", ")}) {...}`
+    fn.toString = (...x) => {
+        if (x.length) return toPrimitive(x)
+        const receivedLen = args.length
         return `(${rest.join(", ")}) => ${name}(${argNames
             .map((arg, idx) => {
-                if (args.length > idx) {
+                if (receivedLen > idx) {
                     const value = args[idx]
                     if (is.placeholder(value)) return value.toString(arg)
-                    //if (is.func(args[idx]) && args[idx].toPrimitive) return args[idx].toPrimitive(x || arg)
-                    return value
+                    return is.string(value) ? `"${value}"` : value
                 }
                 return arg
             })
             .join(", ")})`
     }
-
+    fn[isCurryable] = true
     return fn
 }
 
