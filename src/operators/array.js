@@ -6,7 +6,7 @@ export const pop = invoke(["target"], "pop")
 export const concat = invoke(["a", "b"], "concat")
 export const filter = invoke(["fn", "target"], "filter")
 export const sort = invoke(["fn", "target"], "sort")
-export const reduce = invoke(["fn", "initialValue", "target"], "reduce")
+//export const reduce = invoke(["fn", "initialValue", "target"], "reduce")
 
 export const methods = {
     join: ["delimiter", "target"],
@@ -15,6 +15,6 @@ export const methods = {
     concat: ["value", "functor"],
     filter: ["fn", "functor"],
     sort: ["fn", "functor"],
-    reduce: ["fn", "initialValue", "functor"],
+    //reduce: ["fn", "initialValue", "functor"],
     indexOf: ["value", "target"]
 }

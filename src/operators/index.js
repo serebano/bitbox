@@ -49,6 +49,9 @@ export { default as isNil } from "./isNil"
 export { default as path } from "./path"
 export { default as arg } from "./arg"
 export { default as flip } from "./flip"
+export { default as pipeP } from "./pipePromise"
+export { default as composePromise } from "./composePromise"
+export { default as reverse } from "./reverse"
 
 export * from "./array"
 

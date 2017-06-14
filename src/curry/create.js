@@ -4,7 +4,7 @@ import is from "../is"
 import print from "../operators/print"
 import { isCurryable } from "./isCurryable"
 
-function createFn(length, fn) {
+export function createFn(length, fn) {
     switch (length) {
         case 0:
             return function f() {

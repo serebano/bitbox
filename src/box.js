@@ -12,13 +12,14 @@ function create(box, path = [], handler) {
             if (handler && handler.apply) {
                 return handler.apply(path, args, box)
             }
-            return Reflect.apply(target, context, [path, ...args])
+            return apply(target, [path, ...args])
         },
         get(target, key, receiver) {
             if (key === "$") return { box, target, path }
             if (key === Symbol.for("box")) return [box, path]
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
             if (key === Symbol.toPrimitive) return primitive(path)
+            if (key === "length" || key === "apply" || key === "call") return target[key]
             if (key === "displayName") return toPrimitive(path)
             if (key === "toString") return a => target.toString(a)
             if (key === "toJSON" || key === "toJS") return () => toJSON(path)
