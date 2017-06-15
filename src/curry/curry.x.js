@@ -5,7 +5,7 @@ import curry1 from "./curry.1"
 import isCurryable from "./isCurryable"
 import __ from "./arg"
 
-function curry(fn, ...argNames) {
+function curry(fn, argNames) {
     // if (isCurryable(fn)) {
     //     let args = Array.prototype.slice.call(arguments, 1)
     //     return args && args.length ? curry.map(fn, ...args) : fn
@@ -60,8 +60,8 @@ curry.map = curry(function map(fn) {
     return curryTo(fn.length || args.length, fx)
 })
 
-function curryTo(length, fn, argNames = []) {
-    //argNames = argNames || getArgNames(fn)
+function curryTo(length, fn, argNames) {
+    argNames = argNames || getArgNames(fn)
     const nextFn = curryX(fn, length, [], argNames, [], length)
     return create(length, nextFn, fn, [], argNames)
 }

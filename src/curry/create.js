@@ -74,9 +74,7 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
                         const argName = x[idx] || name
                         const argValue = args[idx]
                         if (is.placeholder(argValue)) return argValue.toString(argName)
-                        return is.string(argValue)
-                            ? `"${argValue}"`
-                            : is.array(argValue) ? JSON.stringify(argValue) : argValue
+                        return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
                     }
                     return x[idx - receivedLen] || name
                 })
