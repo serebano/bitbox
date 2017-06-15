@@ -29,12 +29,13 @@ export { default as scan } from "./scan"
 export { default as nth } from "./nth"
 export { default as iis } from "./is"
 export { default as last } from "./last"
+export { default as keys } from "./keys"
 export { default as invoke } from "./invoke"
 export { default as props } from "./props"
 export { default as pluck } from "./pluck"
 export { default as slice } from "./slice"
 export { default as apply } from "./apply"
-export { default as _toString } from "./toString"
+export { default as toString } from "./toString"
 export { default as type } from "./type"
 export { default as lens } from "./lens"
 export { default as observe } from "./observe"
@@ -54,11 +55,37 @@ export { default as composePromise } from "./composePromise"
 export { default as reverse } from "./reverse"
 export { default as pick } from "./pick"
 export { default as reduce } from "./reduce"
+export { default as argx } from "./argx"
+export { default as diff } from "./diff"
+export { default as sum } from "./sum"
+export { default as contains } from "./contains"
+export { default as indexOf } from "./indexOf"
+export { default as identical } from "./identical"
+export { default as first } from "./first"
+export { default as eq } from "./eq"
+export { default as and } from "./and"
+export { default as cond } from "./cond"
+export { default as constant } from "./constant"
+export { default as uniq } from "./uniq"
+export { default as id } from "./id"
+export { default as tap } from "./tap"
+export { default as defaultTo } from "./defaultTo"
+export { default as log } from "./log"
+export { default as as } from "./as"
+export { default as tail } from "./tail"
+export { default as or } from "./or"
+export { default as toArray } from "./toArray"
+export { default as proxy } from "./proxy"
+export { default as assign } from "./assign"
+export { default as stringify } from "./stringify"
+export { default as toLower } from "./toLower"
+export { default as toUpper } from "./toUpper"
+export { default as lt } from "./lt"
+export { default as gt } from "./gt"
 
 export * from "./array"
 
 export const a = curry(function aFun(a, b, c, target) {
-    log({ a, b, c, target })
     return { a, b, c, target }
 })
 
@@ -67,74 +94,60 @@ export const a = curry(function aFun(a, b, c, target) {
 //     return set(last(path), value, obj)
 // })
 
-export const defaultTo = curry(function defaultTo(d, v) {
-    return v == null || v !== v ? d : v
-})
-export const tap = curry(function tap(fn, x) {
-    fn(x)
-    return x
-})
-export const log1 = (...args) => {
-    print(args.map(String))
-    console.log(args)
-    return args[1]
-}
-export const log = tap(print)
-export const id = curry(function id(arg) {
-    return arg
-})
-export const as = curry(function as(key, value) {
-    return {
-        [key]: value
-    }
-})
+// export const defaultTo = curry(function defaultTo(d, v) {
+//     return v == null || v !== v ? d : v
+// })
+// export const tap = curry(function tap(fn, x) {
+//     fn(x)
+//     return x
+// })
+// export const log = tap(print)
 
-const toArray = curry(function toArray(arg) {
-    return Array.prototype.slice.call(arg)
-})
+// export const as = curry(function as(key, value) {
+//     return {
+//         [key]: value
+//     }
+// })
 
-export const tail = curry(function tail(arg) {
-    return Array.prototype.slice.call(arg, 1)
-})
+// const toArray = curry(function toArray(arg) {
+//     return Array.prototype.slice.call(arg)
+// })
 
-export const or = curry(function or(a, b) {
-    return a || b
-})
+// export const tail = curry(function tail(arg) {
+//     return Array.prototype.slice.call(arg, 1)
+// })
 
-export const eq = curry(function eq(a, b) {
-    return a === b
-})
+// export const or = curry(function or(a, b) {
+//     return a || b
+// })
 
-export const lt = curry(function lt(a, b) {
-    return a > b
-})
-export const gt = curry(function gt(a, b) {
-    return a < b
-})
+// export const lt = curry(function lt(a, b) {
+//     return a > b
+// })
+// export const gt = curry(function gt(a, b) {
+//     return a < b
+// })
 
-export const proxy = curry(function proxy(handler, target) {
-    return new Proxy(target, handler)
-})
-export const toUpper = curry(function toUpper(target) {
-    return target.toUpperCase()
-})
-export const toLower = curry(function toLower(target) {
-    return target.toLowerCase()
-})
-export const toString = curry(function toString(target) {
-    return String(target)
-})
-export const toNumber = curry(function toNumber(target) {
-    return Number(target)
-})
-export const assign = curry((object, target) => Object.assign(target, object))
-export const keys = curry(function keys(target) {
-    return Object.keys(target)
-})
+// export const proxy = curry(function proxy(handler, target) {
+//     return new Proxy(target, handler)
+// })
+// export const toUpper = curry(function toUpper(target) {
+//     return target.toUpperCase()
+// })
+// export const toLower = curry(function toLower(target) {
+//     return target.toLowerCase()
+// })
+// export const toString = curry(function toString(target) {
+//     return String(target)
+// })
+// export const toNumber = curry(function toNumber(target) {
+//     return Number(target)
+// })
+// export const assign = curry((object, target) => Object.assign(target, object))
 
-export const stringify = curry(function stringify(target) {
-    return JSON.stringify(target, null, 4)
-})
+// export const stringify = curry(function stringify(target) {
+//     return JSON.stringify(target, null, 4)
+// })
 
 //
 // export function compute(...args) {

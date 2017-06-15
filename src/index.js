@@ -44,8 +44,11 @@ const {
     delay,
     pick,
     functions,
+    argx,
     pipeP,
-    flip
+    flip,
+    contains,
+    box
 } = bitbox
 
 const obj = observable()
@@ -76,16 +79,15 @@ obj.logs = []
 
 const setInc = set(__, inc(__(0)))
 const pathInc = path(getPath(__, setInc))
-const setBox = path(getPath(__, __(curry.map(set, 1))))
-const observeBox = path(getPath(__, __(curry.map(observe, 1))))
+const setBox = path(getPath(__, __(argx(set, 1))))
+const observeBox = path(getPath(__, __(argx(observe, 1))))
 const toJSON = res => res.json()
-//pipeP(fetch, toJSON)(__(concat(__(join("/"))), "https://api.github.com/"))
 const github = path(
-    curry((url, resolve) => fetch(url).then(toJSON).then(resolve))(__(concat(__(join("/"))), "https://api.github.com/"))
+    box((url, resolve) => fetch(url).then(toJSON).then(resolve))(__(concat(__(join("/"))), "https://api.github.com/"))
 )
 
 const getRepo = github.repos.serebano
-const setRepo = curry.map(set(__, __(pick(["git_url", "owner", "id"]))), 0, 2)
+const setRepo = argx(set(__, __(pick(["git_url", "owner", "id"]))), 0, 2)
 
 observeBox.repos(log, obj)
 github.repos.serebano.bitbox(setRepo("bitbox", obj))
@@ -125,77 +127,44 @@ const hi4 = hi3(__(join(" - ")))
 
 hi4(["Sergiu", "Toderascu"])
 
-//__(toUpper)(__(hi, set("foo", __, obj)))("xxxx ouou")
-
 path(resolve(__, new Date())).getTime()
-
 path(resolve(__, obj)).counter(set("value", inc), log, add(20))
-
 path(assocPath).a.b.c.d.e.f.g.h(10, obj)
-
-path(pipe(r.union, resolve)).counter(
-    set("value", inc),
-    //tap(log),
-    "value",
-    add(3),
-    as("demo"),
-    set("demo", add(-100)),
-    log
-)(obj)
-
-const h = curry(function h(a, b, c, d, e) {
-    return { a, b, c, d, e }
-})
-h(1, 2, 3, 4, 5)
-
-// x('Hello', __.toUpper(), __(add, 1))('jjj',6)
-
-const cnt = set(
-    "count",
-    __(value => {
-        if (!is.number(value)) {
-            console.error(`nnumber required`, { value })
-            return id
-        }
-        return value >= 10 ? add(-10) : add(value)
-    }),
-    obj
-)
-
-// items = app.items
-// itemValues = items.pluck('value')
-// itemTags = itemValues.map(tag`Item #${0}`)
-// itemTags.join('\n', obj)
-// //items.observe(log, obj)
-// getItem = idx => items[idx].value
-// setitem = curry((idx,obj) => getItem(idx).set(add(idx), obj))
-// getItem(1).observe(log, obj)
-// setitem(1, obj)
 
 const counter = app(observable)({ value: 0 })
 app.count.observe(app(tag`item = ${0}`, log), obj)
 app.count.set(inc, obj)
 
-//console.log(join(" - ", __(times(__, 10)))(concat(__(String), "item ")))
-
-// observe(
-//     "items",
-//     pipe(map(tag`<li>Count = ${"value"}</li>`), join(""), set("innerHTML", __(tag`<ul>${0}</ul>`), document.body)),
-//     obj
-// )
-
 observe("count", log, obj)
 set("count", inc, obj)
 
-// __(id, "items", map(app.value.tag`itm -> ${0}`), join("\n * "), concat(__, "\n*** Items: \n * "))(obj)
-
-// app.items.map(set("value", inc))(obj)
+app.items.map(set("value", inc))(obj)
+const app2 = path((path, ...args) => {
+    const key = last(path)
+    if (has(key, functions)) {
+        path.pop()
+        const fn = get(key, functions)
+        // const target = getPath(
+        //     path,
+        //     (key, target) => {
+        //         return target[key]
+        //     },
+        //     args.pop()
+        // )
+        if (contains("key", fn.rest)) {
+            return getPath(path, fn(__, ...args), args.pop())
+        }
+        return fn(...args, getPath(path, get, args.pop()))
+    }
+    return getPath(path, get, ...args)
+})
+//.add(1)
 
 Object.assign(window, bitbox, {
     functions,
-    h,
     x2,
     hi,
+    app2,
     setInc,
     setBox,
     setRepo,
@@ -204,7 +173,6 @@ Object.assign(window, bitbox, {
     hi2,
     hi3,
     hi4,
-    cnt,
     github,
     r,
     b1,

@@ -8,11 +8,11 @@ import __ from "./arg"
 
 function curry(fn, argNames) {
     if (isCurryable(fn)) {
-        return curryTo(argNames.length, fn, argNames)
+        return curryTo(fn.length, fn, argNames)
     }
-    if (arguments.length === 2) {
-        return curryTo(argNames.length, fn, argNames)
-    }
+    // if (arguments.length === 2) {
+    //     return curryTo(fn.length, fn, argNames)
+    // }
     return curryTo(fn.length, fn, argNames)
 }
 // curry(set, ['value','key','target'])
@@ -29,8 +29,8 @@ function f(fn, ...args) {
                 obj[key] = arguments[idx]
                 return obj
             }, {})
-            console.log(`map`, map)
-            return fn(...args.map((arg, idx) => arguments[idx]))
+            console.log(`map`, map, fn)
+            return fn(map)
         },
         args
     )
@@ -52,25 +52,27 @@ function curryMap(fn, ...m) {
         })
     }
     const argNames = m.map(i => fn.argNames[i])
-    function argMap() {
+    function fx() {
         return fn.apply(this, m.map(i => arguments[i]))
     }
-    argMap.displayName = fn.displayName
-    return curryTo(m.length, argMap, argNames)
+    fx.displayName = fn.displayName
+    return curryTo(m.length, fx, argNames)
 }
+
 curry.map = create.map = curryMap
+
 export const adaptTo = curry(function(length, fn) {
     return curryTo(length, function adaptTo(target) {
         return fn.apply(this, Array.prototype.slice.call(arguments, 1).concat(target))
     })
 })
 
-export const adapt = curry(function adapt(fn) {
+export const target = curry(function adapt(fn) {
     return adaptTo(fn.length, fn)
 })
 
 curry.to = curryTo
-curry.adapt = adapt
+curry.target = target
 curry.adaptTo = adaptTo
 
 function curryX(fn, length, received, argNames, receivedNames, left) {

@@ -14,7 +14,7 @@ export const methods = {
     pop: ["target"],
     concat: ["value", "functor"],
     filter: ["fn", "functor"],
-    sort: ["fn", "functor"],
+    sort: ["fn", "functor"]
     //reduce: ["fn", "initialValue", "functor"],
-    indexOf: ["value", "target"]
+    //indexOf: ["value", "target"]
 }

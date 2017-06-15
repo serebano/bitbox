@@ -1,6 +1,5 @@
-import curry from "../curry"
-import _toString from "../curry/toString"
+import box from "../box"
 
-export default curry(function toString(val) {
-    return _toString(val, [])
+export default box(function toString(value) {
+    return String(value)
 })

@@ -1,7 +1,5 @@
 import desc from "./desc"
-//import curry from "./curry.x"
 import is from "../is"
-import print from "../operators/print"
 import { isCurryable } from "./isCurryable"
 
 export function createFn(length, fn) {
@@ -89,6 +87,7 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
     fn.toString = (...x) => {
         if (x.length) return toPrimitive(x)
         const receivedLen = args.length
+        if (!receivedLen) return `${targetFn}`
         return `(${rest.join(", ")}) => ${name}(${argNames
             .map((arg, idx) => {
                 if (receivedLen > idx) {
