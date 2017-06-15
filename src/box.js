@@ -1,7 +1,3 @@
-import curryX from "./curry/curry.x"
-import { store, index } from "./curry/desc"
+import curry from "./curry/curry.x"
 
-curryX.store = store
-curryX.index = index
-
-export default curryX
+export default curry

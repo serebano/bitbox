@@ -4,6 +4,8 @@ import curry3 from "./curry.3"
 import curryTo from "./curry.to"
 import curryX from "./curry.x"
 import adapt from "./curry.adapt"
+import n1, { config } from "./named"
+import n2 from "./named2"
 import desc, { store, index } from "./desc"
 
 const curry = curry1(function curry(fn) {
@@ -21,4 +23,8 @@ curry.store = store
 curryX.store = store
 curryX.desc = desc
 curryX.index = index
+curryX.n1 = n1
+curryX.config = config
+curryX.n2 = n2
+
 export default curryX

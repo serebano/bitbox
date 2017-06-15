@@ -89,7 +89,7 @@ const github = path(
 const getRepo = github.repos.serebano
 const setRepo = argx(set(__, __(pick(["git_url", "owner", "id"]))), 0, 2)
 
-observeBox.repos(log, obj)
+observeBox.bitbox(log, obj)
 github.repos.serebano.bitbox(setRepo("bitbox", obj))
 
 setBox.name(__(toUpper(__(concat, "Mr. "))))("serebano", obj)

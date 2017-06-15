@@ -63,43 +63,29 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
     fn.argNames = argNames
     fn.displayName = name
 
-    const toPrimitive = a => {
+    fn.toString = (...x) => {
         const receivedLen = args.length
-        //console.log(`toPrimitive`, name, receivedLen, a, argNames, args, rest)
-        return `${name}(${argNames
-            .map((name, idx) => {
-                if (receivedLen > idx) {
-                    const argName = a[idx] || name
-                    const argValue = args[idx]
-                    //console.log(`received-arg ->`, idx, argName, argValue)
-                    if (is.placeholder(argValue)) {
-                        return argValue.toString(argName)
+        if (!receivedLen && !x.length) return `${targetFn}`
+        return (
+            (!x.length ? `(${rest.join(", ")}) => ` : ``) +
+            `${name}(${argNames
+                .map((name, idx) => {
+                    if (receivedLen > idx) {
+                        const argName = x[idx] || name
+                        const argValue = args[idx]
+                        if (is.placeholder(argValue)) return argValue.toString(argName)
+                        return is.string(argValue)
+                            ? `"${argValue}"`
+                            : is.array(argValue) ? JSON.stringify(argValue) : argValue
                     }
-                    return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
-                }
-                const argName = a[idx - receivedLen] || name
-                //console.log(`arg->`, idx, idx - receivedLen, argName)
-                return argName
-            })
-            .join(", ")})`
+                    return x[idx - receivedLen] || name
+                })
+                .join(", ")})`
+        )
     }
 
-    fn.toString = (...x) => {
-        if (x.length) return toPrimitive(x)
-        const receivedLen = args.length
-        if (!receivedLen) return `${targetFn}`
-        return `(${rest.join(", ")}) => ${name}(${argNames
-            .map((arg, idx) => {
-                if (receivedLen > idx) {
-                    const argValue = args[idx]
-                    if (is.placeholder(argValue)) return argValue.toString(arg)
-                    return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
-                }
-                return arg
-            })
-            .join(", ")})`
-    }
     fn[isCurryable] = true
+
     return fn
 }
 
