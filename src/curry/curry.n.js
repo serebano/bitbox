@@ -1,49 +1,57 @@
 import create from "./create"
-import desc from "./desc"
 import is from "../is"
 
-function curryN(length, received, fn) {
-    function N() {
-        let combined = []
+function curryX(fn, length, received, argNames, receivedNames, left) {
+    function next() {
+        if (arguments.length === 0) return next.fn
+
+        let idx = 0
+        let args = []
         let argsIdx = 0
         let left = length
-        let combinedIdx = 0
+        let idxMap = []
+        let argsMap = []
 
-        while (combinedIdx < received.length || argsIdx < arguments.length) {
-            let result
-            if (
-                combinedIdx < received.length &&
-                (!is.placeholder(received[combinedIdx]) || argsIdx >= arguments.length)
-            ) {
-                result = received[combinedIdx]
+        while (argsIdx < received.length || idx < arguments.length) {
+            let result, idxres
+
+            if (argsIdx < received.length && (!is.placeholder(received[argsIdx]) || idx >= arguments.length)) {
+                result = received[argsIdx]
             } else {
-                if (is.placeholder(received[combinedIdx])) {
-                    const $arg = received[combinedIdx]
-                    if (is.func($arg) && $arg.isHandler) {
-                        result = $arg(arguments[argsIdx])
+                const $arg = received[argsIdx]
+                const val = arguments[idx]
+                if (is.placeholder($arg)) {
+                    if ($arg["@@isHandler"]) {
+                        result = $arg(val)
                     } else {
-                        result = arguments[argsIdx]
+                        result = val
                     }
                 } else {
-                    result = arguments[argsIdx]
+                    result = val
                 }
-
-                argsIdx += 1
+                idx += 1
             }
 
-            combined[combinedIdx] = result
+            args[argsIdx] = result
+            idxMap.push(argNames[argsIdx] || argsIdx)
 
-            if (!is.placeholder(result)) left -= 1
-            combinedIdx += 1
+            if (!is.placeholder(result)) {
+                left -= 1
+            }
+
+            argsIdx += 1
         }
 
-        if (left <= 0) return fn.apply(this, combined)
+        if (left <= 0) {
+            return fn.apply(this, args)
+        }
 
-        const fx = create(left, curryN(length, combined, fn))
-        return desc(fn, fx, combined)
+        const nextFn = curryX(fn, length, args, argNames, idxMap, left)
+
+        return create(left, nextFn, fn, args, argNames, idxMap)
     }
 
-    return desc(fn, N, received)
+    return next
 }
 
-export default curryN
+export default curryX

@@ -86,6 +86,9 @@ const github = path(
     box((url, resolve) => fetch(url).then(toJSON).then(resolve))(__(concat(__(join("/"))), "https://api.github.com/"))
 )
 
+const xfn = box.fn("{set, inc,__}", "key", "target", "set(key, inc(__(0)), target)")
+xfn({ set, inc, __ }, "count", obj)
+
 const getRepo = github.repos.serebano
 const setRepo = argx(set(__, __(pick(["git_url", "owner", "id"]))), 0, 2)
 

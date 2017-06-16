@@ -63,18 +63,20 @@ function create(length, nextFn, targetFn, args, argNames = [], argMap = []) {
     fn.argNames = argNames
     fn.displayName = name
 
-    fn.toString = (...x) => {
+    fn.toString = (x = [], z) => {
         const receivedLen = args.length
-        if (!receivedLen && !x.length) return `${targetFn}`
+        if (!receivedLen && (!x.length && !z)) return `${targetFn}`
         return (
-            (!x.length ? `(${rest.join(", ")}) => ` : ``) +
+            (!x.length && !z ? `(${rest.join(", ")}) => ` : ``) +
             `${name}(${argNames
                 .map((name, idx) => {
                     if (receivedLen > idx) {
                         const argName = x[idx] || name
                         const argValue = args[idx]
-                        if (is.placeholder(argValue)) return argValue.toString(argName)
-                        return is.string(argValue) ? `"${argValue}"` : is.array(argValue) ? JSON.stringify(argValue) : argValue
+                        if (is.placeholder(argValue)) return argValue.toString([argName])
+                        return is.string(argValue)
+                            ? `"${argValue}"`
+                            : is.array(argValue) ? JSON.stringify(argValue) : argValue
                     }
                     return x[idx - receivedLen] || name
                 })
