@@ -1,4 +1,4 @@
-import curry3 from "../curry/curry.3"
+import curry from "../curry"
 
 /**
  * `o` is a curried composition function that returns a unary function.
@@ -25,6 +25,7 @@ import curry3 from "../curry/curry.3"
  *
  * @symb R.o(f, g, x) = f(g(x))
  */
-export default curry3(function o(f, g, x) {
+
+export default curry(function o(f, g, x) {
     return f(g(x))
 })

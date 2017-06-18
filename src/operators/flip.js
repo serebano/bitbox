@@ -8,5 +8,5 @@ export default curry(function flip(fn) {
         return fn.apply(this, args)
     }
     f.displayName = fn.displayName
-    return curry(f, [fn.argNames[1], fn.argNames[0], ...fn.argNames.slice(2)])
+    return curry(f, fn.length)
 })

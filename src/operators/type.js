@@ -1,7 +1,5 @@
-import curry from "../curry/curry.x"
+import curry from "../curry"
 
-function type(val) {
-    return val === null ? "Null" : val === undefined ? "Undefined" : Object.prototype.toString.call(val).slice(8, -1)
-}
-
-export default curry(type)
+export default curry(function type(val) {
+    return val === null ? "null" : val === undefined ? "undefined" : Object.prototype.toString.call(val).slice(8, -1)
+})

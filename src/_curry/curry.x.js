@@ -20,9 +20,10 @@ function curryX(fn, length, received, argNames, receivedNames, left) {
             } else {
                 const $arg = received[argsIdx]
                 const val = arguments[idx]
+
                 if (is.placeholder($arg)) {
                     if ($arg["@@isHandler"]) {
-                        result = $arg(val)
+                        result = $arg(val) //is.placeholder(val) ? $arg.__(val) : $arg(val)
                     } else {
                         result = val
                     }

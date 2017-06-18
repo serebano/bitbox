@@ -1,10 +1,9 @@
-import box from "../box"
-import { createFn } from "../curry/create"
+import curry from "../curry"
 import max from "./max"
 import map from "./map"
 import reduce from "./reduce"
 
-export default box(function cond(pairs) {
+export default curry(function cond(pairs) {
     let arity = reduce(
         max,
         0,
@@ -12,7 +11,7 @@ export default box(function cond(pairs) {
             return pair[0].length
         }, pairs)
     )
-    return createFn(arity, function() {
+    return curry(function() {
         let idx = 0
         while (idx < pairs.length) {
             if (pairs[idx][0].apply(this, arguments)) {
@@ -20,5 +19,5 @@ export default box(function cond(pairs) {
             }
             idx += 1
         }
-    })
+    }, arity)
 })

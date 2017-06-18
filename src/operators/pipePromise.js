@@ -1,6 +1,6 @@
 import tail from "./tail"
 import reduce from "./reduce"
-import { createFn } from "../curry/create"
+import curry from "../curry"
 
 export function _pipePromise(f, g) {
     return function u() {
@@ -15,5 +15,5 @@ export default function pipePromise() {
     if (arguments.length === 0) {
         throw new Error("pipePromise requires at least one argument")
     }
-    return createFn(arguments[0].length, reduce(_pipePromise, arguments[0], tail(arguments)))
+    return curry(reduce(_pipePromise, arguments[0], tail(arguments)), arguments[0].length)
 }

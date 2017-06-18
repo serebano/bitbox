@@ -1,11 +1,11 @@
 import invoke from "./invoke"
 
-export const join = invoke(["delimiter", "target"], "join")
-export const push = invoke(["value", "target"], "push")
-export const pop = invoke(["target"], "pop")
-export const concat = invoke(["a", "b"], "concat")
-export const filter = invoke(["fn", "target"], "filter")
-export const sort = invoke(["fn", "target"], "sort")
+export const join = invoke("join", ["delimiter", "target"])
+export const push = invoke("push", ["value", "target"])
+export const pop = invoke("pop", ["target"])
+export const concat = invoke("concat", ["a", "b"])
+export const filter = invoke("filter", ["fn", "target"])
+export const sort = invoke("sort", ["fn", "target"])
 //export const reduce = invoke(["fn", "initialValue", "target"], "reduce")
 
 export const methods = {

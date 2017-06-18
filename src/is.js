@@ -1,5 +1,4 @@
 import { isObservable } from "./observer"
-import isPlaceholder from "./curry/isPlaceholder"
 
 function _is(Ctor, val) {
     return (val != null && val.constructor === Ctor) || val instanceof Ctor
@@ -8,7 +7,8 @@ function _is(Ctor, val) {
 const is = {
     box: arg => is.func(arg) && Reflect.has(arg, Symbol.for("box")),
     observable: arg => isObservable(arg),
-    placeholder: arg => arg && isPlaceholder(arg),
+    curryable: arg => arg && arg[is.curryable.symbol] === true,
+    placeholder: arg => arg && arg["@@functional/placeholder"] === true,
     func: arg => typeof arg === "function",
     object: arg => typeof arg === "object" && arg !== null && !Array.isArray(arg),
     complexObject: arg => typeof arg === "object" && arg !== null,
@@ -22,5 +22,7 @@ const is = {
     undefined: arg => typeof arg === "undefined",
     null: arg => arg === null
 }
+
+is.curryable.symbol = Symbol("isCurryable")
 
 export default Object.assign(_is, is)
