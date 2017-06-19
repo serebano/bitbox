@@ -25,7 +25,7 @@ export const _curry0 = (fn, nextFn) => {
     return curried
 }
 
-export function curryN(n, fn) {
+export function _curryN(n, fn) {
     if (n === 1) return fn
 
     return _curry0(fn, (...args) => {
@@ -38,7 +38,7 @@ export function curryN(n, fn) {
 
         const restLength = n - argsLength
 
-        return curryN(
+        return _curryN(
             restLength,
             _curry0(fn, (...rest) => {
                 fn.rest = rest
@@ -56,6 +56,34 @@ export function cx(fn, ...args) {
     return (...next) => cx(fn, ...args, ...next)
 }
 
-export default function curry(fn, length) {
-    return curryN(length || fn.length, fn)
+export function curryN(length, fn) {
+    return arity(length, function() {
+        let n = arguments.length
+        let shortfall = length - n
+        let idx = n
+        while (--idx >= 0) {
+            if (is.placeholder(arguments[idx])) {
+                shortfall += 1
+            }
+        }
+        if (shortfall <= 0) {
+            return fn.apply(this, arguments)
+        } else {
+            let initialArgs = [...arguments]
+            return curryN(shortfall, function() {
+                const currentArgs = [...arguments]
+                const combinedArgs = []
+                let idx = -1
+                while (++idx < n) {
+                    var val = initialArgs[idx]
+                    combinedArgs[idx] = is.placeholder(val) ? currentArgs.shift() : val
+                }
+                return fn.apply(this, combinedArgs.concat(currentArgs))
+            })
+        }
+    })
+}
+
+export default function curry(fn) {
+    return curryN(fn.length, fn)
 }

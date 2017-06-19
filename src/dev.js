@@ -1,4 +1,6 @@
+import is from "./is"
 import curry from "./curry"
+import __ from "./__"
 const MAX_SAFE_INTEGER = 9007199254740991
 const PLACEHOLDER = "__lodash_placeholder__"
 /** Used to detect unsigned integer values. */
@@ -23,14 +25,25 @@ export function reorder(array, indexes) {
     }
     return array
 }
-
+export function rearg(fn, indexes) {
+    return (...args) => fn(...reorder(args, indexes))
+}
 export function cx(fn, ...args) {
     if (args.length >= fn.length) {
         return fn(...args)
     }
 
-    return (...next) => cx(fn, ...args, ...next)
+    const next = (...rest) => {
+        const a = args.map(arg => (is.placeholder(arg) ? arg(rest.shift()) : arg)).concat(rest)
+        return cx(fn, ...a)
+    }
+    next[`[[CurryFunction]]`] = fn
+    next[`[[CurryArgs]]`] = args
+
+    return next
 }
+export const _set = cx((key, val, obj) => (obj[key] = val(obj[key])))
+_set(__(a => a), a => a + 1)("x", { x: 0 })
 
 const f = cx(cx((a, b, c) => a + b * c))
 

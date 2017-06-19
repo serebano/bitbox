@@ -1,7 +1,7 @@
 import is from "./is"
-import curry from "./curry"
-import arity from "./arity"
-import { defaultTo } from "./functions"
+//import curry from "./curry"
+//import arity from "./arity"
+//import { defaultTo } from "./functions"
 /**
     __(fn, ...args) ->
     arg => fn(arg, ...args)
