@@ -1,0 +1,8 @@
+export { default as multiply } from "./multiply"
+export { default as divide } from "./divide"
+export { default as add } from "./add"
+export { default as inc } from "./inc"
+export { default as dec } from "./dec"
+export { default as sum } from "./sum"
+export { default as negate } from "./negate"
+export { default as substract } from "./substract"

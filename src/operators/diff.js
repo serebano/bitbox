@@ -1,8 +1,8 @@
-import box from "../box"
+import curry from "../curry"
 import _indexOf from "./indexOf"
 import contains from "./contains"
 
-export default box(function difference(first, second) {
+export default curry(function difference(first, second) {
     let out = []
     let idx = 0
     let firstLen = first.length

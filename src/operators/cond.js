@@ -4,13 +4,8 @@ import map from "./map"
 import reduce from "./reduce"
 
 export default curry(function cond(pairs) {
-    let arity = reduce(
-        max,
-        0,
-        map(function(pair) {
-            return pair[0].length
-        }, pairs)
-    )
+    const arity = reduce(max, 0, map(pair => pair[0].length, pairs))
+
     return curry(function() {
         let idx = 0
         while (idx < pairs.length) {

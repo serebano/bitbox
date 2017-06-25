@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function defaultTo(d, v) {
-    return v == null || v !== v ? d : v
+export default curry(function defaultTo(value, target) {
+    return target == null || target !== target ? value : target
 })

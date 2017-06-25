@@ -1,13 +1,18 @@
 import is from "./is"
 import __ from "./__"
+import box from "./box"
 import arity from "./arity"
 import path from "./path"
-import curry, { curryN } from "./curry"
+import curry from "./curry"
+import curryN from "./curryN"
 import partial from "./partial"
 import ary, { unary, binary, ternary } from "./ary"
-import * as functions from "./functions"
+import * as operators from "./operators"
 import * as dev from "./dev"
-import * as fnz from "./fnz"
+import * as fz from "./functions"
+import resolve from "./resolve"
+import * as observer from "./observer"
+import R from "ramda"
 
 export { default as __ } from "./__"
 export { default as is } from "./is"
@@ -15,24 +20,29 @@ export { default as ary } from "./ary"
 export { default as arity } from "./arity"
 export { default as path } from "./path"
 export { default as curry } from "./curry"
-export { curryN } from "./curry"
+export { default as curryN } from "./curryN"
 
 export { default as fnz } from "./fnz"
-export * from "./functions"
+export * from "./operators"
 
-Object.assign(window, functions, dev, {
+Object.assign(window, dev, operators, {
     is,
     dev,
     __,
-    fnz,
+    box,
+    R,
+    fz,
     ary,
     unary,
     binary,
     ternary,
+    resolve,
     arity,
     curry,
     curryN,
     path,
     partial,
-    functions
+    observer,
+    //observable,
+    operators
 })

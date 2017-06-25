@@ -1,6 +1,6 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function identical(a, b) {
+export default curry(function identical(a, b) {
     // SameValue algorithm
     if (a === b) {
         // Steps 1-5, 7-10

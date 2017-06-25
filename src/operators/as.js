@@ -1,7 +1,7 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function as(key, value) {
+export default curry(function as(prop, value) {
     return {
-        [key]: value
+        [prop]: value
     }
 })

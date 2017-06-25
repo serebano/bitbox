@@ -1,6 +1,8 @@
-export default curryN(2, function rearg(newOrder, fn) {
+import curry from "./curry"
+
+export default curry(function(newOrder, fn) {
     var l = newOrder.length
-    return ofArity(l, function() {
+    return arity(l, function() {
         var args = []
         for (var i = 0; i < l; ++i) {
             args[newOrder[i]] = arguments[i]
@@ -9,4 +11,4 @@ export default curryN(2, function rearg(newOrder, fn) {
     })
 })
 
-const flip = rearg([1, 0])
+//const flip = rearg([1, 0])

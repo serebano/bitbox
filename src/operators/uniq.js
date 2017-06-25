@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function uniq(list) {
+export default curry(function uniq(list) {
     return Array.from(new Set(list))
 })

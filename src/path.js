@@ -9,7 +9,7 @@ function create(box, path = [], handler) {
             return Reflect.apply(target, context, [path].concat(args))
         },
         get(target, key, receiver) {
-            if (key === "$") return { box, target, path }
+            if (key === "$") return path
             if (key === Symbol.for("box")) return true
             if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(path)
             if (key === Symbol.toPrimitive) return primitive(path)

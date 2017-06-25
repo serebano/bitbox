@@ -1,4 +1,8 @@
-function tag(strings, ...keys) {
+import curry from "../curry"
+
+function tag(strings) {
+    const keys = Array.prototype.slice.call(arguments, 1)
+
     function t(...values) {
         var dict = values[values.length - 1] || {}
         var result = [strings[0]]
@@ -9,6 +13,7 @@ function tag(strings, ...keys) {
         return result.join("")
     }
     t.displayName = `tag\`${strings}\``
-    return t
+    return curry(t, 1)
 }
-export default tag
+
+export default curry(tag, 1)

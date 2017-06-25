@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function toString(value) {
+export default curry(function toString(value) {
     return String(value)
 })

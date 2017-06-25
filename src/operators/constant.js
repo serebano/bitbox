@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function constant(value) {
+export default curry(function constant(value) {
     return () => value
 })

@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function toNumber(target) {
+export default curry(function toNumber(target) {
     return Number(target)
 })

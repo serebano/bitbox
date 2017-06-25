@@ -1,59 +1,61 @@
 import is from "./is"
 import curry from "./curry"
 import __ from "./__"
-const MAX_SAFE_INTEGER = 9007199254740991
-const PLACEHOLDER = "__lodash_placeholder__"
-/** Used to detect unsigned integer values. */
-const reIsUint = /^(?:0|[1-9]\d*)$/
+import path from "./path"
+import resolve from "./resolve"
+import { last, drop, concat, has, get, apply } from "./operators"
+import * as functions from "./operators"
+import box from "./box"
 
-function isIndex(value, length) {
-    length = length == null ? MAX_SAFE_INTEGER : length
-    return (
-        !!length &&
-        (typeof value == "number" || reIsUint.test(value)) &&
-        (value > -1 && value % 1 == 0 && value < length)
-    )
-}
+export const api = path(function api(keys, ...args) {
+    const key = last(keys)
 
-export function reorder(array, indexes) {
-    const oldArray = [...array]
-    const arrLength = array.length
-    let length = Math.min(indexes.length, arrLength)
-    while (length--) {
-        const index = indexes[length]
-        array[length] = isIndex(index, arrLength) ? oldArray[index] : undefined
-    }
-    return array
-}
-export function rearg(fn, indexes) {
-    return (...args) => fn(...reorder(args, indexes))
-}
-export function cx(fn, ...args) {
-    if (args.length >= fn.length) {
-        return fn(...args)
+    if (has(key, functions)) {
+        return path(api, concat(apply(get(key, functions), args), drop(-1, keys)))
     }
 
-    const next = (...rest) => {
-        const a = args.map(arg => (is.placeholder(arg) ? arg(rest.shift()) : arg)).concat(rest)
-        return cx(fn, ...a)
-    }
-    next[`[[CurryFunction]]`] = fn
-    next[`[[CurryArgs]]`] = args
+    return resolve(concat(drop(-1, args), keys), last(args))
+})
 
-    return next
+export const g = box(functions)
+
+export const obj = {
+    app: { count: 0 }
 }
-export const _set = cx((key, val, obj) => (obj[key] = val(obj[key])))
-_set(__(a => a), a => a + 1)("x", { x: 0 })
 
-const f = cx(cx((a, b, c) => a + b * c))
-
-console.log(f(1)(2)(3))
+// api.a
+//     .concat(__, ["x", "y"])
+//     .join(" * ")
+//     .split(" * ")
+//     .sortBy(api[0])
+//     .map(api.toUpper())
+//     .take(-3)
+//     .reverse()
+//     .assocPath(__, 10, {})
+//     .as("foo")
+//     .tap(api.foo.Y.X.set("C", api.inc()))
+//     .log()({ a: ["a", "b", "c"] })
+//
+// api.a
+//     .concat(__, ["z", "x", "y"])
+//     .join(" * ")
+//     .split(" * ")
+//     .map(api.toUpper().as("item"))
+//     .sortBy(api.item)
+//     .as("foo")
+//     .log()({ a: ["a", "b", "c"] })
+//
+// api
+//     .assoc(api.g[2].a.b.c.d[1].e.f[4].g.h.d.$, 100)
+//     .g[api.id(2).a.b.c].d.concat(["xxx", { h: { v: 5 } }])
+//     .as("hhhh")
+//     .log()({})
 
 export function Demo(key, value, object) {
     return { key, value, object }
 }
 
-export function g(a, b, c) {
+export function h(a, b, c) {
     return [a, b, c]
 }
 
@@ -61,4 +63,4 @@ export function args(...args) {
     return args
 }
 
-export const x = curry(g)
+export const x = curry(h)

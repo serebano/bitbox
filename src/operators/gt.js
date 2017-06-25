@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function gt(a, b) {
+export default curry(function gt(a, b) {
     return a < b
 })

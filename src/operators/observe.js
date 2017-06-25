@@ -1,7 +1,6 @@
 import curry from "../curry"
-import { observe } from "../observer"
-import get from "./get"
+import { observe, observable } from "../observer"
 
-export default curry(function observe(key, fn, target) {
-    return observe(() => fn(get(key, target)))
+export default curry(function observer(fn, target) {
+    return observe(() => fn(target))
 })

@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function assign(object, target) {
+export default curry(function assign(object, target) {
     return Object.assign(target, object)
 })

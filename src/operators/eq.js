@@ -1,4 +1,4 @@
-import box from "../box"
+import curry from "../curry"
 import _functionName from "../utils/functionName"
 import _has from "./has"
 import identical from "./identical"
@@ -64,12 +64,14 @@ function _equals(a, b, stackA, stackB) {
             return a.name === b.name && a.message === b.message
         case "RegExp":
             if (
-                !(a.source === b.source &&
+                !(
+                    a.source === b.source &&
                     a.global === b.global &&
                     a.ignoreCase === b.ignoreCase &&
                     a.multiline === b.multiline &&
                     a.sticky === b.sticky &&
-                    a.unicode === b.unicode)
+                    a.unicode === b.unicode
+                )
             ) {
                 return false
             }
@@ -125,6 +127,6 @@ function _equals(a, b, stackA, stackB) {
     return true
 }
 
-export default box(function equals(a, b) {
+export default curry(function equals(a, b) {
     return _equals(a, b, [], [])
 })

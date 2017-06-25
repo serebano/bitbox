@@ -1,6 +1,6 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function tap(fn, target) {
+export default curry(function tap(fn, target) {
     fn(target)
     return target
 })

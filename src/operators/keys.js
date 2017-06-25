@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function keys(target) {
+export default curry(function keys(target) {
     return Object.keys(target)
 })

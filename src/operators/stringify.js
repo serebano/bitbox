@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function stringify(target) {
+export default curry(function stringify(target) {
     return JSON.stringify(target, null, 4)
 })

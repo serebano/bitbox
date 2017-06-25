@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function toLower(value) {
+export default curry(function toLower(value) {
     return value.toLowerCase()
 })

@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function max(a, b) {
+export default curry(function max(a, b) {
     return b > a ? b : a
 })

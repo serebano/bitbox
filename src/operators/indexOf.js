@@ -1,7 +1,7 @@
-import box from "../box"
+import curry from "../curry"
 import eq from "./eq"
 
-export default box(function indexOf(target, xs) {
+export default curry(function indexOf(target, xs) {
     return typeof xs.indexOf === "function" && !Array.isArray(xs) ? xs.indexOf(target) : _indexOf(xs, target, 0)
 })
 

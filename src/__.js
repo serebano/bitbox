@@ -1,29 +1,20 @@
 import is from "./is"
-//import curry from "./curry"
-//import arity from "./arity"
-//import { defaultTo } from "./functions"
-/**
-    __(fn, ...args) ->
-    arg => fn(arg, ...args)
-    const $ = curry(arg => (is.placeholder(arg) ? __(fn(arg, ...args)) : fn(arg, ...args)))
-*/
+import defaultTo from "./operators/defaultTo"
 
-function argFn(fn, args) {
-    const fx = arg => {
-        const res = is.placeholder(arg) ? argFn(fn(arg, args)) : fn(arg, ...args)
-        console.log(`arg`, { fn, arg, args, res })
-        return res
-    }
-    console.log(`argFn`, { fn, args, fx })
+export const placeholder = Symbol.for("functional/placeholder")
+export const isPlaceholder = arg => typeof arg === "function" && Reflect.has(arg, placeholder)
 
-    fx["@@functional/placeholder"] = true
+function __(fn, ...args) {
+    if (!is.func(fn)) fn = defaultTo(fn)
+    const fx = arg => (isPlaceholder(arg) ? __(fn(arg, ...args)) : fn(arg, ...args))
+
+    fx.toString = () => `__(${fn})`
+    fx[placeholder] = true
+
     return fx
 }
 
-function __(fn, ...args) {
-    return argFn(fn, args)
-}
-
-__["@@functional/placeholder"] = true
+__.toString = () => `__`
+__[placeholder] = true
 
 export default __

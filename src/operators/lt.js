@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function lt(a, b) {
+export default curry(function lt(a, b) {
     return a > b
 })

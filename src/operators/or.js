@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function or(a, b) {
+export default curry(function or(a, b) {
     return a || b
 })

@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function proxy(handler, target) {
+export default curry(function proxy(handler, target) {
     return new Proxy(target, handler)
 })

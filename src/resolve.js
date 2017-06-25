@@ -19,7 +19,9 @@ export default curry(function resolve(path, target) {
 
         const value = obj[key]
         if (is.func(value)) {
-            return value.apply(obj, path.slice(index + 1))
+            const args = path.splice(index + 1, value.length - 1)
+            console.log(`args`, { value, obj, args })
+            return value.apply(obj, args)
         }
         return value
     }, target)

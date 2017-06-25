@@ -1,5 +1,5 @@
-import box from "../box"
+import curry from "../curry"
 
-export default box(function and(a, b) {
+export default curry(function and(a, b) {
     return a && b
 })
