@@ -41,7 +41,7 @@ function curry(fn) {
                     .concat(rest)
             )
         })
-
+        fnb[Symbol.for("functional/curryable")] = true
         fnb.displayName = name
         fnb.argNames = argNames.slice(fnb.length)
         fnb.args = args
@@ -50,7 +50,7 @@ function curry(fn) {
 
         return fnb
     })
-
+    fna[Symbol.for("functional/curryable")] = true
     fna.displayName = name
     fna.argNames = argNames
     fna.toString = () => fnToString(fn) + "(" + argNames.join(", ") + ")"

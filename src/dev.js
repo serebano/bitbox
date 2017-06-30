@@ -17,7 +17,7 @@ export const api = path(function api(keys, ...args) {
     return resolve(concat(drop(-1, args), keys), last(args))
 })
 
-export const g = box(functions)
+export const g = box(Object.assign({}, functions, { __, curry }))
 
 export const obj = {
     app: { count: 0 }

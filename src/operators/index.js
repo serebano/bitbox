@@ -24,6 +24,7 @@ export { default as apply } from "./apply"
 
 export { default as to } from "./to"
 
+export { default as initial } from "./initial"
 export { default as rearg } from "./rearg"
 export { default as methods } from "./methods"
 export { default as reorder } from "./reorder"

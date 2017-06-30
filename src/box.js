@@ -1,39 +1,36 @@
 import resolve from "./resolve"
 import is from "./is"
-import { getArgNames } from "./utils"
+import { getArgNames, toPrimitive } from "./utils"
 import __, { placeholder } from "./__"
-import { last, has, get, apply } from "./operators"
+import { first, last, has, get, apply } from "./operators"
+import curry from "./curry"
+
+function primitive(keys) {
+    primitive.__keys = keys
+    return () => (primitive.__key = toPrimitive(keys))
+}
 
 function box(object) {
     function executor(fn, keys, currentKey) {
-        //console.log(`[%cexecutor%c]`, `color:#c00`, "", fn, keys, currentKey)
         return new Proxy(fn, {
-            apply(fn, ctx, args) {
-                const withKey = currentKey && fn.argNames && fn.argNames[0] === "key"
-                const allArgs = withKey ? [currentKey].concat(args) : args
-                const argsLen = allArgs.length
+            apply(fn, ctx, _args) {
+                const withKey = currentKey && fn.argNames && first(fn.argNames) === "key"
+                const args = withKey ? [currentKey].concat(_args) : _args
+                const argsLen = args.length
                 const fnLen = fn.length
 
-                if (fnLen <= argsLen && !is.placeholder(last(args))) {
-                    const target = allArgs.pop()
-                    const result = fn.apply(ctx, allArgs)
-                    const path = keys.concat(result)
+                const result = fn.apply(ctx, args)
+                console.group(fnLen, fn)
+                args.map((arg, idx) => console.log(fnLen, idx, arg))
 
-                    console.log(`[%cRESOLVE%c]`, `color:green`, "", path, target, allArgs)
+                console.log(result)
+                console.groupEnd()
 
-                    return resolve(path, target)
-                }
-
-                const result = fn.apply(ctx, allArgs)
-                console.log(`[%cRUN%c]`, `color:orange`, "", fn, allArgs, "->", result)
-
-                return fnLen <= argsLen ? result : executor(result, keys)
-                //return getter(keys.concat(result), currentKey)
+                return !is.func(result) ? result : executor(result, keys)
             },
             get(fn, key) {
                 if (Reflect.has(fn, key)) return Reflect.get(fn, key)
-                //if (key === placeholder) return get(key, fn)
-                console.log(`[%cRUN%c/GET]`, `color:orange`, "", key, `[key=${currentKey}]`)
+                console.log(`[%cRUN%c/GET]`, `color:orange`, "", fn, key)
 
                 if (currentKey) return getter(keys, currentKey)[key]
                 return get(key, getter(keys.concat(fn)))
@@ -47,30 +44,27 @@ function box(object) {
     function getter(keys = [], currentKey) {
         const proxy = new Proxy(object, {
             get(target, key) {
-                //console.log(`[%cGET%c] g.${keys.map(String).join(".")} -> ${key}`, "color: #61afef;", "")
-                console.log(`[GET]`, key)
-                keys.map((key, idx) => console.log(idx, key))
-
                 if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(keys)
                 if (key === Symbol.toPrimitive) return () => "box(" + keys.map(key => key.toString()).join(".") + ")"
-                if (key === placeholder) return get(key, target)
-                //if (is.symbol(key)) return get(key, target)
 
                 if (key === "$") return (fn, ...args) => fn(keys, ...args)
-                if (has(key, target)) {
-                    const fn = get(key, target)
-                    const withPath = fn.argNames && fn.argNames[0] === "path"
-                    const withKey = fn.argNames && fn.argNames[0] === "key"
-                    if (currentKey && !withKey) keys = keys.concat(get(currentKey))
-
-                    return withPath
-                        ? executor(fn(keys), [], currentKey)
-                        : withKey ? executor(fn, keys, currentKey) : executor(fn, keys)
+                if (Reflect.has(target, key)) {
+                    return executor(Reflect.get(target, key), keys, currentKey)
                 }
 
-                if (currentKey) keys = keys.concat(get(currentKey))
+                console.log(`[%cGET%c] ${String(key)}`, "color: #61afef;", "")
+                keys.map((key, idx) => console.log(idx, key))
 
-                return executor(get, keys, key)
+                const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
+                    ? primitive.__keys
+                    : is.numeric(key) ? parseInt(key) : key
+
+                //const nextKeys = [...keys, nextKey]
+
+                delete primitive.__key
+                delete primitive.__keys
+
+                return executor(get, keys, nextKey)
             }
         })
 

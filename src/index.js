@@ -13,6 +13,7 @@ import * as fz from "./functions"
 import resolve from "./resolve"
 import * as observer from "./observer"
 import R from "ramda"
+import _ from "lodash/fp"
 
 export { default as __ } from "./__"
 export { default as is } from "./is"
@@ -30,6 +31,7 @@ Object.assign(window, dev, operators, {
     dev,
     __,
     box,
+    _,
     R,
     fz,
     ary,
