@@ -3,39 +3,48 @@ import curry from "./curry"
 import __ from "./__"
 import path from "./path"
 import resolve from "./resolve"
-import { last, drop, concat, has, get, apply } from "./operators"
+import { last, drop, concat, has, get, set, inc, times, identity, to, apply } from "./operators"
 import * as functions from "./operators"
 import box from "./box"
+export * from "./examples/counter"
 
-export const api = path(function api(keys, ...args) {
-    const key = last(keys)
+export const o = Object.assign({}, functions) //{ __, curry }
+export const g = box(o)
 
-    if (has(key, functions)) {
-        return path(api, concat(apply(get(key, functions), args), drop(-1, keys)))
-    }
+export const setItems = set(__, __(times(to({ id: identity, count: inc }))))
+o.setItems = setItems
 
-    return resolve(concat(drop(-1, args), keys), last(args))
+export const obj = g.observable({
+    app: { count: 0 }
 })
 
-export const g = box(Object.assign({}, functions, { __, curry }))
+g.foo
+    .add(__(g.add(20)), __(3))
+    .add(30)
+    .as("num")
+    .tap(set("num", g.add(2)))
+    .tap(setItems("items", 10))
+    .tap(g.tap(g.observe(set("num", g.add(3)))).observe(g.log))(obj).num++
 
-export const obj = {
-    app: { count: 0 }
-}
+//g.setItems(10, obj)
 
-// api.a
+import("./curry.js").then(({ default: theDefault }) => {
+    console.log(theDefault)
+})
+
+// g.a
 //     .concat(__, ["x", "y"])
 //     .join(" * ")
 //     .split(" * ")
-//     .sortBy(api[0])
-//     .map(api.toUpper())
+//     .sortBy(g[0])
+//     .map(g.toUpper)
 //     .take(-3)
 //     .reverse()
 //     .assocPath(__, 10, {})
 //     .as("foo")
-//     .tap(api.foo.Y.X.set("C", api.inc()))
-//     .log()({ a: ["a", "b", "c"] })
-//
+//     //.tap(g.foo.Y.X.set("C", g.inc))
+//     .log({ a: ["a", "b", "c"] })
+
 // api.a
 //     .concat(__, ["z", "x", "y"])
 //     .join(" * ")

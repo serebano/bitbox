@@ -26,7 +26,7 @@ export { default as curryN } from "./curryN"
 export { default as fnz } from "./fnz"
 export * from "./operators"
 
-Object.assign(window, dev, operators, {
+Object.assign(window, operators, dev, {
     is,
     dev,
     __,

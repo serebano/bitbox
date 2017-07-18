@@ -2,6 +2,8 @@
 export * from "./math"
 /* Array */
 export * from "./array"
+export { default as __ } from "../__"
+
 /* Base */
 export { default as observe } from "./observe"
 export { default as observable } from "./observable"

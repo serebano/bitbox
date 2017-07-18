@@ -2,7 +2,7 @@ import resolve from "./resolve"
 import is from "./is"
 import { getArgNames, toPrimitive } from "./utils"
 import __, { placeholder } from "./__"
-import { first, last, has, get, apply } from "./operators"
+import { first, last, has, get, apply, pipe, compose } from "./operators"
 import curry from "./curry"
 
 function primitive(keys) {
@@ -12,59 +12,111 @@ function primitive(keys) {
 
 function box(object) {
     function executor(fn, keys, currentKey) {
-        return new Proxy(fn, {
-            apply(fn, ctx, _args) {
-                const withKey = currentKey && fn.argNames && first(fn.argNames) === "key"
-                const args = withKey ? [currentKey].concat(_args) : _args
+        const eProxy = new Proxy(fn, {
+            apply(fn, ctx, args) {
+                if (!args.length) return eProxy
+                if (currentKey) args.unshift(currentKey)
+
                 const argsLen = args.length
                 const fnLen = fn.length
+                const placeholders = args.filter(is.placeholder)
+                const placeholdersLen = placeholders.length
+
+                console.group(fn.displayName || fn.name, fn.argNames)
+
+                keys.map((key, idx) => console.log(`[%c KEY #${idx}%c ]`, `color:lightblue`, "", key))
+                args.map((arg, idx) =>
+                    console.log(
+                        `[%c ARG %c#${idx}%c ]`,
+                        `color:grey`,
+                        `color:${is.placeholder(arg) ? "red" : "green"}`,
+                        "",
+                        arg
+                    )
+                )
+
+                if (!placeholdersLen && argsLen >= fnLen) {
+                    if (!keys.length) {
+                        console.groupEnd()
+                        return fn.apply(ctx, args)
+                    }
+
+                    const target = args.pop()
+                    const result = fn.apply(ctx, args)
+
+                    const rkeys = keys.concat(result)
+                    const r = pipe(rkeys)(target)
+
+                    console.log(`[R-KEYS]`, rkeys)
+                    args.map((arg, idx) => console.log(`[%c ARG %c#${idx}%c ]`, `color:grey`, "color:lime", "", arg))
+                    console.warn(`[resolve]`, r)
+                    console.groupEnd()
+
+                    return r
+                }
 
                 const result = fn.apply(ctx, args)
-                console.group(fnLen, fn)
-                args.map((arg, idx) => console.log(fnLen, idx, arg))
 
-                console.log(result)
+                console.log(`[%c RETURN%c ]`, `color:magenta`, "", result, result && result.length)
                 console.groupEnd()
 
-                return !is.func(result) ? result : executor(result, keys)
+                return executor(result, keys)
             },
             get(fn, key) {
-                if (Reflect.has(fn, key)) return Reflect.get(fn, key)
-                console.log(`[%cRUN%c/GET]`, `color:orange`, "", fn, key)
+                if (key === "$") return fn
+                if (key === Symbol.toPrimitive) return () => fn.toString()
 
-                if (currentKey) return getter(keys, currentKey)[key]
-                return get(key, getter(keys.concat(fn)))
+                console.log(`[%cRUN%c/GET]`, `color:orange`, "", currentKey, key, keys)
+                if (Reflect.has(fn, key)) return Reflect.get(fn, key)
+                if (currentKey) return getter(keys.concat(get(currentKey)))[key]
+                return getter(keys.concat(fn))[key]
             },
             has(fn, key) {
                 return Reflect.has(fn, key)
             }
         })
+        return eProxy
     }
 
     function getter(keys = [], currentKey) {
         const proxy = new Proxy(object, {
             get(target, key) {
                 if (key === Symbol.iterator) return () => Array.prototype[Symbol.iterator].apply(keys)
-                if (key === Symbol.toPrimitive) return () => "box(" + keys.map(key => key.toString()).join(".") + ")"
+                if (key === Symbol.toPrimitive) return () => keys.map(key => key.toString()).join(".")
 
-                if (key === "$") return (fn, ...args) => fn(keys, ...args)
+                if (key === "$") return keys
+                if (key === "curry") return executor(curry, keys)
+                if (key === "__") return executor(__, keys)
+
                 if (Reflect.has(target, key)) {
-                    return executor(Reflect.get(target, key), keys, currentKey)
+                    const fn = Reflect.get(target, key)
+                    console.log(`[%cGET%c]`, "color: #61afef;", "", fn)
+
+                    if (!is.func(fn)) return fn
+                    if (is.placeholder(fn)) return fn
+
+                    return executor(fn, keys)
                 }
 
-                console.log(`[%cGET%c] ${String(key)}`, "color: #61afef;", "")
-                keys.map((key, idx) => console.log(idx, key))
-
-                const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key
-                    ? primitive.__keys
-                    : is.numeric(key) ? parseInt(key) : key
-
-                //const nextKeys = [...keys, nextKey]
+                const nextKey = !is.undefined(primitive.__keys) && key === primitive.__key ? primitive.__keys : key
 
                 delete primitive.__key
                 delete primitive.__keys
 
-                return executor(get, keys, nextKey)
+                console.log(`[%cGET%c]`, "color: #61afef;", "", nextKey)
+
+                return executor(get(nextKey), keys)
+                //return executor(get, keys, nextKey)
+            },
+            has(target, key) {
+                if (key === "curry") return true
+                if (key === "__") return true
+                return Reflect.has(target, key)
+            },
+            set(target, key, value) {
+                if (is.func(value)) {
+                    return Reflect.set(target, key, curry(value))
+                }
             }
         })
 
@@ -75,6 +127,17 @@ function box(object) {
 }
 
 export default box
+
+/*
+g
+    .add(__(add(20)),__(3))
+    .add(30)
+    .as('num')
+    .tap(set('num', add(2)))
+    .observable
+    .tap(observe(log))
+    (null).num++
+*/
 
 // const log = curry(a => console.log(a))
 // const pairArgs = (idxs, args) => idxs.map(i => args[i])
