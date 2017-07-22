@@ -40,22 +40,18 @@ function curry(fn) {
         fnb.argNames = argNames.slice(fnb.length)
         fnb.args = args
 
-        fnb["[[CurriedFunction]]"] = fn
-        fnb["[[CurriedArguments]]"] = args
-
         fnb.toString = () => fnToString(fn) + "(" + args.map(String).join(", ") + ")"
 
         return fnb
     })
 
     fna[Symbol.for("functional/curryable")] = true
+
     fna.displayName = name
     fna.argNames = argNames
     fna.args = []
-    fna.toString = () => fnToString(fn) + "(" + argNames.join(", ") + ")"
 
-    fna["[[CurriedFunction]]"] = fn
-    fna["[[CurriedArguments]]"] = []
+    fna.toString = () => fnToString(fn) + "(" + argNames.join(", ") + ")"
 
     return fna
 }

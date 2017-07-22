@@ -15,22 +15,27 @@ export const setItems = set(__, __(times(to({ id: identity, count: inc }))))
 o.setItems = setItems
 
 export const obj = g.observable({
-    app: { count: 0 }
+    app: { count: 0 },
+    arr: ["First", 2, {}]
 })
 
-g.foo
+export const a = g[0][1].concat("x").concat("y").as("value").assign({ id: 100 }).tap(g.set("name", "Serebano"))
+
+export const b = g.foo
     .add(__(g.add(20)), __(3))
     .add(30)
     .as("num")
     .tap(set("num", g.add(2)))
     .tap(setItems("items", 10))
-    .tap(g.tap(g.observe(set("num", g.add(3)))).observe(g.log))(obj).num++
+    .tap(g.tap(g.observe(set("num", g.add(3)))).observe(g.log))
+
+//b(obj).num++
 
 //g.setItems(10, obj)
 
-import("./curry.js").then(({ default: theDefault }) => {
-    console.log(theDefault)
-})
+// import("./curry.js").then(({ default: theDefault }) => {
+//     console.log(theDefault)
+// })
 
 // g.a
 //     .concat(__, ["x", "y"])
