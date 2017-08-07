@@ -3,11 +3,27 @@ import curry from "./curry"
 import __ from "./__"
 import path from "./path"
 import resolve from "./resolve"
-import { last, drop, concat, has, get, set, inc, times, identity, to, apply } from "./operators"
+import { last, drop, concat, has, get, set, inc, log, times, identity, toUpper, to, apply } from "./operators"
 import * as functions from "./operators"
 import box from "./box"
+//import { curry as xc, _ as x_ } from "curry-this/module"
+
+import placeholder from "./__"
+//import curry from "./curry-this"
+
 export * from "./examples/counter"
 
+// export const XC = ({ Symbol }) => {
+//     const _ = placeholder //({ Symbol })
+//     const curry = curryFunction({ placeholder: _ })
+//
+//     return { _, curry }
+// }
+// export const $ = XC({ Symbol })
+// export const $__ = $._
+// export const $curry = $.curry
+//export { curryThis }
+// export { placeholder, curryFunction }
 export const o = Object.assign({}, functions) //{ __, curry }
 export const g = box(o)
 
@@ -64,6 +80,15 @@ export const b = g.foo
 //     .g[api.id(2).a.b.c].d.concat(["xxx", { h: { v: 5 } }])
 //     .as("hhhh")
 //     .log()({})
+
+const sal = curry((greeting, name) => `${greeting} ${name}`)
+box({
+    x: curry(a => a, __(concat(__(toUpper), `val = `))),
+    log,
+    sal
+})
+    .sal("Salute")
+    .x.log("John")
 
 export function Demo(key, value, object) {
     return { key, value, object }

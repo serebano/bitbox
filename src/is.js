@@ -1,5 +1,8 @@
 import { isObservable } from "./observer"
-import { isPlaceholder } from "./__"
+//import { isPlaceholder } from "./__"
+
+export const placeholder = Symbol.for("functional/placeholder")
+export const isPlaceholder = arg => typeof arg === "function" && Reflect.has(arg, placeholder)
 
 function _is(Ctor, val) {
     return (val != null && val.constructor === Ctor) || val instanceof Ctor

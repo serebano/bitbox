@@ -31,6 +31,7 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
+    "curry-this": "^3.1.0",
     "gh-pages": "^0.12.0",
     "rambda": "^0.6.1",
     "ramda": "^0.23.0",
