@@ -1,16 +1,11 @@
 import is from "./is"
 import curry from "./curry"
-import __ from "./__"
+import __ from "./placeholder"
 import path from "./path"
 import resolve from "./resolve"
-import { last, drop, concat, has, get, set, inc, log, times, identity, toUpper, to, apply } from "./operators"
+import { last, drop, concat, has, get, set, inc, add, log, times, identity, toUpper, to, apply } from "./operators"
 import * as functions from "./operators"
 import box from "./box"
-//import { curry as xc, _ as x_ } from "curry-this/module"
-
-import placeholder from "./__"
-//import curry from "./curry-this"
-
 export * from "./examples/counter"
 
 // export const XC = ({ Symbol }) => {
@@ -45,7 +40,24 @@ export const b = g.foo
     .tap(setItems("items", 10))
     .tap(g.tap(g.observe(set("num", g.add(3)))).observe(g.log))
 
-//b(obj).num++
+export const welcome = curry((message, name) => `${message} ${name}`)
+export const hello = welcome("Hello")
+export const salut = welcome("Salut")
+
+export const bx = box({
+    x: curry(a => a, __(concat(__(toUpper), `x = `))),
+    log,
+    welcome
+})
+
+bx.inc = set(__, add(1))
+bx.dec = set(__, add(-1))
+
+bx.sereban = welcome(__, "Sereban")
+
+bx.welcome("Salute").x.log("John")
+
+bx.inc("bxn", obj)
 
 //g.setItems(10, obj)
 
@@ -80,15 +92,6 @@ export const b = g.foo
 //     .g[api.id(2).a.b.c].d.concat(["xxx", { h: { v: 5 } }])
 //     .as("hhhh")
 //     .log()({})
-
-const sal = curry((greeting, name) => `${greeting} ${name}`)
-box({
-    x: curry(a => a, __(concat(__(toUpper), `val = `))),
-    log,
-    sal
-})
-    .sal("Salute")
-    .x.log("John")
 
 export function Demo(key, value, object) {
     return { key, value, object }

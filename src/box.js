@@ -80,7 +80,7 @@ function box(object) {
                 if (Reflect.has(target, key)) {
                     const fn = Reflect.get(target, key)
                     if (!is.func(fn)) return fn
-                    if (is.placeholder(fn)) return fn
+                    //if (is.placeholder(fn)) return fn
 
                     return executor(fn, keys)
                 }

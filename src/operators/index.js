@@ -2,7 +2,7 @@
 export * from "./math"
 /* Array */
 export * from "./array"
-export { default as __ } from "../__"
+// export { default as __ } from "../placeholder"
 
 /* Base */
 export { default as observe } from "./observe"

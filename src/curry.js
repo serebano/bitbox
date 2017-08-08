@@ -25,11 +25,14 @@ function curry(fn, ...initialArgs) {
 
     const _curry = (...args) => {
         const f = (...newArgs) => {
+            if (!newArgs.length) return fx
             const concatedArgs = merge(args, newArgs)
             return actualLength(concatedArgs) >= len ? fn(...concatedArgs.slice(0, len)) : _curry(...concatedArgs)
         }
 
-        return arity(len - actualLength(args), f)
+        const fx = arity(len - actualLength(args), f)
+
+        return fx
     }
 
     return _curry(...initialArgs)()
